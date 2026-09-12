@@ -261,124 +261,138 @@ async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise
 // OPERAÇÕES DE INTELIGÊNCIA ARTIFICIAL (GOOGLE GEMINI)
 // ============================================================================
 
+// Modelos candidatos ordenados por preferência e disponibilidade
+const EMBEDDING_MODELS = ["gemini-embedding-001", "text-embedding-004", "gemini-embedding-2"];
+const GENERATION_MODELS = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-1.5-flash"];
+
 /**
- * Gera vetor denso de 768 dimensões com text-embedding-004
+ * Gera vetor denso de 768 dimensões com suporte resiliente a múltiplos modelos
  */
 async function generateEmbedding(ai: GoogleGenAI, text: string): Promise<number[] | null> {
-  try {
-    const response = await ai.models.embedContent({
-      model: "text-embedding-004",
-      contents: text.slice(0, 2048), // Limite confortável para embeddings precisos
-    });
+  const cleanSnippet = text.slice(0, 2048);
 
-    const values = response.embeddings?.[0]?.values || (response as any).embedding?.values;
-    if (Array.isArray(values) && values.length > 0) {
-      return values;
+  for (const model of EMBEDDING_MODELS) {
+    try {
+      const response = await ai.models.embedContent({
+        model,
+        contents: cleanSnippet,
+        config: { outputDimensionality: 768 },
+      });
+
+      const values = response.embeddings?.[0]?.values || (response as any).embedding?.values;
+      if (Array.isArray(values) && values.length === 768) {
+        return values;
+      }
+    } catch (error: any) {
+      // Tenta próximo modelo na lista se este não estiver disponível
     }
-    return null;
-  } catch (error: any) {
-    console.warn(`  ⚠️ [Embedding] Erro ao gerar vetor: ${error?.message || error}`);
-    return null;
   }
+
+  console.warn("  ⚠️ [Embedding] Não foi possível gerar vetor 768d com nenhum dos modelos disponíveis.");
+  return null;
 }
 
 /**
- * Reescreve a matéria com voz gamer, SEO e estrutura JSON pelo Gemini 1.5 Flash
+ * Reescreve a matéria com voz gamer, SEO e estrutura JSON pelo Gemini Flash
  */
 async function rewriteArticleWithGemini(
   ai: GoogleGenAI,
   scraped: ScrapedContent,
   sourceName: string
 ): Promise<AIArticleOutput | null> {
-  try {
-    const userPrompt = `URL Canônica da Fonte: ${scraped.canonicalUrl}
+  const userPrompt = `URL Canônica da Fonte: ${scraped.canonicalUrl}
 Veículo de Origem: ${sourceName}
 Título Original do Feed: ${scraped.title}
 
 Conteúdo Extraído da Matéria:
 ${scraped.cleanText}`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      config: {
-        temperature: 0.2,
-        topP: 0.85,
-        topK: 40,
-        maxOutputTokens: 4096,
-        responseMimeType: "application/json",
-        systemInstruction: SYSTEM_INSTRUCTION,
-        responseSchema: {
-          type: Type.OBJECT,
-          required: [
-            "title",
-            "slug",
-            "tldr",
-            "excerpt",
-            "content",
-            "community_sentiment",
-            "game_metadata",
-            "suggested_category",
-            "keywords",
-          ],
-          properties: {
-            title: { type: Type.STRING },
-            slug: { type: Type.STRING },
-            tldr: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-            },
-            excerpt: { type: Type.STRING },
-            content: { type: Type.STRING },
-            community_sentiment: { type: Type.STRING },
-            game_metadata: {
-              type: Type.OBJECT,
-              required: ["game_name", "platforms", "release_date", "developer", "publisher"],
-              properties: {
-                game_name: { type: Type.STRING },
-                platforms: { type: Type.ARRAY, items: { type: Type.STRING } },
-                release_date: { type: Type.STRING },
-                developer: { type: Type.STRING },
-                publisher: { type: Type.STRING },
+  for (const model of GENERATION_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        config: {
+          temperature: 0.2,
+          topP: 0.85,
+          topK: 40,
+          maxOutputTokens: 4096,
+          responseMimeType: "application/json",
+          systemInstruction: SYSTEM_INSTRUCTION,
+          responseSchema: {
+            type: Type.OBJECT,
+            required: [
+              "title",
+              "slug",
+              "tldr",
+              "excerpt",
+              "content",
+              "community_sentiment",
+              "game_metadata",
+              "suggested_category",
+              "keywords",
+            ],
+            properties: {
+              title: { type: Type.STRING },
+              slug: { type: Type.STRING },
+              tldr: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
               },
-            },
-            suggested_category: {
-              type: Type.STRING,
-              enum: ["PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Geral"],
-            },
-            keywords: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
+              excerpt: { type: Type.STRING },
+              content: { type: Type.STRING },
+              community_sentiment: { type: Type.STRING },
+              game_metadata: {
+                type: Type.OBJECT,
+                required: ["game_name", "platforms", "release_date", "developer", "publisher"],
+                properties: {
+                  game_name: { type: Type.STRING },
+                  platforms: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  release_date: { type: Type.STRING },
+                  developer: { type: Type.STRING },
+                  publisher: { type: Type.STRING },
+                },
+              },
+              suggested_category: {
+                type: Type.STRING,
+                enum: ["PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Geral"],
+              },
+              keywords: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
             },
           },
         },
-      },
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: userPrompt }],
-        },
-      ],
-    });
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: userPrompt }],
+          },
+        ],
+      });
 
-    const responseText = response.text;
-    if (!responseText) {
-      throw new Error("Resposta de texto vazia retornada pelo Gemini.");
+      const responseText = response.text;
+      if (!responseText) {
+        continue;
+      }
+
+      // Remove eventuais blocos de código se presentes
+      const sanitizedJson = responseText.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
+      const parsed: AIArticleOutput = JSON.parse(sanitizedJson);
+
+      // Validação de integridade dos campos obrigatórios
+      if (!parsed.title || !parsed.content || !Array.isArray(parsed.tldr)) {
+        continue;
+      }
+
+      return parsed;
+    } catch (error: any) {
+      // Se der erro de cota ou modelo 404, tenta o próximo modelo
     }
-
-    // Remove eventuais blocos de código se presentes
-    const sanitizedJson = responseText.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
-    const parsed: AIArticleOutput = JSON.parse(sanitizedJson);
-
-    // Validação de integridade dos campos obrigatórios
-    if (!parsed.title || !parsed.content || !Array.isArray(parsed.tldr)) {
-      throw new Error("JSON retornado não contém os campos estruturais obrigatórios.");
-    }
-
-    return parsed;
-  } catch (error: any) {
-    console.error(`  ❌ [Gemini 1.5] Falha na redação com IA: ${error?.message || error}`);
-    return null;
   }
+
+  console.error("  ❌ [Gemini Flash] Falha na redação com IA com todos os modelos candidatos.");
+  return null;
 }
 
 // ============================================================================
