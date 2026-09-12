@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #fafafa;
+  --foreground: #09090b;
+}
+
+.dark {
+  --background: #0a0a0e;
+  --foreground: #f4f4f6;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
+}
+
+/* Custom gamer scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27273a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8b5cf6;
+}
+
+/* Text Selection Glow */
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: #ffffff;
+}
+
+/* Rich Prose article styling */
+.article-content {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: #3f3f46;
+}
+
+.dark .article-content {
+  color: #d4d4d8;
+}
+
+.article-content p {
+  margin-bottom: 1.5rem;
+}
+
+.article-content h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  color: #18181b;
+}
+
+.dark .article-content h2 {
+  color: #f4f4f6;
+}
+
+.article-content h3 {
+  font-size: 1.35rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: #18181b;
+}
+
+.dark .article-content h3 {
+  color: #f4f4f6;
+}
+
+.article-content blockquote {
+  border-left: 4px solid #8b5cf6;
+  padding-left: 1.25rem;
+  margin: 1.75rem 0;
+  font-style: italic;
+  color: #52525b;
+}
+
+.dark .article-content blockquote {
+  color: #a1a1aa;
+}
+
+.article-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.article-content li {
+  margin-bottom: 0.5rem;
+}
+
+.article-content strong {
+  font-weight: 700;
+  color: #09090b;
+}
+
+.dark .article-content strong {
+  color: #ffffff;
+}

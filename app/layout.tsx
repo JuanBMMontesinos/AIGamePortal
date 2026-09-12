@@ -1,0 +1,93 @@
+import type { Metadata } from "next";
+import { Inter, Outfit } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { getCategories } from "@/lib/data/api";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: {
+    default: "AIGamePortal • Notícias Gamer com Curadoria de IA em Tempo Real",
+    template: "%s | AIGamePortal",
+  },
+  description:
+    "Portal de notícias de videogame de última geração gerenciado por agentes de IA. Cobertura em tempo real de PlayStation, Xbox, Nintendo, PC Gaming e Hardware com resumos TL;DR e verificação E-E-A-T.",
+  keywords: [
+    "Games",
+    "Notícias Gamer",
+    "PlayStation 5",
+    "Xbox Series X",
+    "Nintendo Switch 2",
+    "PC Gaming",
+    "Hardware",
+    "IA",
+    "Gemini",
+    "AIGamePortal",
+  ],
+  authors: [{ name: "AIGamePortal AI Editorial Team" }],
+  creator: "AIGamePortal",
+  publisher: "AIGamePortal",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: "/",
+    siteName: "AIGamePortal",
+    title: "AIGamePortal • Notícias Gamer com Curadoria de IA em Tempo Real",
+    description:
+      "Portal gamer autônomo com resumos TL;DR, metadados de jogos e verificação semântica de fatos.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AIGamePortal • Notícias Gamer com Curadoria de IA",
+    description: "Cobertura gamer veloz, inteligente e estruturada por IA.",
+  },
+};
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const categories = await getCategories();
+
+  return (
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body
+        className={`${inter.variable} ${outfit.variable} font-sans min-h-screen flex flex-col bg-zinc-50 dark:bg-gamer-950 text-zinc-900 dark:text-zinc-100 antialiased selection:bg-brand-purple selection:text-white transition-colors duration-200`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          <div className="flex flex-col min-h-screen">
+            <Header categories={categories} />
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
