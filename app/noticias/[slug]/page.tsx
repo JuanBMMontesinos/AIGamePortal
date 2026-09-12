@@ -42,42 +42,69 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   if (!post) {
     return {
       title: "Matéria Não Encontrada",
+      robots: {
+        index: false,
+        follow: false,
+      },
     };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com").replace(/\/+$/, "");
   const postUrl = `${siteUrl}/noticias/${post.slug}`;
+
+  const hasValidCover = isValidImageUrl(post.cover_image_url);
+  const coverUrl = hasValidCover
+    ? (post.cover_image_url!.startsWith("http") ? post.cover_image_url! : `${siteUrl}${post.cover_image_url}`)
+    : `${siteUrl}/og-image.png`;
+
+  const description =
+    post.excerpt?.trim() ||
+    (post.tldr && post.tldr.length > 0 ? post.tldr.join(" ") : `Leia a cobertura completa de ${post.title} no AIGamePortal.`);
 
   return {
     title: post.title,
-    description: post.excerpt || `Leia a cobertura completa de ${post.title} no AIGamePortal.`,
+    description,
     alternates: {
       canonical: postUrl,
     },
+    robots: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     openGraph: {
       type: "article",
+      locale: "pt_BR",
       title: post.title,
-      description: post.excerpt || "",
+      description,
       url: postUrl,
-      publishedTime: post.published_at,
-      modifiedTime: post.updated_at,
+      siteName: "AIGamePortal",
+      publishedTime: new Date(post.published_at).toISOString(),
+      modifiedTime: new Date(post.updated_at || post.published_at).toISOString(),
       section: post.categories?.name || "Games",
-      images: post.cover_image_url
-        ? [
-            {
-              url: post.cover_image_url,
-              width: 1200,
-              height: 630,
-              alt: post.cover_image_alt || post.title,
-            },
-          ]
-        : [],
+      images: [
+        {
+          url: coverUrl,
+          width: 1200,
+          height: 630,
+          alt: post.cover_image_alt || post.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
-      description: post.excerpt || "",
-      images: post.cover_image_url ? [post.cover_image_url] : [],
+      description,
+      images: [coverUrl],
     },
   };
 }
@@ -100,33 +127,84 @@ export default async function PostPage({ params }: PostPageProps) {
   const allLatest = await getLatestPosts(4);
   const relatedPosts = allLatest.filter((p) => p.slug !== post.slug).slice(0, 3);
 
-  // Schema.org NewsArticle JSON-LD
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const jsonLd = {
-    "@context": "https://schema.org",
+  // Schema.org Structured Data (NewsArticle + BreadcrumbList)
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com").replace(/\/+$/, "");
+  const postUrl = `${siteUrl}/noticias/${post.slug}`;
+
+  // Headline limitado a 110 caracteres conforme especificação técnica do Google Rich Results / NewsArticle
+  const rawTitle = post.title?.trim() || "Notícia Gamer";
+  const headline = rawTitle.length <= 110 ? rawTitle : rawTitle.slice(0, 107).trim() + "...";
+
+  // Descrição/TL;DR sanitizada
+  const description =
+    post.excerpt?.trim() ||
+    (post.tldr && post.tldr.length > 0 ? post.tldr.join(" ") : post.title);
+
+  // URL absoluta de imagem com largura mínima de 1200px para elegibilidade no Google Discover
+  const hasValidCover = isValidImageUrl(post.cover_image_url);
+  const absoluteImageUrl = hasValidCover
+    ? (post.cover_image_url!.startsWith("http") ? post.cover_image_url! : `${siteUrl}${post.cover_image_url}`)
+    : `${siteUrl}/og-image.png`;
+
+  const datePublishedIso = new Date(post.published_at).toISOString();
+  const dateModifiedIso = new Date(post.updated_at || post.published_at).toISOString();
+
+  const newsArticleJsonLd = {
     "@type": "NewsArticle",
-    "headline": post.title,
-    "description": post.excerpt,
-    "image": post.cover_image_url ? [post.cover_image_url] : [],
-    "datePublished": post.published_at,
-    "dateModified": post.updated_at,
+    "headline": headline,
+    "description": description,
+    "image": [absoluteImageUrl],
+    "datePublished": datePublishedIso,
+    "dateModified": dateModifiedIso,
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": `${siteUrl}/noticias/${post.slug}`,
+      "@id": postUrl,
     },
     "author": {
       "@type": "Organization",
-      "name": "AIGamePortal AI Curadoria & Redação Editorial",
+      "name": "Redação AIGamePortal",
       "url": `${siteUrl}/transparencia-editorial`,
     },
     "publisher": {
       "@type": "Organization",
       "name": "AIGamePortal",
+      "url": siteUrl,
       "logo": {
         "@type": "ImageObject",
         "url": `${siteUrl}/logo.png`,
+        "width": 600,
+        "height": 60,
       },
     },
+  };
+
+  const breadcrumbJsonLd = {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Início",
+        "item": siteUrl,
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": categoryName,
+        "item": `${siteUrl}/categoria/${categorySlug}`,
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": post.title,
+        "item": postUrl,
+      },
+    ],
+  };
+
+  const jsonLdGraph = {
+    "@context": "https://schema.org",
+    "@graph": [newsArticleJsonLd, breadcrumbJsonLd],
   };
 
   return (
@@ -134,7 +212,7 @@ export default async function PostPage({ params }: PostPageProps) {
       {/* Structured Data Script */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
       />
 
       {/* Breadcrumbs */}

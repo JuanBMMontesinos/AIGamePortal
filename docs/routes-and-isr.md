@@ -13,6 +13,9 @@ Este documento detalha o sistema de roteamento baseado no **Next.js App Router**
 | `GET /categoria/[slug]` | [app/categoria/[slug]/page.tsx](file:///d:/IAProjects/AIGamePortal/app/categoria/[slug]/page.tsx) | Estático (SSG + ISR) | `120s` ou via webhook | Feed de notícias filtrado pela plataforma/categoria. |
 | `GET /transparencia-editorial`| [app/transparencia-editorial/page.tsx](file:///d:/IAProjects/AIGamePortal/app/transparencia-editorial/page.tsx) | Estático Puro | Permanente | Manifesto de IA, diretrizes anti-alucinação e lista de feeds oficiais. |
 | `POST /api/revalidate` | [app/api/revalidate/route.ts](file:///d:/IAProjects/AIGamePortal/app/api/revalidate/route.ts) | Dynamic Route Handler | Não aplicável | Endpoint de revalidação instantânea sob demanda para automações n8n. |
+| `GET /sitemap.xml` | [app/sitemap.ts](file:///d:/IAProjects/AIGamePortal/app/sitemap.ts) | Dynamic / ISR | `3600s` (1h) | Sitemap padrão com todas as URLs do portal, frequências e prioridades. |
+| `GET /news-sitemap.xml` | [app/news-sitemap.xml/route.ts](file:///d:/IAProjects/AIGamePortal/app/news-sitemap.xml/route.ts) | Route Handler XML | `300s` (5m) | Google News Sitemap exclusivo contendo apenas notícias publicadas nas últimas 48h. |
+| `GET /robots.txt` | [app/robots.ts](file:///d:/IAProjects/AIGamePortal/app/robots.ts) | Estático / Dynamic | Permanente | Instruções aos crawlers e declaração dos dois sitemaps do portal. |
 | Rota Inexistente (404) | [app/not-found.tsx](file:///d:/IAProjects/AIGamePortal/app/not-found.tsx) | Estático Puro | Permanente | Página de erro 404 personalizada gamer. |
 
 ---

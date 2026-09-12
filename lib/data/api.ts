@@ -213,3 +213,105 @@ export async function getAllCategorySlugs(): Promise<{ slug: string }[]> {
   const categories = await getCategories();
   return categories.map((c) => ({ slug: c.slug }));
 }
+
+export interface SitemapPostItem {
+  slug: string;
+  updated_at: string;
+  published_at: string;
+}
+
+export async function getAllPostsForSitemap(): Promise<SitemapPostItem[]> {
+  if (!isSupabaseConfigured) {
+    return MOCK_POSTS.map((p) => ({
+      slug: p.slug,
+      updated_at: p.updated_at || p.published_at,
+      published_at: p.published_at,
+    }));
+  }
+
+  try {
+    const supabase = createServerClient();
+    if (!supabase) {
+      return MOCK_POSTS.map((p) => ({
+        slug: p.slug,
+        updated_at: p.updated_at || p.published_at,
+        published_at: p.published_at,
+      }));
+    }
+
+    const { data, error } = await supabase
+      .from("posts")
+      .select("slug, updated_at, published_at")
+      .eq("status", "published")
+      .order("published_at", { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      return MOCK_POSTS.map((p) => ({
+        slug: p.slug,
+        updated_at: p.updated_at || p.published_at,
+        published_at: p.published_at,
+      }));
+    }
+
+    return data as SitemapPostItem[];
+  } catch {
+    return MOCK_POSTS.map((p) => ({
+      slug: p.slug,
+      updated_at: p.updated_at || p.published_at,
+      published_at: p.published_at,
+    }));
+  }
+}
+
+export interface NewsSitemapPostItem {
+  slug: string;
+  title: string;
+  published_at: string;
+}
+
+export async function getRecentPostsForNewsSitemap(
+  hours: number = 48
+): Promise<NewsSitemapPostItem[]> {
+  const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
+  const cutoffIso = cutoffTime.toISOString();
+
+  if (!isSupabaseConfigured) {
+    const recentMocks = MOCK_POSTS.filter(
+      (p) => new Date(p.published_at).getTime() >= cutoffTime.getTime()
+    );
+
+    const postsToUse = recentMocks.length > 0 ? recentMocks : MOCK_POSTS.slice(0, 5);
+    return postsToUse.map((p) => ({
+      slug: p.slug,
+      title: p.title,
+      published_at: p.published_at,
+    }));
+  }
+
+  try {
+    const supabase = createServerClient();
+    if (!supabase) {
+      return MOCK_POSTS.slice(0, 5).map((p) => ({
+        slug: p.slug,
+        title: p.title,
+        published_at: p.published_at,
+      }));
+    }
+
+    const { data, error } = await supabase
+      .from("posts")
+      .select("slug, title, published_at")
+      .eq("status", "published")
+      .gte("published_at", cutoffIso)
+      .order("published_at", { ascending: false })
+      .limit(1000);
+
+    if (error || !data) {
+      return [];
+    }
+
+    return data as NewsSitemapPostItem[];
+  } catch {
+    return [];
+  }
+}

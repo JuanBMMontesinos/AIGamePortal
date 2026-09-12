@@ -15,6 +15,7 @@ Esta documentação foi estruturada para servir tanto a engenheiros humanos de s
 | **[api-reference.md](file:///d:/IAProjects/AIGamePortal/docs/api-reference.md)** | Referência exaustiva de todas as funções, módulos (`lib/data/api.ts`, `lib/utils.ts`, `lib/supabase/*`), parâmetros e retornos. | Desenvolvedores & LLMs |
 | **[components.md](file:///d:/IAProjects/AIGamePortal/docs/components.md)** | Catálogo e documentação de todos os componentes de UI, tipagem de props e design tokens. | Frontend Engineers |
 | **[routes-and-isr.md](file:///d:/IAProjects/AIGamePortal/docs/routes-and-isr.md)** | Mapeamento de rotas do App Router, pré-renderização estática (`generateStaticParams`) e contrato do webhook `/api/revalidate`. | Fullstack & Automações n8n |
+| **[seo-and-indexing.md](file:///d:/IAProjects/AIGamePortal/docs/seo-and-indexing.md)** | Infraestrutura técnica de SEO, Schema.org (JSON-LD NewsArticle & Breadcrumbs), Google Discover e Google News Sitemap (48h). | Especialistas de SEO, Engenheiros & IA |
 | **[environment-variables.md](file:///d:/IAProjects/AIGamePortal/docs/environment-variables.md)** | Dicionário de variáveis de ambiente, escopos (público vs servidor), segredos e boas práticas de segurança. | DevOps & Engenheiros |
 | **[database.md](file:///d:/IAProjects/AIGamePortal/docs/database.md)** | Modelagem relacional, dicionário de dados, extensões (`vector`), índices HNSW, RLS e RPCs. | DBAs & Backend |
 | **[ai-context.md](file:///d:/IAProjects/AIGamePortal/docs/ai-context.md)** | Guia canônico para agentes de IA: regras de negócio, pipeline n8n + Gemini, diretrizes E-E-A-T e política anti-alucinação. | Agentes de IA & Engenheiros |
@@ -69,16 +70,20 @@ d:/IAProjects/AIGamePortal/
 │   ├── categoria/
 │   │   └── [slug]/
 │   │       └── page.tsx                # Feed dinâmico por categoria/plataforma
+│   ├── news-sitemap.xml/
+│   │   └── route.ts                    # Google News Sitemap exclusivo (janela 48h)
 │   ├── noticias/
 │   │   └── [slug]/
-│   │       └── page.tsx                # Página completa do artigo
+│   │       └── page.tsx                # Página completa do artigo + JSON-LD
 │   ├── transparencia-editorial/
 │   │   └── page.tsx                    # Manifesto de transparência e IA
 │   ├── globals.css                     # Variáveis de tema e tipografia rica
 │   ├── layout.tsx                      # RootLayout (Header, Footer, ThemeProvider)
 │   ├── loading.tsx                     # Skeleton screens de transição
 │   ├── not-found.tsx                   # Página 404 personalizada gamer
-│   └── page.tsx                        # Homepage (Hero, Grid e Sidebar)
+│   ├── page.tsx                        # Homepage (Hero, Grid e Sidebar)
+│   ├── robots.ts                       # Diretivas crawler com apontamento de sitemaps
+│   └── sitemap.ts                      # Sitemap padrão completo do portal
 ├── components/                         # Componentes de interface modulares
 │   ├── community-sentiment-box.tsx     # Card de repercussão Reddit/X
 │   ├── eeat-attribution-box.tsx        # Box de transparência e link da fonte
@@ -101,7 +106,11 @@ d:/IAProjects/AIGamePortal/
 │   ├── database.md                     # Modelagem relacional e índices
 │   ├── environment-variables.md        # Dicionário de variáveis de ambiente
 │   ├── index.md                        # Este documento
-│   └── routes-and-isr.md               # Rotas, SSG e webhook de revalidação
+│   ├── routes-and-isr.md               # Rotas, SSG e webhook de revalidação
+│   └── seo-and-indexing.md             # SEO Técnico, Schema.org e Google News/Discover
+├── public/                             # Ativos estáticos públicos
+│   ├── logo.png                        # Logotipo retangular oficial (600x60)
+│   └── og-image.png                    # Fallback OpenGraph em alta resolução (1200x630)
 ├── lib/                                # Utilitários e camada de dados
 │   ├── data/
 │   │   ├── api.ts                      # Funções de busca com fallback gracioso
