@@ -20,6 +20,7 @@ Esta documentação foi estruturada para servir tanto a engenheiros humanos de s
 | **[database.md](file:///d:/IAProjects/AIGamePortal/docs/database.md)** | Modelagem relacional, dicionário de dados, extensões (`vector`), índices HNSW, RLS e RPCs. | DBAs & Backend |
 | **[ai-context.md](file:///d:/IAProjects/AIGamePortal/docs/ai-context.md)** | Guia canônico para agentes de IA: regras de negócio, pipeline n8n + Gemini, diretrizes E-E-A-T e política anti-alucinação. | Agentes de IA & Engenheiros |
 | **[gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md)** | Especificação do Agente Redator & Otimizador SEO: System Prompt definitivo, Few-Shot, JSON Schema e parâmetros Gemini 1.5. | Engenheiros de IA & Redação |
+| **[social-automation.md](file:///d:/IAProjects/AIGamePortal/docs/social-automation.md)** | Módulo de Distribuição Multi-canal: Telegram Bot API, X/Twitter API v2, copywriter gamer e resiliência non-blocking. | Social Media & Engenheiros |
 
 ---
 

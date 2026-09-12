@@ -23,7 +23,13 @@ flowchart TD
     end
 
     subgraph Revalidacao ["Gatilho de Revalidação Instantânea"]
-        DB_INS -->|HTTP POST / GET| REVAL[/api/revalidate?secret=...&slug=.../]
+        DB_INS -->|HTTP POST| REVAL[/api/revalidate?secret=...&slug=.../]
+    end
+
+    subgraph Distribuicao_Social ["Distribuição Multi-canal (lib/services/social-publisher.ts)"]
+        DB_INS -->|Publicação Concluída| SOC[Social Publisher Multi-Canal]
+        SOC -->|Bot API: sendPhoto / sendMessage| TEL[Canal/Grupo Telegram]
+        SOC -->|twitter-api-v2: OAuth 1.0a <= 280c| TW[X / Twitter Oficial]
     end
 
     subgraph Frontend_Nextjs ["Frontend Next.js (App Router)"]
@@ -184,3 +190,25 @@ Os componentes visuais ([NewsCard](file:///d:/IAProjects/AIGamePortal/components
 ### 5.5 Tipografia com `next/font`
 
 - Fontes `Inter` (leitura editorial) e `Outfit` (estética gamer) são carregadas com `display: "swap"` e declaradas como variáveis CSS (`--font-inter`, `--font-outfit`), sem gerar requisições de rede em tempo de execução para servidores do Google.
+
+---
+
+## 6. Distribuição Multi-canal Automática (Fase 2)
+
+Para maximizar a tração orgânica e o engajamento imediato com a comunidade gamer, o pipeline integra o módulo [lib/services/social-publisher.ts](file:///d:/IAProjects/AIGamePortal/lib/services/social-publisher.ts), acionado imediatamente após a persistência do post no banco de dados e a revalidação do ISR.
+
+### 6.1 Princípios de Resiliência e Falha Segura (Non-Blocking)
+- **Desacoplamento Estrito**: Falhas em redes sociais (rate limit da API do X/Twitter, timeout no Telegram ou tokens ausentes) **nunca** abortam nem invalidam o salvamento da notícia no Supabase.
+- **Execução Concorrente**: Utiliza `Promise.allSettled` para disparar Telegram e Twitter simultaneamente, isolando falhas por canal.
+- **Degradação Graciosa**: Quando as credenciais de uma rede social não estão presentes no ambiente, o canal é ignorado emitindo apenas um aviso de log estruturado (`skipped: true`).
+
+### 6.2 Social Copywriter Adaptativo
+- **Ganchos Gamer**: Emojis temáticos (`🎮`, `🚨`, `💥`) e detecção de credibilidade (se `is_rumor: true`, prefixa obrigatoriamente `🚨 [RUMOR]`).
+- **Telegram**:
+  - Envio de foto em alta resolução via `sendPhoto` com fallback para `sendMessage`.
+  - Legenda rica com formatação HTML sanitizada (`parse_mode: 'HTML'`).
+  - Botão inline interativo *"Ler Matéria Completa 🎮"* com link canônico para o portal.
+- **X (Twitter)**:
+  - Integração oficial com `twitter-api-v2` sob OAuth 1.0a User Context.
+  - Algoritmo de compressão dinâmico com garantia matemática de cumprimento do limite estrito de **280 caracteres** (compensando os 23 caracteres fixos da URL via `t.co`).
+  - Hashtags estratégicas geradas dinamicamente com base na categoria e plataformas do jogo.

@@ -7,6 +7,7 @@ import * as cheerio from "cheerio";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Category, GameMetadata, Post, Source } from "../types/database";
+import { publishToSocialNetworks } from "../lib/services/social-publisher";
 
 // ============================================================================
 // CONFIGURAÇÕES & FONTES OFICIAIS
@@ -907,6 +908,22 @@ export async function runNewsSync() {
         // PASSO F: Revalidação On-Demand do Cache Next.js (ISR)
         // --------------------------------------------------------------------
         await triggerISRRevalidation(siteUrl, revalidateSecret, saved.slug);
+
+        // --------------------------------------------------------------------
+        // PASSO G: Distribuição Multi-canal Automática (Telegram & Twitter/X)
+        // --------------------------------------------------------------------
+        const canonicalArticleUrl = `${siteUrl.replace(/\/+$/, "")}/noticias/${saved.slug}`;
+        await publishToSocialNetworks({
+          title: saved.title,
+          slug: saved.slug,
+          url: canonicalArticleUrl,
+          tldr: generated.tldr || [],
+          category: feedConfig.defaultCategorySlug || generated.suggested_category || "geral",
+          coverImageUrl: scraped.imageUrl,
+          isRumor: isRumor,
+          reliabilityScore: reliabilityScore,
+          platforms: generated.game_metadata?.platforms,
+        });
       } catch (insertCatch: any) {
         console.error(`     ❌ Erro ao salvar artigo no Supabase: ${insertCatch?.message || insertCatch}`);
         totalErrors++;

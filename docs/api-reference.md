@@ -313,3 +313,38 @@ Submete o texto original raspado ao **Gemini 1.5 Flash** (temperatura 0.2) sob o
 
 ### `triggerISRRevalidation(siteUrl, secret, slug)`
 Dispara chamada HTTP ao endpoint `/api/revalidate` para invalidar instantaneamente o cache da notícia e da homepage.
+
+---
+
+## 6. Módulo de Distribuição Social (`lib/services/social-publisher.ts`)
+
+Módulo responsável pelo envio automatizado de notícias para redes sociais com formatação e regras adaptadas por canal.
+
+### `publishToSocialNetworks(payload)`
+Orquestrador central de publicação multi-canal. Executa disparos em paralelo via `Promise.allSettled`, garantindo execução 100% não-bloqueante e tolerante a falhas.
+- **Assinatura**:
+  ```typescript
+  export async function publishToSocialNetworks(
+    payload: SocialArticlePayload
+  ): Promise<SocialPublishResult>
+  ```
+- **Parâmetros**: `SocialArticlePayload` contendo `title`, `slug`, `url`, `tldr`, `category`, `coverImageUrl`, `isRumor`, `platforms`.
+- **Retorno**: `Promise<SocialPublishResult>` com status de envio ou erro por rede social.
+
+### `generateSocialCopy(payload)`
+Gera as copies otimizadas para Telegram (HTML rica com botão inline) e X/Twitter (<= 280 caracteres).
+- **Assinatura**:
+  ```typescript
+  export function generateSocialCopy(payload: SocialArticlePayload): SocialCopy
+  ```
+- **Regras**:
+  - Ganchos gamer com emojis (`🎮`, `🚨 [RUMOR]`).
+  - 2 bullet points condensados a partir do `tldr`.
+  - Link canônico do artigo no portal.
+  - 3 a 4 hashtags estratégicas por categoria e plataforma.
+
+### `sendToTelegram(payload, copy)`
+Envia publicação com capa (`sendPhoto`) ou texto (`sendMessage`) via Telegram Bot API com botão inline *"Ler Matéria Completa 🎮"*.
+
+### `sendToTwitter(payload, copy)`
+Envia tweet via `twitter-api-v2` utilizando OAuth 1.0a User Context, respeitando rigorosamente o limite de 280 caracteres.

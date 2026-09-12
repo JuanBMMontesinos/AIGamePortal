@@ -15,6 +15,12 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 | `GEMINI_API_KEY` | **Privado** (GitHub Actions / Script) | Sim | Chave de API do Google AI Studio para geração de embeddings (`text-embedding-004`) e redação (`gemini-1.5-flash`). | `AIzaSyD...` |
 | `REVALIDATE_SECRET` | **Privado** (Servidor & GitHub Actions) | Sim | Token secreto utilizado pelo pipeline para autenticar requisições de revalidação instantânea ao `/api/revalidate`. | `aigameportal_super_secret_token_2026` |
 | `NEXT_PUBLIC_SITE_URL` | Público (Browser & Server) | Sim | Domínio canônico do site, utilizado para resolução de metatags OpenGraph, Twitter Cards e chamadas de revalidação ISR. | `http://localhost:3000` ou `https://aigameportal.com` |
+| `TELEGRAM_BOT_TOKEN` | **Privado** (Pipeline / Script) | Opcional (Fase 2) | Token de autenticação HTTP da Telegram Bot API gerado pelo @BotFather. | `123456789:ABCdefGhIJKlm...` |
+| `TELEGRAM_CHAT_ID` | **Privado** (Pipeline / Script) | Opcional (Fase 2) | Identificador numérico ou username do canal/grupo do Telegram de destino. | `@aigameportal_noticias` ou `-1001234567890` |
+| `TWITTER_API_KEY` | **Privado** (Pipeline / Script) | Opcional (Fase 2) | Consumer API Key gerada no Developer Portal do X (Twitter). | `eXamPleApiKey123...` |
+| `TWITTER_API_SECRET` | **Privado** (Pipeline / Script) | Opcional (Fase 2) | Consumer API Secret Key correspondente no Developer Portal do X. | `eXamPleApiSecret456...` |
+| `TWITTER_ACCESS_TOKEN` | **Privado** (Pipeline / Script) | Opcional (Fase 2) | User Access Token gerado com permissões de 'Read and Write' na API v2. | `12345678-eXamPleToken...` |
+| `TWITTER_ACCESS_SECRET`| **Privado** (Pipeline / Script) | Opcional (Fase 2) | User Access Token Secret associado para assinatura OAuth 1.0a. | `eXamPleAccessSecret789...` |
 
 ---
 
@@ -57,6 +63,28 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 
 ---
 
+### 2.6 `TELEGRAM_BOT_TOKEN` & `TELEGRAM_CHAT_ID` (Fase 2)
+- **Utilizadas em**: [lib/services/social-publisher.ts](file:///d:/IAProjects/AIGamePortal/lib/services/social-publisher.ts).
+- **Finalidade**: Envio automatizado de posts com imagem de capa (`sendPhoto`), legenda em HTML formatada e botão inline interativo *"Ler Matéria Completa 🎮"* para canais ou grupos de games.
+- **Como Obter**:
+  1. No Telegram, converse com o [@BotFather](https://t.me/BotFather) e envie `/newbot` para obter o `TELEGRAM_BOT_TOKEN`.
+  2. Adicione o bot como Administrador do seu canal ou grupo (com permissão de publicar mensagens).
+  3. O `TELEGRAM_CHAT_ID` pode ser o username público do canal (ex: `@aigameportal_noticias`) ou o ID numérico obtido via `@userinfobot` / `@getidsbot` (ex: `-1001234567890`).
+
+---
+
+### 2.7 `TWITTER_API_KEY`, `TWITTER_API_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_SECRET` (Fase 2)
+- **Utilizadas em**: [lib/services/social-publisher.ts](file:///d:/IAProjects/AIGamePortal/lib/services/social-publisher.ts).
+- **Finalidade**: Postagem de tweets automatizados de até 280 caracteres na conta oficial do portal via `twitter-api-v2` (plano gratuito API v2).
+- **Como Obter**:
+  1. Acesse o [Developer Portal do X](https://developer.x.com/en/portal/dashboard) e crie um App dentro de um Project.
+  2. Em *User authentication settings*, habilite OAuth 1.0a com permissões **Read and Write**.
+  3. Em *Keys and tokens*, gere e copie os pares de chaves:
+     - **Consumer Keys**: `TWITTER_API_KEY` (API Key) e `TWITTER_API_SECRET` (API Secret Key).
+     - **Authentication Tokens**: `TWITTER_ACCESS_TOKEN` (Access Token) e `TWITTER_ACCESS_SECRET` (Access Token Secret).
+
+---
+
 ## 3. Arquivos de Ambiente no Repositório
 
 1. **[.env.example](file:///d:/IAProjects/AIGamePortal/.env.example)**: Modelo público versionado no Git contendo apenas os nomes das variáveis e valores fictícios seguros.
@@ -67,3 +95,9 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `REVALIDATE_SECRET`
    - `NEXT_PUBLIC_SITE_URL`
+   - *(Opcional - Fase 2)* `TELEGRAM_BOT_TOKEN`
+   - *(Opcional - Fase 2)* `TELEGRAM_CHAT_ID`
+   - *(Opcional - Fase 2)* `TWITTER_API_KEY`
+   - *(Opcional - Fase 2)* `TWITTER_API_SECRET`
+   - *(Opcional - Fase 2)* `TWITTER_ACCESS_TOKEN`
+   - *(Opcional - Fase 2)* `TWITTER_ACCESS_SECRET`
