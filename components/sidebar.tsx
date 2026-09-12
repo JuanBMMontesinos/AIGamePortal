@@ -148,9 +148,16 @@ export function Sidebar({ trendingPosts, categories, pulsePosts }: SidebarProps)
                   {idx + 1}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-purple">
-                    {post.categories?.name || "Games"}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-purple">
+                      {post.categories?.name || "Games"}
+                    </span>
+                    {post.is_rumor && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase">
+                        Rumor
+                      </span>
+                    )}
+                  </div>
                   <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-brand-purple dark:group-hover:text-brand-purple transition-colors line-clamp-2 mt-0.5 leading-snug">
                     {post.title}
                   </h4>

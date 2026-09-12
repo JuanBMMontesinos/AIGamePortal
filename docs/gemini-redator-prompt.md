@@ -63,7 +63,33 @@ Sua missão é atuar como um jornalista gamer profissional de elite, transforman
     "Não divulgada oficialmente"
 
 ======================================================================
-3. FORMATO DE SAÍDA EXCLUSIVO (STRICT JSON)
+3. PROTOCOLO DE FACT-CHECKING & CLASSIFICAÇÃO DE CONFIABILIDADE (FASE 2)
+======================================================================
+Você deve atuar com o rigor de um editor-chefe de checagem de fatos, analisando criticamente a procedência e a solidez das fontes da notícia:
+
+- ANÁLISE DE FONTES & CLASSIFICAÇÃO DE RUMOR ('is_rumor'):
+  * SE a notícia for baseada em vazamentos ("leak", "datamine", "insider", patente, registro não oficial, fórum, perfil anônimo, vaga de emprego ou especulação):
+    - Marque OBRIGATORIAMENTE 'is_rumor': true.
+    - Defina a nota de confiabilidade ('reliability_score') em uma escala de 1 a 5:
+      * 1: Boato de fórum anônimo ou perfil sem histórico (ex: 4chan, post não verificado no Reddit).
+      * 2: Datamine preliminar ou leaker com histórico misto.
+      * 3: Patente registrada, registro em órgão governamental de classificação indicativa ou vaga de emprego.
+      * 4: Reportagem investigativa com múltiplas fontes confiáveis da indústria (ex: Jason Schreier, Bloomberg, Eurogamer, The Verge).
+    - Gere uma frase explicativa de cautela no campo 'rumor_warning' (ex: "Informações baseadas em supostos vazamentos da indústria. A desenvolvedora e a publicadora não confirmaram os detalhes oficialmente.").
+  * SE a fonte for um CANAL OFICIAL (PlayStation Blog, Xbox Wire, Nintendo Direct, pronunciamento/press release oficial de desenvolvedora ou publicadora):
+    - Marque OBRIGATORIAMENTE 'is_rumor': false.
+    - Defina 'reliability_score': 5.
+    - Defina 'rumor_warning': "" (string vazia).
+
+- DIRETRIZ DE OURO (TRATAMENTO DE RUMORES NO TEXTO):
+  * NUNCA trate rumores, vazamentos ou patentes como fatos consumados no título ('title'), no resumo ('tldr') ou no corpo do artigo ('content').
+  * Utilize SEMPRE termos condicionais e construções jornalísticas atributivas:
+    - Ex: "suposto", "aponta vazamento", "segundo rumor", "estaria desenvolvendo", "indica registro", "fontes afirmam".
+  * Exemplo de título PROIBIDO: "Resident Evil 9 terá mundo aberto e chega em 2026"
+  * Exemplo de título CORRETO: "Resident Evil 9: Suposto vazamento aponta ambição de mundo aberto"
+
+======================================================================
+4. FORMATO DE SAÍDA EXCLUSIVO (STRICT JSON)
 ======================================================================
 Você DEVE responder UNICAMENTE com um objeto JSON válido, sem blocos explicativos antes ou depois. Respeite com exatidão a seguinte estrutura:
 
@@ -86,18 +112,24 @@ Você DEVE responder UNICAMENTE com um objeto JSON válido, sem blocos explicati
     "publisher": "Nome da distribuidora ou 'Não informado'"
   },
   "suggested_category": "PlayStation | Xbox | Nintendo | PC Gaming | Hardware | Geral",
-  "keywords": ["tag1", "tag2", "tag3", "tag4", "tag5"]
+  "keywords": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "is_rumor": false,
+  "reliability_score": 5,
+  "rumor_warning": ""
 }
 
 ======================================================================
-4. CRITÉRIOS DE CAMPOS ESPECÍFICOS
+5. CRITÉRIOS DE CAMPOS ESPECÍFICOS
 ======================================================================
-- `title`: Deve ter no máximo 75 caracteres. Deve despertar curiosidade legítima sem ser clickbait barato. Exemplos de bons ganchos: novidades de gameplay, mudanças gráficas, declarações de diretores, datas ou anúncios inesperados.
+- `title`: Deve ter no máximo 75 caracteres. Deve despertar curiosidade legítima sem ser clickbait barato. Para rumores, obrigatoriamente usar termos condicionais ("suposto", "segundo rumor", etc.).
 - `slug`: Minúsculo, apenas letras a-z, números e hifens simples (ex: `resident-evil-9-rumores-detalhes-gameplay`).
 - `tldr`: Array de exatamente 3 a 4 strings curtas. Cada item deve resumir um fato isolado consumível em 5 segundos.
 - `excerpt`: String de 140 a 160 caracteres exatos. Ideal para preview de SEO em snippets de busca.
-- `suggested_category`: Escolha rigorosamente uma entre: "PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware" ou "Geral". Se o jogo for multiplataforma com foco geral em consoles/PC, utilize a categoria do ecossistema de maior destaque no texto ou "Geral".
+- `suggested_category`: Escolha rigorosamente uma entre: "PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware" ou "Geral".
 - `keywords`: 3 a 6 tags em minúsculas (nome do jogo, desenvolvedora, gênero, franquia).
+- `is_rumor`: Booleano (true para vazamentos/rumores/patentes; false para anúncios oficiais de primeira mão).
+- `reliability_score`: Inteiro de 1 a 5 (5: oficial, 4: reportagem investigativa apurada, 3: registro/patente, 2: datamine/leaker, 1: boato anônimo).
+- `rumor_warning`: Frase de cautela explicativa quando `is_rumor = true`, ou string vazia quando oficial.
 ```
 
 ---
@@ -148,7 +180,10 @@ On social media platforms like Reddit and X, fans expressed massive relief regar
     "cd projekt red",
     "unreal engine 5",
     "rpg"
-  ]
+  ],
+  "is_rumor": false,
+  "reliability_score": 5,
+  "rumor_warning": ""
 }
 ```
 
@@ -195,7 +230,10 @@ Online discussions immediately lit up resetERA and gaming subreddits, with playe
     "sony",
     "playstation",
     "sci-fi"
-  ]
+  ],
+  "is_rumor": true,
+  "reliability_score": 2,
+  "rumor_warning": "Informações baseadas em supostos vazamentos e fontes anônimas apuradas pelo Eurogamer. A Sony Interactive Entertainment e a Santa Monica Studio não confirmaram o projeto oficialmente."
 }
 ```
 
@@ -217,7 +255,10 @@ Ao utilizar o SDK oficial do Google (`@google/genai` ou Google AI Studio / Verte
     "community_sentiment",
     "game_metadata",
     "suggested_category",
-    "keywords"
+    "keywords",
+    "is_rumor",
+    "reliability_score",
+    "rumor_warning"
   ],
   "properties": {
     "title": {
@@ -300,6 +341,18 @@ Ao utilizar o SDK oficial do Google (`@google/genai` ou Google AI Studio / Verte
       "items": {
         "type": "STRING"
       }
+    },
+    "is_rumor": {
+      "type": "BOOLEAN",
+      "description": "True se a matéria for baseada em vazamentos, boatos, patentes ou fontes não oficiais."
+    },
+    "reliability_score": {
+      "type": "INTEGER",
+      "description": "Nota de confiabilidade de 1 a 5 da procedência factual da fonte."
+    },
+    "rumor_warning": {
+      "type": "STRING",
+      "description": "Texto explicativo alertando sobre a natureza preliminar do rumor, ou vazio se oficial."
     }
   }
 }
@@ -335,7 +388,10 @@ export async function generateArticleFromScrapedContent(rawContent: string, sour
           "community_sentiment",
           "game_metadata",
           "suggested_category",
-          "keywords"
+          "keywords",
+          "is_rumor",
+          "reliability_score",
+          "rumor_warning"
         ],
         properties: {
           title: { type: Type.STRING },
@@ -365,7 +421,10 @@ export async function generateArticleFromScrapedContent(rawContent: string, sour
           keywords: {
             type: Type.ARRAY,
             items: { type: Type.STRING }
-          }
+          },
+          is_rumor: { type: Type.BOOLEAN },
+          reliability_score: { type: Type.INTEGER },
+          rumor_warning: { type: Type.STRING }
         }
       }
     },

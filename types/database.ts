@@ -54,6 +54,11 @@ export interface Post {
   created_at: string;
   updated_at: string;
 
+  // Fact-Checking & Confiabilidade (Fase 2)
+  is_rumor: boolean;
+  reliability_score: number;
+  rumor_warning: string | null;
+
   // Joined relations
   categories?: Category | null;
   sources?: Source | null;

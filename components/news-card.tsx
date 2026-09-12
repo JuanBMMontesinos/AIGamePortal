@@ -39,10 +39,16 @@ export function NewsCard({ post, priority = false }: NewsCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
         {/* Category Badge overlay on image */}
-        <div className="absolute top-3 left-3 z-10">
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase bg-black/60 backdrop-blur-md text-white border border-white/10 group-hover:border-brand-purple/40 transition-colors">
             {categoryName}
           </span>
+          {post.is_rumor && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase bg-amber-500 text-zinc-950 shadow-sm border border-amber-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-950 animate-pulse" />
+              Rumor
+            </span>
+          )}
         </div>
 
         {/* Platforms Badges overlay */}

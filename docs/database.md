@@ -43,6 +43,9 @@ erDiagram
         jsonb game_metadata
         text community_sentiment
         vector(768) embedding
+        boolean is_rumor
+        integer reliability_score
+        text rumor_warning
         text status
         integer views_count
         timestamptz published_at
@@ -104,6 +107,9 @@ Entidade central contendo o conteúdo das matérias geradas e estruturadas por I
 | `game_metadata` | `JSONB` | `NOT NULL DEFAULT '{}'::JSONB` | Dados estruturados do jogo (ver esquema abaixo) |
 | `community_sentiment` | `TEXT` | `NULL` | Reação pública resumida (Reddit/X/fóruns) |
 | `embedding` | `vector(768)`| `NULL` | Vetor denso (Gemini `text-embedding-004`) |
+| `is_rumor` | `BOOLEAN` | `NOT NULL DEFAULT false` | Flag indicando se a matéria é rumor, vazamento ou patente |
+| `reliability_score` | `INTEGER` | `NOT NULL DEFAULT 5 CHECK (1 a 5)` | Escala de confiabilidade: 5 (anúncio oficial) a 1 (fórum anônimo) |
+| `rumor_warning` | `TEXT` | `NULL` | Aviso explicativo e contextual gerado pelo agente de IA |
 | `status` | `TEXT` | `NOT NULL DEFAULT 'published'` | `CHECK (status IN ('draft', 'published', 'archived'))` |
 | `views_count` | `INTEGER` | `NOT NULL DEFAULT 0` | Contador de visualizações |
 | `published_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Data de publicação visível |
@@ -132,6 +138,8 @@ Entidade central contendo o conteúdo das matérias geradas e estruturadas por I
 | `idx_posts_published_at_desc` | B-Tree | `posts(published_at DESC)` | Paginação e ordenação cronológica do feed inicial |
 | `idx_posts_category_id` | B-Tree | `posts(category_id)` | Filtragem de notícias por categoria |
 | `idx_posts_source_id` | B-Tree | `posts(source_id)` | Agrupamento e auditoria por veículo de origem |
+| `idx_posts_is_rumor` | B-Tree | `posts(is_rumor)` | Filtragem rápida para listagens/exclusões de boatos |
+| `idx_posts_reliability_score` | B-Tree | `posts(reliability_score)` | Auditoria editorial e ordenação por reputação de fonte |
 | `idx_posts_status_published_at` | B-Tree Composto | `posts(status, published_at DESC)` | Garante index-only scans para queries públicas |
 | `idx_posts_source_original_url` | B-Tree | `posts(source_original_url)` | Deduplicação determinística no n8n antes do embedding |
 | `idx_posts_embedding_hnsw` | HNSW (`vector_cosine_ops`) | `posts(embedding)` | Busca por vizinhos mais próximos (ANN) com distância de cosseno |

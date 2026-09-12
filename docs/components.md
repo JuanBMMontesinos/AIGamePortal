@@ -95,6 +95,29 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
 
 ## 3. Componentes da Página do Artigo
 
+### `<RumorBanner warning={warning} reliabilityScore={reliabilityScore} />`
+- **Arquivo**: [components/RumorBanner.tsx](file:///d:/IAProjects/AIGamePortal/components/RumorBanner.tsx) (com re-export em [components/rumor-banner.tsx](file:///d:/IAProjects/AIGamePortal/components/rumor-banner.tsx))
+- **Tipo**: Server / Client Component compatível
+- **Props**:
+  ```typescript
+  interface RumorBannerProps {
+    warning?: string | null;
+    reliabilityScore?: number;
+    className?: string;
+  }
+  ```
+- **Design & Funcionalidades**:
+  - Banner de alerta visual gamer exibido no topo da matéria quando `post.is_rumor === true`.
+  - Estilização moderna com borda e fundo em acento âmbar néon (`border-amber-500/30 bg-amber-500/10`).
+  - Glow âmbar ambiente de fundo (`bg-amber-500/15 blur-2xl`) sem bloquear interações.
+  - Ícone pulsante de perigo da Lucide (`AlertTriangle`) em caixa destacada com efeito de vidro fosco.
+  - Badge de status com ponto animado (`animate-ping`) indicando *"Rumor / Vazamento Não Confirmado"*.
+  - **Medidor de Confiabilidade da Fonte (1 a 5)**: Barras visuais e legenda contextual (ex: 5 = Oficial, 4 = Investigação, 3 = Patente, 2 = Datamine, 1 = Fórum anônimo).
+  - Texto regulatório padronizado: *"Atenção: Esta notícia é baseada em rumores ou vazamentos não confirmados oficialmente pelas empresas envolvidas. Trate as informações com cautela."*
+  - Bloco expansivo para o aviso contextual (`rumor_warning`) formulado pelo modelo de IA.
+
+---
+
 ### `<TldrBox bullets={bullets} />`
 - **Arquivo**: [components/tldr-box.tsx](file:///d:/IAProjects/AIGamePortal/components/tldr-box.tsx)
 - **Tipo**: Server Component

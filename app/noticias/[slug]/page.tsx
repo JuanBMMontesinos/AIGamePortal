@@ -19,6 +19,7 @@ import { EeatAttributionBox } from "@/components/eeat-attribution-box";
 import { ShareButtons } from "@/components/share-buttons";
 import { MarkdownContent } from "@/components/markdown-content";
 import { NewsCard } from "@/components/news-card";
+import { RumorBanner } from "@/components/RumorBanner";
 
 export const revalidate = 300; // ISR revalidate fallback a cada 5 minutos
 
@@ -232,6 +233,14 @@ export default async function PostPage({ params }: PostPageProps) {
           {post.title}
         </span>
       </nav>
+
+      {/* Banner de Alerta para Rumores / Vazamentos (Topo da Matéria) */}
+      {post.is_rumor && (
+        <RumorBanner
+          warning={post.rumor_warning}
+          reliabilityScore={post.reliability_score}
+        />
+      )}
 
       {/* Editorial Header */}
       <header className="space-y-5">

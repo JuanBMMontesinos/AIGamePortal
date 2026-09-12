@@ -121,15 +121,44 @@ Sua missão é atuar como um jornalista gamer profissional de elite, transforman
     "Não divulgada oficialmente"
 
 ======================================================================
-3. FORMATO DE SAÍDA EXCLUSIVO (STRICT JSON)
+3. PROTOCOLO DE FACT-CHECKING & CLASSIFICAÇÃO DE CONFIABILIDADE (FASE 2)
+======================================================================
+Você deve atuar com o rigor de um editor-chefe de checagem de fatos, analisando criticamente a procedência e a solidez das fontes da notícia:
+
+- ANÁLISE DE FONTES & CLASSIFICAÇÃO DE RUMOR ('is_rumor'):
+  * SE a notícia for baseada em vazamentos ("leak", "datamine", "insider", patente, registro não oficial, fórum, perfil anônimo, vaga de emprego ou especulação):
+    - Marque OBRIGATORIAMENTE 'is_rumor': true.
+    - Defina a nota de confiabilidade ('reliability_score') em uma escala de 1 a 5:
+      * 1: Boato de fórum anônimo ou perfil sem histórico (ex: 4chan, post não verificado no Reddit).
+      * 2: Datamine preliminar ou leaker com histórico misto.
+      * 3: Patente registrada, registro em órgão governamental de classificação indicativa ou vaga de emprego.
+      * 4: Reportagem investigativa com múltiplas fontes confiáveis da indústria (ex: Jason Schreier, Bloomberg, Eurogamer, The Verge).
+    - Gere uma frase explicativa de cautela no campo 'rumor_warning' (ex: "Informações baseadas em supostos vazamentos da indústria. A desenvolvedora e a publicadora não confirmaram os detalhes oficialmente.").
+  * SE a fonte for um CANAL OFICIAL (PlayStation Blog, Xbox Wire, Nintendo Direct, pronunciamento/press release oficial de desenvolvedora ou publicadora):
+    - Marque OBRIGATORIAMENTE 'is_rumor': false.
+    - Defina 'reliability_score': 5.
+    - Defina 'rumor_warning': "" (string vazia).
+
+- DIRETRIZ DE OURO (TRATAMENTO DE RUMORES NO TEXTO):
+  * NUNCA trate rumores, vazamentos ou patentes como fatos consumados no título ('title'), no resumo ('tldr') ou no corpo do artigo ('content').
+  * Utilize SEMPRE termos condicionais e construções jornalísticas atributivas:
+    - Ex: "suposto", "aponta vazamento", "segundo rumor", "estaria desenvolvendo", "indica registro", "fontes afirmam".
+  * Exemplo de título PROIBIDO: "Resident Evil 9 terá mundo aberto e chega em 2026"
+  * Exemplo de título CORRETO: "Resident Evil 9: Suposto vazamento aponta ambição de mundo aberto"
+
+======================================================================
+4. FORMATO DE SAÍDA EXCLUSIVO (STRICT JSON)
 ======================================================================
 Você DEVE responder UNICAMENTE com um objeto JSON válido correspondente ao schema solicitado.
-- 'title': Máximo 75 caracteres, forte gancho jornalístico sem clickbait enganoso.
+- 'title': Máximo 75 caracteres, forte gancho jornalístico sem clickbait enganoso e com cautela em rumores.
 - 'slug': Minúsculo, apenas a-z, números e hifens simples (ex: 'diablo-5-anuncio-oficial-blizzcon-2026').
 - 'tldr': Array de exatamente 3 a 4 strings curtas com os fatos principais.
 - 'excerpt': String persuasiva de 140 a 160 caracteres para meta description.
 - 'suggested_category': Estritamente uma entre: "PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Geral".
-- 'keywords': Array com 3 a 6 tags curtas em minúsculas.`;
+- 'keywords': Array com 3 a 6 tags curtas em minúsculas.
+- 'is_rumor': Booleano (true para rumores/vazamentos/patentes, false para comunicados oficiais).
+- 'reliability_score': Inteiro de 1 a 5 avaliando a solidez da fonte.
+- 'rumor_warning': String de cautela se is_rumor for true, ou string vazia "" se is_rumor for false.`;
 
 // ============================================================================
 // TIPOS INTERNOS
@@ -151,6 +180,9 @@ interface AIArticleOutput {
   };
   suggested_category: "PlayStation" | "Xbox" | "Nintendo" | "PC Gaming" | "Hardware" | "Geral";
   keywords: string[];
+  is_rumor: boolean;
+  reliability_score: number;
+  rumor_warning: string | null;
 }
 
 interface ScrapedContent {
@@ -435,6 +467,9 @@ ${scraped.cleanText}`;
               "game_metadata",
               "suggested_category",
               "keywords",
+              "is_rumor",
+              "reliability_score",
+              "rumor_warning",
             ],
             properties: {
               title: { type: Type.STRING },
@@ -464,6 +499,18 @@ ${scraped.cleanText}`;
               keywords: {
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
+              },
+              is_rumor: {
+                type: Type.BOOLEAN,
+                description: "Verdadeiro se for baseado em vazamento, datamine, boato ou patente não confirmada.",
+              },
+              reliability_score: {
+                type: Type.INTEGER,
+                description: "Nota de confiabilidade de 1 a 5 da fonte.",
+              },
+              rumor_warning: {
+                type: Type.STRING,
+                description: "Mensagem contextual de aviso para o leitor se for rumor, ou vazio se oficial.",
               },
             },
           },
@@ -804,6 +851,19 @@ export async function runNewsSync() {
         const categoryId = resolveCategoryId(generated.suggested_category, feedConfig.defaultCategorySlug, categoryMap);
         const sourceId = sourceMap.get(feedConfig.url) || null;
 
+        // Fact-Checking & Confiabilidade (Fase 2)
+        const isRumor = Boolean(generated.is_rumor);
+        const rawScore = Number(generated.reliability_score);
+        const reliabilityScore = !isNaN(rawScore) ? Math.max(1, Math.min(5, Math.round(rawScore))) : (isRumor ? 2 : 5);
+        const rumorWarning = isRumor
+          ? (generated.rumor_warning?.trim() || "Atenção: Esta notícia é baseada em rumores ou vazamentos não confirmados oficialmente pelas empresas envolvidas. Trate as informações com cautela.")
+          : null;
+
+        console.log(`     🔎 [Fact-Checking] Rumor: ${isRumor ? "SIM ⚠️ (Vazamento/Especulação)" : "NÃO ✅ (Canal Oficial)"} | Confiabilidade: ${reliabilityScore}/5`);
+        if (isRumor && rumorWarning) {
+          console.log(`        Aviso Editorial: "${rumorWarning}"`);
+        }
+
         const newPost = {
           title: generated.title,
           slug: finalSlug,
@@ -819,6 +879,9 @@ export async function runNewsSync() {
           game_metadata: generated.game_metadata || {},
           community_sentiment: generated.community_sentiment || null,
           embedding: embedding || null,
+          is_rumor: isRumor,
+          reliability_score: reliabilityScore,
+          rumor_warning: rumorWarning,
           status: "published",
           views_count: 0,
           published_at: new Date().toISOString(),

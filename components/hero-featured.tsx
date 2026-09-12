@@ -46,6 +46,12 @@ export function HeroFeatured({ post }: HeroFeaturedProps) {
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-md text-white border border-white/20">
             {categoryName}
           </span>
+          {post.is_rumor && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500 text-zinc-950 shadow-md border border-amber-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-950 animate-pulse" />
+              Rumor
+            </span>
+          )}
           {platforms.slice(0, 2).map((p) => (
             <span
               key={p}
