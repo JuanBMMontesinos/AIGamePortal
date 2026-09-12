@@ -65,3 +65,18 @@ export function getMetacriticColor(score: number | null | undefined): {
     border: "border-rose-500/40",
   };
 }
+
+/**
+ * Valida se uma string é uma URL válida de imagem HTTP/HTTPS e descarta áudios/vídeos (ex: podcasts .mp3)
+ */
+export function isValidImageUrl(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) return false;
+  // Rejeita extensões de áudio e vídeo comumente encontradas em enclosures de podcasts
+  if (/\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm|mkv|avi)(\?.*)?$/i.test(trimmed)) {
+    return false;
+  }
+  return true;
+}
+

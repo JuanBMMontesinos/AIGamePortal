@@ -34,7 +34,7 @@ const OFFICIAL_FEEDS: FeedConfig[] = [
   },
   {
     name: "Nintendo Life",
-    url: "https://www.nintendolife.com/feeds/latest",
+    url: "https://www.nintendolife.com/feeds/news",
     websiteUrl: "https://www.nintendolife.com",
     defaultCategorySlug: "nintendo",
   },
@@ -57,13 +57,29 @@ const MAX_ITEMS_PER_FEED = Number(process.env.MAX_ITEMS_PER_FEED) || 3;
 const SIMILARITY_THRESHOLD = 0.82;
 const LOOKBACK_HOURS = 48;
 
-// Fallback de imagens gamer de alta qualidade caso o artigo original não possua capa
-const FALLBACK_COVERS = [
-  "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop",
-];
+// Fallback de imagens gamer de alta qualidade categorizadas por plataforma/assunto
+const FALLBACK_COVERS_BY_CATEGORY: Record<string, string[]> = {
+  playstation: [
+    "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop",
+  ],
+  xbox: [
+    "https://images.unsplash.com/photo-1621259182978-fbf93132d53d?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1605901309584-818e25960a8f?q=80&w=1200&auto=format&fit=crop",
+  ],
+  nintendo: [
+    "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=1200&auto=format&fit=crop",
+  ],
+  "pc-gaming": [
+    "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop",
+  ],
+  geral: [
+    "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=1200&auto=format&fit=crop",
+  ],
+};
 
 // ============================================================================
 // SYSTEM PROMPT & DIRETRIZES EDITORIAIS (GEMINI 1.5 FLASH)
@@ -193,6 +209,70 @@ function cleanHtmlText(html: string): string {
 }
 
 /**
+ * Valida se uma string é uma URL válida de imagem HTTP/HTTPS e descarta áudios/vídeos (ex: podcasts .mp3)
+ */
+function isValidImageUrl(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) return false;
+  // Rejeita extensões de áudio e vídeo comuns em feeds/enclosures
+  if (/\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm|mkv|avi)(\?.*)?$/i.test(trimmed)) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Extrai URL de campos complexos de mídia RSS (media:content, media:thumbnail)
+ */
+function extractMediaUrl(media: any): string | null {
+  if (!media) return null;
+  if (typeof media === "string" && isValidImageUrl(media)) return media;
+  if (Array.isArray(media)) {
+    for (const m of media) {
+      const found = extractMediaUrl(m);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (media.$ && media.$.url && isValidImageUrl(media.$.url)) {
+    return media.$.url;
+  }
+  if (media.url && isValidImageUrl(media.url)) {
+    return media.url;
+  }
+  return null;
+}
+
+/**
+ * Tenta obter a imagem OpenGraph diretamente da página web via fetch com headers reais
+ */
+async function fetchOgImage(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const ogMatch =
+      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+      html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
+    if (ogMatch && isValidImageUrl(ogMatch[1])) {
+      return ogMatch[1];
+    }
+  } catch {
+    // Falha silenciosa permitindo seguir para os outros fallbacks
+  }
+  return null;
+}
+
+/**
  * Extrai o corpo de texto e capa de uma matéria com múltiplas estratégias defensivas
  */
 async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise<ScrapedContent> {
@@ -200,53 +280,74 @@ async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise
   const originalTitle = item.title?.trim() || "Sem título";
   let cleanText = "";
   let imageUrl: string | null = null;
+  const rawItem = item as any;
 
-  // 1. Tentar obter imagem das tags RSS
-  if (item.enclosure && item.enclosure.url) {
-    imageUrl = item.enclosure.url;
-  } else if ((item as any)["media:content"]?.["$"]?.url) {
-    imageUrl = (item as any)["media:content"]["$"].url;
-  } else if ((item as any)["media:thumbnail"]?.["$"]?.url) {
-    imageUrl = (item as any)["media:thumbnail"]["$"].url;
+  // 1. Tentar obter imagem das tags media:content ou media:thumbnail (Nintendo Life, IGN, PC Gamer)
+  const mediaContentUrl = extractMediaUrl(rawItem.mediaContent || rawItem["media:content"]);
+  const mediaThumbnailUrl = extractMediaUrl(rawItem.mediaThumbnail || rawItem["media:thumbnail"]);
+
+  if (mediaContentUrl) {
+    imageUrl = mediaContentUrl;
+  } else if (mediaThumbnailUrl) {
+    imageUrl = mediaThumbnailUrl;
   }
 
-  // 2. Extração primária via @extractus/article-extractor
+  // 2. Tentar obter imagem de tag enclosure (rejeitando arquivos de áudio/podcast como .mp3)
+  if (!imageUrl && item.enclosure && item.enclosure.url) {
+    const isAudio = item.enclosure.type?.toLowerCase().includes("audio");
+    if (!isAudio && isValidImageUrl(item.enclosure.url)) {
+      imageUrl = item.enclosure.url;
+    }
+  }
+
+  // 3. Tentar obter imagem embutida no HTML do feed (content:encoded ou item.content)
+  const rawFeedHtml =
+    rawItem.contentEncoded || rawItem["content:encoded"] || item.content || item.contentSnippet || rawItem.summary || "";
+
+  if (!imageUrl && rawFeedHtml && rawFeedHtml.includes("<img")) {
+    const $ = cheerio.load(rawFeedHtml);
+    $("img").each((_, el) => {
+      const src = $(el).attr("src");
+      if (!imageUrl && isValidImageUrl(src)) {
+        imageUrl = src!;
+      }
+    });
+  }
+
+  // 4. Extração primária do texto via @extractus/article-extractor
   try {
     const article = await extract(url);
     if (article && article.content) {
       cleanText = cleanHtmlText(article.content);
-      if (!imageUrl && article.image) {
-        imageUrl = article.image;
+      if (!imageUrl && isValidImageUrl(article.image)) {
+        imageUrl = article.image!;
       }
     }
   } catch (error: any) {
     // Falha esperada em sites com anti-bot (ex: 403 no Nintendo Life / IGN)
-    // O pipeline continuará com a estratégia de fallback abaixo
   }
 
-  // 3. Fallback: Usar conteúdo já embutido no item RSS
+  // 5. Fallback para conteúdo embutido no feed caso o extrator tenha falhado
   if (!cleanText || cleanText.length < 150) {
-    const rawFeedHtml =
-      (item as any)["content:encoded"] || item.content || item.contentSnippet || (item as any).summary || "";
-
     if (rawFeedHtml) {
       cleanText = cleanHtmlText(rawFeedHtml);
-
-      // Tentar capturar imagem do HTML do feed caso ainda não tenhamos capa
-      if (!imageUrl && rawFeedHtml.includes("<img")) {
-        const $ = cheerio.load(rawFeedHtml);
-        const imgSrc = $("img").first().attr("src");
-        if (imgSrc && imgSrc.startsWith("http")) {
-          imageUrl = imgSrc;
-        }
-      }
     }
   }
 
-  // Se a imagem ainda for nula, seleciona uma capa padrão temática
+  // 6. Tentar capturar OpenGraph image diretamente da página caso ainda não tenhamos capa
+  if (!imageUrl && url) {
+    const ogImg = await fetchOgImage(url);
+    if (ogImg) {
+      imageUrl = ogImg;
+    }
+  }
+
+  // 7. Fallback final temático por plataforma/categoria
   if (!imageUrl) {
+    const categoryCovers =
+      FALLBACK_COVERS_BY_CATEGORY[feedConfig.defaultCategorySlug] || FALLBACK_COVERS_BY_CATEGORY.geral;
     const hash = Math.abs(originalTitle.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0));
-    imageUrl = FALLBACK_COVERS[hash % FALLBACK_COVERS.length];
+    imageUrl = categoryCovers[hash % categoryCovers.length];
   }
 
   return {
@@ -548,6 +649,13 @@ export async function runNewsSync() {
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    },
+    customFields: {
+      item: [
+        ["media:content", "mediaContent"],
+        ["media:thumbnail", "mediaThumbnail"],
+        ["content:encoded", "contentEncoded"],
+      ],
     },
     timeout: 12000,
   });

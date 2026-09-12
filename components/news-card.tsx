@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Clock, Calendar, Zap, Sparkles } from "lucide-react";
 import { Post } from "@/types/database";
-import { calculateReadingTime, formatRelativeTime } from "@/lib/utils";
+import { calculateReadingTime, formatRelativeTime, isValidImageUrl } from "@/lib/utils";
 
 interface NewsCardProps {
   post: Post;
@@ -16,14 +16,15 @@ export function NewsCard({ post, priority = false }: NewsCardProps) {
   const categorySlug = post.categories?.slug || "geral";
   const platforms = post.game_metadata?.platforms || [];
   const quickTldr = post.tldr && post.tldr.length > 0 ? post.tldr[0] : null;
+  const hasValidImage = isValidImageUrl(post.cover_image_url);
 
   return (
     <article className="group relative flex flex-col rounded-2xl overflow-hidden border border-zinc-200 dark:border-gamer-800/80 bg-white dark:bg-gamer-900 hover:border-brand-purple/50 dark:hover:border-brand-purple/50 hover:shadow-neon-purple/15 transition-all duration-300">
       {/* Cover Image Container */}
       <Link href={`/noticias/${post.slug}`} className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-900 block">
-        {post.cover_image_url ? (
+        {hasValidImage ? (
           <Image
-            src={post.cover_image_url}
+            src={post.cover_image_url!}
             alt={post.cover_image_alt || post.title}
             fill
             priority={priority}

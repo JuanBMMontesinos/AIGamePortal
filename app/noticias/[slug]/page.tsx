@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { getPostBySlug, getAllPostSlugs, getLatestPosts } from "@/lib/data/api";
-import { calculateReadingTime, formatDate, formatRelativeTime } from "@/lib/utils";
+import { calculateReadingTime, formatDate, formatRelativeTime, isValidImageUrl } from "@/lib/utils";
 import { TldrBox } from "@/components/tldr-box";
 import { GameMetadataCard } from "@/components/game-metadata-card";
 import { CommunitySentimentBox } from "@/components/community-sentiment-box";
@@ -229,10 +229,10 @@ export default async function PostPage({ params }: PostPageProps) {
       </header>
 
       {/* Featured Cover Image */}
-      {post.cover_image_url && (
+      {isValidImageUrl(post.cover_image_url) && (
         <div className="my-8 rounded-2xl md:rounded-3xl overflow-hidden border border-zinc-200 dark:border-gamer-800 shadow-lg relative aspect-[16/9] w-full bg-zinc-900">
           <Image
-            src={post.cover_image_url}
+            src={post.cover_image_url!}
             alt={post.cover_image_alt || post.title}
             fill
             priority

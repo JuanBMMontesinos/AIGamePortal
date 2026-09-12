@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Clock, Calendar, ArrowRight, Zap, Sparkles } from "lucide-react";
 import { Post } from "@/types/database";
-import { calculateReadingTime, formatRelativeTime } from "@/lib/utils";
+import { calculateReadingTime, formatRelativeTime, isValidImageUrl } from "@/lib/utils";
 
 interface HeroFeaturedProps {
   post: Post;
@@ -13,14 +13,15 @@ export function HeroFeatured({ post }: HeroFeaturedProps) {
   const relativeDate = formatRelativeTime(post.published_at);
   const categoryName = post.categories?.name || "Geral";
   const platforms = post.game_metadata?.platforms || [];
+  const hasValidImage = isValidImageUrl(post.cover_image_url);
 
   return (
     <section className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden border border-zinc-200 dark:border-gamer-800 bg-zinc-900 group shadow-lg hover:shadow-neon-purple/20 transition-all duration-500">
       {/* Background Image with Dark Gamer Gradient Overlays */}
       <div className="absolute inset-0 z-0">
-        {post.cover_image_url ? (
+        {hasValidImage ? (
           <Image
-            src={post.cover_image_url}
+            src={post.cover_image_url!}
             alt={post.cover_image_alt || post.title}
             fill
             priority
