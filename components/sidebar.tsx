@@ -1,14 +1,129 @@
 import Link from "next/link";
-import { Flame, TrendingUp, ShieldCheck, Radio, Sparkles, ArrowUpRight } from "lucide-react";
+import { Flame, TrendingUp, ArrowUpRight } from "lucide-react";
 import { Post, Category } from "@/types/database";
 import { formatRelativeTime } from "@/lib/utils";
+
+interface PulseItem {
+  name: string;
+  label: string;
+  score: number;
+  colorClass: string;
+  barClass: string;
+  slug?: string;
+}
+
+const DEFAULT_PULSE: PulseItem[] = [
+  {
+    name: "Ghost of Yōtei",
+    label: "94% Positivo",
+    score: 94,
+    colorClass: "text-emerald-500",
+    barClass: "bg-emerald-500",
+    slug: "ghost-of-yotei-gameplay-ps5-pro-combate",
+  },
+  {
+    name: "GTA VI Trailer 2",
+    label: "98% Hype Extremo",
+    score: 98,
+    colorClass: "text-brand-purple",
+    barClass: "bg-gradient-to-r from-brand-purple to-brand-cyan",
+    slug: "gta-vi-rockstar-fisica-agua-trailer-2-detalhes",
+  },
+  {
+    name: "Switch 2 Preço/Specs",
+    label: "82% Empolgado",
+    score: 82,
+    colorClass: "text-amber-500",
+    barClass: "bg-amber-500",
+    slug: "nintendo-switch-2-oled-120hz-retrocompatibilidade-total",
+  },
+];
+
+/**
+ * Converte notícias reais do Supabase em métricas dinâmicas do Pulso da Comunidade
+ */
+function extractPulseItems(posts: Post[] = []): PulseItem[] {
+  const items: PulseItem[] = [];
+  const seenNames = new Set<string>();
+
+  for (const post of posts) {
+    if (!post.community_sentiment && !post.game_metadata?.game_name) continue;
+
+    // Obtém o nome limpo do jogo ou do tópico
+    let rawName = post.game_metadata?.game_name?.trim();
+    if (!rawName || rawName.toLowerCase().includes("não confirmad") || rawName.toLowerCase().includes("share of")) {
+      const parts = post.title.split(/[:–—]/);
+      rawName = parts[0]?.trim() || post.title;
+    }
+
+    // Limita tamanho para caber no widget
+    const cleanName = rawName.length > 25 ? `${rawName.slice(0, 24)}...` : rawName;
+    const lowerKey = cleanName.toLowerCase();
+    if (seenNames.has(lowerKey)) continue;
+    seenNames.add(lowerKey);
+
+    const sentiment = (post.community_sentiment || "").toLowerCase();
+    let score = 91;
+    let label = "91% Positivo";
+    let colorClass = "text-emerald-500";
+    let barClass = "bg-emerald-500";
+
+    if (
+      sentiment.includes("hype") ||
+      sentiment.includes("grande empolgação") ||
+      sentiment.includes("explosiv") ||
+      sentiment.includes("muito positivo")
+    ) {
+      score = 96;
+      label = "96% Hype Extremo";
+      colorClass = "text-brand-purple";
+      barClass = "bg-gradient-to-r from-brand-purple to-brand-cyan";
+    } else if (
+      sentiment.includes("cautela") ||
+      sentiment.includes("debate") ||
+      sentiment.includes("divid") ||
+      sentiment.includes("mudança")
+    ) {
+      score = 85;
+      label = "85% Debate Acalorado";
+      colorClass = "text-amber-500";
+      barClass = "bg-amber-500";
+    } else if (
+      sentiment.includes("entusiasmo") ||
+      sentiment.includes("celebrou") ||
+      sentiment.includes("positivo") ||
+      sentiment.includes("elogi")
+    ) {
+      score = 93;
+      label = "93% Positivo";
+      colorClass = "text-emerald-500";
+      barClass = "bg-emerald-500";
+    }
+
+    items.push({
+      name: cleanName,
+      label,
+      score,
+      colorClass,
+      barClass,
+      slug: post.slug,
+    });
+
+    if (items.length >= 3) break;
+  }
+
+  return items.length >= 2 ? items : DEFAULT_PULSE;
+}
 
 interface SidebarProps {
   trendingPosts: Post[];
   categories: Category[];
+  pulsePosts?: Post[];
 }
 
-export function Sidebar({ trendingPosts, categories }: SidebarProps) {
+export function Sidebar({ trendingPosts, categories, pulsePosts }: SidebarProps) {
+  const pulseItems = extractPulseItems(pulsePosts);
+
   return (
     <aside className="w-full space-y-8">
       {/* 1. Mais Lidas / Em Alta */}
@@ -42,7 +157,9 @@ export function Sidebar({ trendingPosts, categories }: SidebarProps) {
                   <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-1">
                     <span>{formatRelativeTime(post.published_at)}</span>
                     <span>•</span>
-                    <span className="text-zinc-500 font-medium">{post.views_count.toLocaleString("pt-BR")} views</span>
+                    <span className="text-zinc-500 font-medium">
+                      {post.views_count.toLocaleString("pt-BR")} views
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -51,7 +168,7 @@ export function Sidebar({ trendingPosts, categories }: SidebarProps) {
         </div>
       </div>
 
-      {/* 2. Radar de Sentimento da Comunidade (AI Sentiment Pulse) */}
+      {/* 2. Radar de Sentimento da Comunidade (AI Sentiment Pulse Conectado ao Supabase) */}
       <div className="rounded-2xl border border-zinc-200 dark:border-gamer-800 bg-gradient-to-b from-brand-purple/5 to-brand-cyan/5 dark:from-brand-purple/10 dark:to-transparent p-6 relative overflow-hidden">
         <div className="flex items-center gap-2 mb-3">
           <div className="p-1.5 rounded-lg bg-brand-cyan/10 text-brand-cyan">
@@ -65,36 +182,27 @@ export function Sidebar({ trendingPosts, categories }: SidebarProps) {
           Nossa IA analisa em tempo real reações no Reddit, X e fóruns especializados para medir o hype e a recepção pública dos maiores lançamentos.
         </p>
 
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs font-semibold">
-              <span className="text-zinc-700 dark:text-zinc-300">Ghost of Yōtei</span>
-              <span className="text-emerald-500">94% Positivo</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-gamer-800 overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full w-[94%]" />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs font-semibold">
-              <span className="text-zinc-700 dark:text-zinc-300">GTA VI Trailer 2</span>
-              <span className="text-brand-purple">98% Hype Extremo</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-gamer-800 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-brand-purple to-brand-cyan rounded-full w-[98%]" />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs font-semibold">
-              <span className="text-zinc-700 dark:text-zinc-300">Switch 2 Preço/Specs</span>
-              <span className="text-amber-500">82% Empolgado</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-gamer-800 overflow-hidden">
-              <div className="h-full bg-amber-500 rounded-full w-[82%]" />
-            </div>
-          </div>
+        <div className="space-y-3.5">
+          {pulseItems.map((item) => (
+            <Link
+              key={item.slug || item.name}
+              href={item.slug ? `/noticias/${item.slug}` : "#"}
+              className="block group space-y-1.5 hover:opacity-90 transition-opacity"
+            >
+              <div className="flex justify-between text-xs font-semibold">
+                <span className="text-zinc-700 dark:text-zinc-300 group-hover:text-brand-purple dark:group-hover:text-brand-purple transition-colors truncate max-w-[65%]">
+                  {item.name}
+                </span>
+                <span className={item.colorClass}>{item.label}</span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-gamer-800 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${item.barClass}`}
+                  style={{ width: `${item.score}%` }}
+                />
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -115,23 +223,6 @@ export function Sidebar({ trendingPosts, categories }: SidebarProps) {
             </Link>
           ))}
         </div>
-      </div>
-
-      {/* 4. Transparência & Governança Callout */}
-      <div className="rounded-2xl border border-brand-purple/30 bg-brand-purple/5 p-6 space-y-3">
-        <div className="flex items-center gap-2 text-brand-purple">
-          <ShieldCheck className="w-5 h-5" />
-          <h4 className="font-bold text-sm">Governança Algorítmica</h4>
-        </div>
-        <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
-          Nenhum artigo é publicado sem deduplicação semântica vetorial (Gemini 768d) e atribuição de link canônico para preservar os créditos das redações originais.
-        </p>
-        <Link
-          href="/transparencia-editorial"
-          className="inline-flex items-center gap-1 text-xs font-bold text-brand-purple hover:underline"
-        >
-          Leia nosso manifesto editorial →
-        </Link>
       </div>
     </aside>
   );

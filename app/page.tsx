@@ -71,7 +71,11 @@ export default async function HomePage() {
 
         {/* Right Column: Sidebar (4 cols) */}
         <div className="lg:col-span-4">
-          <Sidebar trendingPosts={trendingPosts} categories={categories} />
+          <Sidebar
+            trendingPosts={trendingPosts}
+            categories={categories}
+            pulsePosts={posts}
+          />
         </div>
       </div>
     </div>
