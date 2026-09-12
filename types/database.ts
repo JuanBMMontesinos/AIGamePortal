@@ -47,6 +47,7 @@ export interface Post {
   source_original_title: string | null;
   game_metadata: GameMetadata;
   community_sentiment: string | null;
+  embedding?: number[] | string | null;
   status: "draft" | "published" | "archived";
   views_count: number;
   published_at: string;
@@ -65,11 +66,13 @@ export interface Database {
         Row: Category;
         Insert: Omit<Category, "id" | "created_at"> & { id?: string; created_at?: string };
         Update: Partial<Category>;
+        Relationships: [];
       };
       sources: {
         Row: Source;
         Insert: Omit<Source, "id" | "created_at"> & { id?: string; created_at?: string };
         Update: Partial<Source>;
+        Relationships: [];
       };
       posts: {
         Row: Post;
@@ -79,12 +82,16 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Post>;
+        Relationships: [];
       };
+    };
+    Views: {
+      [_ in never]: never;
     };
     Functions: {
       match_recent_articles: {
         Args: {
-          query_embedding: number[];
+          query_embedding: number[] | string;
           match_threshold?: number;
           hours_limit?: number;
         };
@@ -98,5 +105,12 @@ export interface Database {
         }[];
       };
     };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
 }
+

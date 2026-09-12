@@ -12,7 +12,7 @@ Portal moderno de notícias gamer gerenciado por agentes de IA com curadoria, su
 - **Ícones**: [Lucide React](https://lucide.dev/)
 - **Datas**: [date-fns](https://date-fns.org/) com formatação amigável em português (`pt-BR`)
 - **Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL 15+ com extensões `vector` HNSW e RLS)
-- **Automação & IA**: n8n + Google Gemini (`text-embedding-004`)
+- **Automação & IA**: TypeScript Autônomo + GitHub Actions (Cron 15min) + Google Gemini (`text-embedding-004` & `gemini-1.5-flash`)
 
 ---
 
@@ -72,16 +72,35 @@ npm run start
 
 ---
 
-## 🔄 Revalidação Sob Demanda (n8n Webhook)
+## 🤖 Automação de Ingestão de Notícias Gamer (Cron)
 
-Quando uma nova notícia for inserida no Supabase pelo workflow do n8n, faça uma requisição HTTP para forçar a revalidação imediata:
+O portal utiliza um pipeline TypeScript autônomo executado a cada 15 minutos via **GitHub Actions** (`.github/workflows/cron-sync-news.yml`):
+
+1. **Leitura de 5 Feeds RSS**: PlayStation Blog, Xbox Wire, Nintendo Life, PC Gamer e IGN Games.
+2. **Extração Limpa**: Extração de texto higienizado e imagens sem scripts ou anúncios.
+3. **Deduplicação Semântica com pgvector**: Embeddings `text-embedding-004` e RPC `match_recent_articles` (similaridade >= 0.82 em 48h).
+4. **Redação & SEO (Gemini 1.5 Flash)**: Temperatura 0.2, tom gamer-nativo, TL;DR, tabela de especificações, diretriz anti-alucinação rígida e schema JSON estruturado.
+5. **Persistência no Supabase**: Gravação na tabela `posts` com status `published`.
+6. **Revalidação ISR On-Demand**: Chamada imediata ao endpoint `/api/revalidate`.
+
+### Como rodar a sincronização manualmente:
+
+```bash
+npm run sync:news
+```
+
+---
+
+## 🔄 Revalidação Sob Demanda (ISR Endpoint)
+
+Quando uma nova notícia for inserida no Supabase, o pipeline dispara automaticamente a revalidação imediata:
 
 ```http
-POST /api/revalidate?secret=aigameportal_super_secret_token_2026&slug=ghost-of-yotei-gameplay-ps5-pro-combate
+POST /api/revalidate?secret=aigameportal_super_secret_token_2026&slug=diablo-5-anuncio-blizzcon-2026
 ```
 
 Parâmetros suportados:
-- `secret`: Chave de autenticação (`REVALIDATION_SECRET`)
+- `secret`: Chave de autenticação (`REVALIDATE_SECRET` ou `REVALIDATION_SECRET`)
 - `slug`: Slug da notícia a ser atualizada (revalida a página da notícia e a homepage automaticamente)
 - `path`: Caminho arbitrário a ser revalidado (ex: `/categoria/playstation`)
 

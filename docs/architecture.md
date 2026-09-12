@@ -6,23 +6,24 @@ Este documento detalha as decisões arquiteturais, padrões de fluxo de dados, m
 
 ## 1. Visão Geral da Arquitetura
 
-O AIGamePortal opera sob um modelo de **arquitetura orientada a eventos e regeneração estática sob demanda**. O sistema desacopla completamente o pipeline pesado de crawling/IA (executado assincronamente no n8n) da entrega de páginas web aos usuários finais (servida via Next.js com cache em CDN).
+O AIGamePortal opera sob um modelo de **arquitetura orientada a eventos e regeneração estática sob demanda**. O sistema desacopla completamente o pipeline pesado de crawling/IA (executado periodicamente via **GitHub Actions** com script TypeScript autônomo) da entrega de páginas web aos usuários finais (servida via Next.js com cache em CDN).
 
 ```mermaid
 flowchart TD
-    subgraph Pipeline_IA ["Pipeline de Ingestão & IA (n8n + Gemini)"]
-        F1[Fontes RSS Oficiais] -->|Polling 15-30min| N1[n8n Crawler]
-        N1 -->|Verifica URL| N2{Deduplicação Determinística?}
+    subgraph Pipeline_IA ["Pipeline de Ingestão & IA (GitHub Actions + scripts/sync-news.ts)"]
+        F1[Fontes RSS Oficiais] -->|Cron a cada 15min / Manual| SCRIPT[scripts/sync-news.ts]
+        SCRIPT -->|Verifica URL| N2{Deduplicação Determinística?}
         N2 -->|Já existe| SKIP[Descarta Item]
-        N2 -->|Nova URL| G1[Gemini API: text-embedding-004]
+        N2 -->|Nova URL| EXT["Extração Limpa (@extractus/article-extractor + cheerio)"]
+        EXT --> G1[Gemini API: text-embedding-004]
         G1 -->|Vetor 768d| DB_VEC[Supabase RPC: match_recent_articles]
         DB_VEC -->|Similaridade >= 0.82| SKIP
-        DB_VEC -->|Não duplicada| G2["Gemini Flash: Redação & Extração (docs/gemini-redator-prompt.md)"]
+        DB_VEC -->|Não duplicada| G2["Gemini Flash: Redação & SEO (docs/gemini-redator-prompt.md)"]
         G2 -->|JSONB + Markdown| DB_INS[(Supabase PostgreSQL)]
     end
 
     subgraph Revalidacao ["Gatilho de Revalidação Instantânea"]
-        DB_INS -->|Webhook HTTP POST| REVAL[/api/revalidate?secret=...&slug=.../]
+        DB_INS -->|HTTP POST / GET| REVAL[/api/revalidate?secret=...&slug=.../]
     end
 
     subgraph Frontend_Nextjs ["Frontend Next.js (App Router)"]
@@ -34,6 +35,7 @@ flowchart TD
 ```
 
 > 💡 **Nota sobre o Agente de IA**: A especificação detalhada do **Agente Redator & Otimizador SEO** (System Prompt, Few-Shot, JSON Schema estrito e mitigação anti-alucinação) encontra-se em **[docs/gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md)**.
+
 
 
 ---

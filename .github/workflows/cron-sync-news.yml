@@ -1,0 +1,41 @@
+name: Ingestão de Notícias Gamer (Cron)
+
+on:
+  schedule:
+    # Executa a cada 15 minutos (00, 15, 30, 45 de cada hora)
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Permite disparo manual pelo painel do GitHub Actions
+
+# Evita execuções simultâneas concorrentes gravando no mesmo banco
+concurrency:
+  group: sync-gaming-news
+  cancel-in-progress: false
+
+jobs:
+  sync-news:
+    name: Sincronizar Feeds & Publicar com IA
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js v20 com Cache NPM
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar Dependências de Produção e Build
+        run: npm ci
+
+      - name: Executar Pipeline de Sincronização e Publicação
+        run: npm run sync:news
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          MAX_ITEMS_PER_FEED: 3
