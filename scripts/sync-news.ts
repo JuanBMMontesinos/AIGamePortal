@@ -219,6 +219,10 @@ function isValidImageUrl(url?: string | null): boolean {
   if (/\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm|mkv|avi)(\?.*)?$/i.test(trimmed)) {
     return false;
   }
+  // Rejeita CDNs que utilizam Cloudflare Bot Challenge bloqueando hotlinking
+  if (trimmed.includes("images.nintendolife.com")) {
+    return false;
+  }
   return true;
 }
 
