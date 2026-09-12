@@ -18,6 +18,7 @@ Esta documentação foi estruturada para servir tanto a engenheiros humanos de s
 | **[environment-variables.md](file:///d:/IAProjects/AIGamePortal/docs/environment-variables.md)** | Dicionário de variáveis de ambiente, escopos (público vs servidor), segredos e boas práticas de segurança. | DevOps & Engenheiros |
 | **[database.md](file:///d:/IAProjects/AIGamePortal/docs/database.md)** | Modelagem relacional, dicionário de dados, extensões (`vector`), índices HNSW, RLS e RPCs. | DBAs & Backend |
 | **[ai-context.md](file:///d:/IAProjects/AIGamePortal/docs/ai-context.md)** | Guia canônico para agentes de IA: regras de negócio, pipeline n8n + Gemini, diretrizes E-E-A-T e política anti-alucinação. | Agentes de IA & Engenheiros |
+| **[gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md)** | Especificação do Agente Redator & Otimizador SEO: System Prompt definitivo, Few-Shot, JSON Schema e parâmetros Gemini 1.5. | Engenheiros de IA & Redação |
 
 ---
 

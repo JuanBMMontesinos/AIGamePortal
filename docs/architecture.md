@@ -17,7 +17,7 @@ flowchart TD
         N2 -->|Nova URL| G1[Gemini API: text-embedding-004]
         G1 -->|Vetor 768d| DB_VEC[Supabase RPC: match_recent_articles]
         DB_VEC -->|Similaridade >= 0.82| SKIP
-        DB_VEC -->|Não duplicada| G2[Gemini Flash: Redação & Extração]
+        DB_VEC -->|Não duplicada| G2["Gemini Flash: Redação & Extração (docs/gemini-redator-prompt.md)"]
         G2 -->|JSONB + Markdown| DB_INS[(Supabase PostgreSQL)]
     end
 
@@ -32,6 +32,9 @@ flowchart TD
         SERVER_COMP -->|Fallback se DB vazio| MOCK[(Mock Data Gamer)]
     end
 ```
+
+> 💡 **Nota sobre o Agente de IA**: A especificação detalhada do **Agente Redator & Otimizador SEO** (System Prompt, Few-Shot, JSON Schema estrito e mitigação anti-alucinação) encontra-se em **[docs/gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md)**.
+
 
 ---
 

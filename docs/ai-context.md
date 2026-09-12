@@ -86,13 +86,20 @@ sequenceDiagram
 
 ## 5. Política Anti-Alucinação e Diretrizes E-E-A-T
 
-Ao instruir LLMs a redigirem notícias para o AIGamePortal:
+Ao instruir LLMs (como o Google Gemini 1.5) a redigirem notícias para o AIGamePortal, as regras a seguir são **leis canônicas e inegociáveis**:
 
-1. **Apenas Fatos do Artigo Original**:
-   - O modelo **NUNCA** deve inventar datas de lançamento de jogos, preços ou especificações que não estejam presentes explicitamente no texto de entrada.
-   - Se o preço ou a data forem desconhecidos, os campos em `game_metadata` devem ser gravados como `null`.
-2. **Tom de Voz Editorial**:
-   - Informativo, ágil, entusiasta de tecnologia e games, mas sóbrio e imparcial quanto a rumores.
-   - Sempre diferenciar fatos confirmados de boatos da indústria.
-3. **Atribuição Canônica Inegociável**:
-   - O campo `source_original_url` e `source_original_title` devem apontar diretamente para a matéria de origem, garantindo respeito à propriedade intelectual das redações.
+1. **Integridade Factual Estrita (Zero Fake News)**:
+   - O modelo **NUNCA** deve inventar datas de lançamento de jogos, preços, especificações técnicas ou plataformas que não estejam presentes de forma explícita e confirmada no texto de entrada raspado.
+   - **Regra da Frase Padronizada**: Se uma informação (como data de lançamento, preço ou specs) não estiver confirmada e explícita no texto original raspado, o modelo deve declarar obrigatoriamente no corpo do texto:
+     > *"Informação ainda não confirmada oficialmente pelo estúdio/distribuidora."*
+   - No schema `game_metadata`, o campo `release_date` deve ser preenchido como `"Não divulgada oficialmente"` e `platforms` com as plataformas confirmadas (ou `["Não confirmadas"]`).
+2. **Proteção contra Penalizações de SEO (Google Helpful Content / Scaled Content)**:
+   - **Proibição de tradução literal**: O artigo deve ser reescrito na íntegra com a voz editorial do AIGamePortal (entusiasta, informativo, preciso e fluido), agregando contexto histórico e relevância de mercado.
+   - **Estruturação Semântica**: Dividido em seções com subtítulos H2 e H3 atraentes, sem clichês automatizados (ex: proibir "No vibrante mundo dos games").
+   - **Ficha Técnica Rápida**: Todo artigo deve conter no corpo Markdown uma tabela estruturada com specs (Jogo, Desenvolvedora, Distribuidora, Plataformas e Previsão de Lançamento).
+   - **Repercussão da Comunidade**: Deve sintetizar debates e reações de jogadores (Reddit, X/Twitter, fóruns) no campo `community_sentiment` e nos parágrafos finais.
+3. **Atribuição Canônica Inegociável (E-E-A-T)**:
+   - O campo `source_original_url` e o fechamento do texto Markdown devem citar e apontar diretamente para a matéria de origem, preservando a autoria original de apuração.
+4. **Especificação Completa do Agente Redator**:
+   - A especificação detalhada de System Prompt, parâmetros de amostragem (temperatura 0.20, top-p 0.85), JSON Schema formal e Few-Shot examples encontra-se documentada em:
+     👉 **[docs/gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md)**.
