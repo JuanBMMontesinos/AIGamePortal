@@ -50,6 +50,7 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
 - **Funcionalidades**:
   - Destaque visual principal da Homepage com aspecto cinematográfico.
   - Imagem de capa otimizada via `next/image` com flag `priority={true}` para otimizar a métrica **LCP (Largest Contentful Paint)**.
+  - **Guarda de Imagem Segura**: Validação defensiva via `isValidImageUrl` que impede renderização de formatos inválidos ou áudios `.mp3`.
   - Camadas de gradiente escuro (`from-zinc-950 via-zinc-950/70 to-transparent`) que preservam o contraste do texto mesmo em imagens claras.
   - Badges informativas: Categoria, Plataformas suportadas, tempo de leitura e data relativa.
 
@@ -67,6 +68,7 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
   ```
 - **Funcionalidades**:
   - Card responsivo para exibição no grid de notícias.
+  - **Guarda Defensiva de Capa**: Renderiza a imagem via `next/image` apenas se validada por `isValidImageUrl()`. Em caso de URL inválida, exibe o placeholder gradiente gamer com ícone de raio neon sem quebrar o layout.
   - Efeito suave de zoom na capa no estado `:hover` (`group-hover:scale-105 duration-500`).
   - **Bullet point rápido de TL;DR**: Exibe o primeiro fato resumido da matéria diretamente no card, economizando tempo de navegação do leitor.
   - Badges de plataforma flutuantes com efeito de vidro fosco (`backdrop-blur-md`).
@@ -85,7 +87,7 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
   ```
 - **Funcionalidades**:
   - **Ranking Mais Lidas**: Lista ordenada numericamente (#1 a #5) com contador formatado de visualizações.
-  - **Pulso de Sentimento da Comunidade**: Barras de progresso com medidor de hype (Ghost of Yōtei, GTA VI, Switch 2).
+  - **Pulso de Sentimento da Comunidade Dinâmico**: Extrai dados reais do Supabase a partir dos campos `post.game_metadata.game_name` e `post.community_sentiment`, calculando barras de progresso proporcionais com score de hype/aprovação e **links clicáveis diretos** para a matéria correspondente (`/noticias/[slug]`). Conta com fallback para tópicos em alta caso o banco esteja vazio.
   - **Atalhos Rápidos**: Botões de navegação direta por plataforma.
   - **Card de Governança Algorítmica**: Explicação condensada do filtro vetorial do Gemini.
 

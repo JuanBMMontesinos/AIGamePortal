@@ -68,7 +68,7 @@ npm run start
 - `/noticias/[slug]` (`app/noticias/[slug]/page.tsx`): **Página da Matéria** com cabeçalho editorial, Box TL;DR (30s), Ficha Técnica do jogo com nota Metacritic colorida, conteúdo em prosa rica, box de sentimento Reddit/X, Atribuição E-E-A-T com link canônico e metatags JSON-LD `NewsArticle`.
 - `/categoria/[slug]` (`app/categoria/[slug]/page.tsx`): **Feed por Categoria** (PlayStation, Xbox, Nintendo, PC Gaming, Hardware, Indústria, Geral).
 - `/transparencia-editorial` (`app/transparencia-editorial/page.tsx`): **Transparência e Governança de IA**, detalhando o pipeline, política anti-alucinação, deduplicação vetorial e contato de retificação.
-- `/api/revalidate` (`app/api/revalidate/route.ts`): **Endpoint de Revalidação Incremental sob Demanda (ISR)** acionado via webhook do n8n para atualizar o cache instantaneamente após a gravação no Supabase.
+- `/api/revalidate` (`app/api/revalidate/route.ts`): **Endpoint de Revalidação Incremental sob Demanda (ISR)** acionado pelo pipeline autônomo para atualizar o cache instantaneamente após a gravação no Supabase.
 
 ---
 
@@ -77,8 +77,8 @@ npm run start
 O portal utiliza um pipeline TypeScript autônomo executado a cada 15 minutos via **GitHub Actions** (`.github/workflows/cron-sync-news.yml`):
 
 1. **Leitura de 5 Feeds RSS**: PlayStation Blog, Xbox Wire, Nintendo Life, PC Gamer e IGN Games.
-2. **Extração Limpa**: Extração de texto higienizado e imagens sem scripts ou anúncios.
-3. **Deduplicação Semântica com pgvector**: Embeddings `text-embedding-004` e RPC `match_recent_articles` (similaridade >= 0.82 em 48h).
+2. **Pipeline de Imagens Resiliente (7 Etapas)**: Extração com suporte a Media RSS (`media:content`, `media:thumbnail`), OpenGraph fallback, descarte de arquivos de áudio de podcasts (`.mp3`), filtragem de CDNs com Cloudflare anti-hotlink e fallbacks temáticos em alta resolução por plataforma.
+3. **Deduplicação Semântica com pgvector**: Embeddings `gemini-embedding-001` / `text-embedding-004` (768d) e RPC `match_recent_articles` (similaridade >= 0.82 em 48h).
 4. **Redação & SEO (Gemini 1.5 Flash)**: Temperatura 0.2, tom gamer-nativo, TL;DR, tabela de especificações, diretriz anti-alucinação rígida e schema JSON estruturado.
 5. **Persistência no Supabase**: Gravação na tabela `posts` com status `published`.
 6. **Revalidação ISR On-Demand**: Chamada imediata ao endpoint `/api/revalidate`.
@@ -112,7 +112,14 @@ Consulte a pasta [supabase/](file:///d:/IAProjects/AIGamePortal/supabase):
 - [20260912000001_initial_schema.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260912000001_initial_schema.sql): Migração mestre idempotente com pgvector HNSW, RLS e RPC `match_recent_articles`.
 - [seed.sql](file:///d:/IAProjects/AIGamePortal/supabase/seed.sql): Categorias e feeds RSS iniciais.
 
-## 📚 Documentação Técnica
-
-- [Documentação de Banco de Dados](file:///d:/IAProjects/AIGamePortal/docs/database.md)
-- [Contexto de Arquitetura e IA](file:///d:/IAProjects/AIGamePortal/docs/ai-context.md)
+## 📚 Documentação Técnica Completa
+Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
+- [docs/index.md](file:///d:/IAProjects/AIGamePortal/docs/index.md): Sumário executivo e guia geral do projeto.
+- [docs/architecture.md](file:///d:/IAProjects/AIGamePortal/docs/architecture.md): Arquitetura, pipeline de imagens resiliente (7 etapas) e SSG + ISR.
+- [docs/api-reference.md](file:///d:/IAProjects/AIGamePortal/docs/api-reference.md): Referência completa de APIs, funções utilitárias e pipeline autônomo.
+- [docs/components.md](file:///d:/IAProjects/AIGamePortal/docs/components.md): Catálogo de componentes UI e guardas defensivas.
+- [docs/database.md](file:///d:/IAProjects/AIGamePortal/docs/database.md): Modelagem relacional, índices HNSW e RPCs do pgvector.
+- [docs/environment-variables.md](file:///d:/IAProjects/AIGamePortal/docs/environment-variables.md): Variáveis de ambiente e GitHub Secrets.
+- [docs/routes-and-isr.md](file:///d:/IAProjects/AIGamePortal/docs/routes-and-isr.md): Mapeamento de rotas e contrato da API de revalidação.
+- [docs/ai-context.md](file:///d:/IAProjects/AIGamePortal/docs/ai-context.md): Diretrizes para agentes de IA e conformidade E-E-A-T.
+- [docs/gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md): System Prompt oficial do Agente Redator Gemini.

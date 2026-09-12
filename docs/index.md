@@ -25,12 +25,13 @@ Esta documentação foi estruturada para servir tanto a engenheiros humanos de s
 ## 🎯 Visão Executiva do Projeto
 
 O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre jogos eletrônicos através de uma abordagem híbrida:
-1. **Curadoria em Tempo Real**: Monitora feeds RSS de fontes oficiais de primeira mão (PlayStation Blog, Xbox Wire, Nintendo Life, PC Gamer, Eurogamer).
-2. **Deduplicação Semântica Vetorial**: Evita publicar notícias repetidas sobre o mesmo fato utilizando embeddings densos (Google Gemini `text-embedding-004`, 768 dimensões) com distância de cosseno no PostgreSQL (`pgvector` com índice HNSW).
-3. **Resumos em 30 Segundos (TL;DR)**: Extrai 3 a 4 bullet points essenciais para leitura rápida.
-4. **Metadados Estruturados de Jogos**: Salva plataformas, nota Metacritic, estúdio desenvolvedor e data de lançamento em formato JSONB tipado.
-5. **Transparência E-E-A-T**: Atribui autoria ao modelo de IA e exibe link canônico direto e transparente para a matéria original.
-6. **Entrega Ultra-Rápida (Core Web Vitals 95+)**: Páginas pré-renderizadas estaticamente no build (SSG) com revalidação sob demanda (ISR) disparada via webhook pelo n8n imediatamente após a gravação no banco.
+1. **Curadoria em Tempo Real**: Monitora feeds RSS de fontes oficiais de primeira mão (PlayStation Blog, Xbox Wire, Nintendo Life, PC Gamer, IGN Games).
+2. **Pipeline de Imagens Resiliente (7 Etapas)**: Extração robusta com suporte a Media RSS (`media:content`, `media:thumbnail`), OpenGraph fallback, descarte de arquivos de áudio de podcasts (`.mp3`), filtragem de CDNs com Cloudflare anti-hotlink e fallbacks temáticos em alta resolução por plataforma.
+3. **Deduplicação Semântica Vetorial**: Evita publicar notícias repetidas sobre o mesmo fato utilizando embeddings densos (Google Gemini `gemini-embedding-001` / `text-embedding-004`, 768 dimensões) com distância de cosseno no PostgreSQL (`pgvector` com índice HNSW).
+4. **Resumos em 30 Segundos (TL;DR)**: Extrai 3 a 4 bullet points essenciais para leitura rápida.
+5. **Metadados Estruturados de Jogos**: Salva plataformas, nota Metacritic, estúdio desenvolvedor e data de lançamento em formato JSONB tipado.
+6. **Transparência E-E-A-T**: Atribui autoria ao modelo de IA e exibe link canônico direto e transparente para a matéria original.
+7. **Entrega Ultra-Rápida (Core Web Vitals 95+)**: Páginas pré-renderizadas estaticamente no build (SSG) com revalidação sob demanda (ISR) disparada instantaneamente após a gravação no banco.
 
 ---
 
@@ -49,8 +50,9 @@ O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre j
 │ Manipulação de Datas          │ date-fns 4.1+ (pt-BR)         │
 │ Camada de Banco de Dados      │ Supabase Client 2.49+         │
 │ Banco Relacional & Vetorial   │ PostgreSQL 15+ com pgvector   │
-│ Embeddings de IA              │ Google Gemini text-embedding  │
-│ Orquestração de Crawlers      │ n8n Workflow Automation       │
+│ Embeddings de IA              │ Gemini gemini-embedding-001   │
+│ Redação & SEO                 │ Gemini 1.5 Flash (Temp 0.2)   │
+│ Ingestão Autônoma & Cron      │ TypeScript + GitHub Actions   │
 └───────────────────────────────┴───────────────────────────────┘
 ```
 

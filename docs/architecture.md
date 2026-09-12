@@ -123,10 +123,64 @@ export async function getLatestPosts(limit = 12): Promise<Post[]> {
 
 ---
 
-## 5. Práticas de Otimização de Imagens e Fontes
+## 5. Arquitetura de Imagens e Pipeline Resiliente
 
-1. **Next/Image com Domínios Autorizados**:
-   - As capas das notícias são carregadas via `next/image` com suporte a `srcset` automático e conversão para formatos modernos (`AVIF` e `WebP`).
-   - Domínios permitidos em [next.config.ts](file:///d:/IAProjects/AIGamePortal/next.config.ts): Unsplash, PlayStation Blog, Xbox Wire, Nintendo Life, Eurogamer e Vox/PC Gamer.
-2. **Next/Font com Google Fonts**:
-   - Fontes `Inter` (leitura editorial) e `Outfit` (estética gamer) são carregadas com `display: "swap"` e declaradas como variáveis CSS (`--font-inter`, `--font-outfit`), sem gerar requisições de rede em tempo de execução para servidores do Google.
+O AIGamePortal implementa uma arquitetura defensiva multicamada para garantir que nenhuma notícia seja publicada ou renderizada com capas quebradas, links corrompidos ou arquivos de áudio indesejados.
+
+### 5.1 Pipeline de Extração em 7 Etapas ([scripts/sync-news.ts](file:///d:/IAProjects/AIGamePortal/scripts/sync-news.ts))
+
+Durante o ciclo de sincronização de notícias, o script de ingestão executa uma hierarquia defensiva para determinar a melhor imagem de capa (`cover_image_url`):
+
+1. **Tags Yahoo Media RSS (`media:content` e `media:thumbnail`)**:
+   - Mapeadas nativamente via `customFields` no `rss-parser`.
+   - Captura imagens de alta resolução de portais como Nintendo Life, IGN Games e PC Gamer.
+2. **Inspeção de Enclosure com Filtro Anti-Áudio**:
+   - Inspeciona a tag `<enclosure>`, rejeitando expressamente itens com `type="audio/*"` ou extensões de áudio/vídeo (`.mp3`, `.wav`, `.m4a`, `.mp4`).
+   - Evita que episódios de podcasts (como o *PlayStation Podcast*) tenham seu arquivo de áudio gravado no campo de imagem.
+3. **Varredura no HTML Embutido do Feed**:
+   - Analisa fragmentos em `content:encoded` via Cheerio buscando tags `<img>` válidas.
+4. **Extração de Artigo (`@extractus/article-extractor`)**:
+   - Tenta extrair a imagem destacada diretamente do DOM da página do artigo original.
+5. **Fallback de Conteúdo Estruturado**:
+   - Utiliza resumos e imagens secundárias do próprio feed caso a página externa bloqueie o acesso.
+6. **Varredura OpenGraph (`fetchOgImage`)**:
+   - Realiza uma requisição com headers realistas de navegador (`User-Agent`, `Accept`) para extrair `<meta property="og:image">` ou `<meta name="twitter:image">`.
+7. **Detecção Anti-Hotlink (Cloudflare Challenge) & Fallback Temático por Categoria**:
+   - CDNs protegidas por Cloudflare Managed Challenge (como `images.nintendolife.com`) respondem com HTTP 403 Forbidden e páginas HTML de captcha para acessos externos.
+   - O validador central descarta automaticamente essas URLs protegidas, ativando o fallback por categoria (`FALLBACK_COVERS_BY_CATEGORY`), que seleciona wallpapers temáticos de alta definição correspondentes à plataforma da notícia (**PlayStation**, **Xbox**, **Nintendo**, **PC Gaming** ou **Geral**).
+
+### 5.2 Validador Centralizado de Imagens (`isValidImageUrl`)
+
+Tanto no script de ingestão quanto no frontend ([lib/utils.ts](file:///d:/IAProjects/AIGamePortal/lib/utils.ts)), a função central `isValidImageUrl` atua como barreira de segurança:
+```typescript
+export function isValidImageUrl(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) return false;
+  // Rejeita extensões de áudio e vídeo comuns em feeds/enclosures
+  if (/\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm|mkv|avi)(\?.*)?$/i.test(trimmed)) return false;
+  // Rejeita CDNs conhecidas por Cloudflare Bot Challenge bloqueando hotlinking
+  if (trimmed.includes("images.nintendolife.com")) return false;
+  return true;
+}
+```
+
+### 5.3 Configuração do Next.js Image Optimization ([next.config.ts](file:///d:/IAProjects/AIGamePortal/next.config.ts))
+
+O Next.js é configurado com wildcard global nos protocolos `https` e `http`, permitindo a otimização de imagens de qualquer assessoria de imprensa ou CDN oficial de videogame:
+```typescript
+images: {
+  remotePatterns: [
+    { protocol: "https", hostname: "**" },
+    { protocol: "http", hostname: "**" },
+  ],
+}
+```
+
+### 5.4 Proteção nos Componentes de Interface
+
+Os componentes visuais ([NewsCard](file:///d:/IAProjects/AIGamePortal/components/news-card.tsx), [HeroFeatured](file:///d:/IAProjects/AIGamePortal/components/hero-featured.tsx) e [app/noticias/[slug]/page.tsx](file:///d:/IAProjects/AIGamePortal/app/noticias/[slug]/page.tsx)) nunca invocam o componente `<Image />` com dados crus do banco. Eles validam `hasValidImage = isValidImageUrl(post.cover_image_url)`. Se a URL for inválida ou ausente, a interface exibe de forma harmoniosa um gradiente escuro com ícone de raio neon, mantendo o layout intacto.
+
+### 5.5 Tipografia com `next/font`
+
+- Fontes `Inter` (leitura editorial) e `Outfit` (estética gamer) são carregadas com `display: "swap"` e declaradas como variáveis CSS (`--font-inter`, `--font-outfit`), sem gerar requisições de rede em tempo de execução para servidores do Google.

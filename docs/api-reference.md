@@ -209,6 +209,17 @@ Determina o conjunto de cores semânticas (fundo, texto, borda) para o badge de 
 
 ---
 
+### `isValidImageUrl(url)`
+Valida se uma string é uma URL de imagem válida (HTTP/HTTPS) e segura para renderização no front-end, descartando arquivos de áudio/podcast (`.mp3`, `.wav`, `.m4a`) ou CDNs com bloqueio anti-hotlink via Cloudflare (`images.nintendolife.com`).
+
+- **Assinatura**:
+  ```typescript
+  export function isValidImageUrl(url?: string | null): boolean
+  ```
+- **Retorno**: `boolean`.
+
+---
+
 ## 3. Clientes Supabase
 
 ### `lib/supabase/client.ts` (Client-side)
@@ -250,6 +261,7 @@ export interface Post {
   source_original_title: string | null;
   game_metadata: GameMetadata;
   community_sentiment: string | null;
+  embedding?: number[] | null;
   status: "draft" | "published" | "archived";
   views_count: number;
   published_at: string;
@@ -259,3 +271,45 @@ export interface Post {
   sources?: Source | null;
 }
 ```
+
+---
+
+## 5. Pipeline Autônomo de Ingestão (`scripts/sync-news.ts`)
+
+Módulo autônomo executado via CLI (`npm run sync:news`) ou via GitHub Actions (`cron-sync-news.yml`).
+
+### `runNewsSync()`
+Função orquestradora principal. Executa o ciclo completo de leitura dos 5 feeds RSS oficiais, deduplicação em duas etapas, geração jornalística por IA, persistência relacional e disparo de revalidação ISR.
+
+### `isValidImageUrl(url)`
+Validador de integridade e segurança de imagens.
+- **Assinatura**:
+  ```typescript
+  export function isValidImageUrl(url?: string | null): boolean
+  ```
+- **Regras**:
+  - Rejeita URLs que não comecem com `http://` ou `https://`.
+  - Rejeita arquivos de áudio/vídeo (`.mp3`, `.wav`, `.ogg`, `.m4a`, `.mp4`, etc.).
+  - Rejeita CDNs com proteção Cloudflare Managed Challenge (como `images.nintendolife.com`).
+- **Retorno**: `boolean` (`true` se a imagem puder ser carregada com segurança).
+
+### `scrapeArticle(item, feedConfig)`
+Extrai o texto higienizado e a capa da matéria através do pipeline defensivo de 7 etapas.
+- **Assinatura**:
+  ```typescript
+  async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise<ScrapedContent>
+  ```
+- **Retorno**: Objeto `{ title, cleanText, imageUrl, canonicalUrl }`.
+
+### `generateEmbedding(ai, text)`
+Gera o vetor denso de 768 dimensões com chaveamento resiliente de modelos (`gemini-embedding-001`, `text-embedding-004`, `gemini-embedding-2`).
+- **Assinatura**:
+  ```typescript
+  async function generateEmbedding(ai: GoogleGenAI, text: string): Promise<number[] | null>
+  ```
+
+### `rewriteArticleWithGemini(ai, scraped, feedName)`
+Submete o texto original raspado ao **Gemini 1.5 Flash** (temperatura 0.2) sob o System Prompt jornalístico e schema estruturado JSON com política anti-alucinação.
+
+### `triggerISRRevalidation(siteUrl, secret, slug)`
+Dispara chamada HTTP ao endpoint `/api/revalidate` para invalidar instantaneamente o cache da notícia e da homepage.
