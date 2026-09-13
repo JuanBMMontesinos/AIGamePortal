@@ -1,6 +1,21 @@
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 dotenv.config();
+
+// Fallback universal de WebSocket para ambientes Node.js sem WebSocket nativo
+if (typeof (globalThis as any).WebSocket === "undefined") {
+  (globalThis as any).WebSocket = class DummyWebSocket {
+    static readonly CONNECTING = 0;
+    static readonly OPEN = 1;
+    static readonly CLOSING = 2;
+    static readonly CLOSED = 3;
+    addEventListener() {}
+    removeEventListener() {}
+    close() {}
+    send() {}
+  };
+}
+
 import Parser from "rss-parser";
 import { extract } from "@extractus/article-extractor";
 import * as cheerio from "cheerio";
