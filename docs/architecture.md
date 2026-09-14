@@ -264,4 +264,32 @@ O sistema de afiliados foi desenhado para maximizar a conversão orgânica sem c
 - **Prevenção de Indexação**: Metadados de página configurados com `robots: { index: false, follow: false }` e bloqueio explícito no `robots.txt` para proteger a área contra indexação nos motores de busca.
 - **Operação em Tempo Real**: Gestão visual de catálogo, métricas de cliques por produto e botões liga/desliga integrados diretamente ao banco Supabase.
 
+---
+
+## 8. Mídia Programática & Otimização de Core Web Vitals (Fase 3)
+
+### 8.1 Prevenção Absoluta de Cumulative Layout Shift (CLS = 0)
+Anúncios dinâmicos de redes como Google AdSense frequentemente degradam a métrica de **Cumulative Layout Shift (CLS)** ao empurrar abruptamente o conteúdo da página quando o script remoto injeta um `<iframe>` de altura desconhecida. Para resolver esse problema estruturalmente:
+1. **Dimensionamento Antecipado Obrigatório**: O componente `<AdBanner />` implementa contêineres com altura mínima estrita reservada via Tailwind CSS antes de qualquer execução de JavaScript:
+   - `in-article-top`: `min-h-[280px] md:min-h-[114px]` (reservado para 300x250 no mobile e 728x90 no desktop).
+   - `in-article-mid`: `min-h-[290px]` (reservado para 300x250/336x280 + padding).
+   - `sidebar-sticky`: `min-h-[630px]` (reservado para 300x600 skyscraper na lateral de leitura).
+2. **Isolamento Visual Neutro**: O contêiner de anúncio possui background neutro sutil (`bg-zinc-100/80 dark:bg-gamer-900/60`), borda delimitadora tracejada e label regulatória `"PUBLICIDADE"` permanente. Quando o anúncio é carregado, ele substitui a área sem qualquer salto visual ou re-flow no navegador.
+
+### 8.2 Inserção Dinâmica no Corpo da Notícia ([lib/utils/content-parser.tsx](file:///d:/IAProjects/AIGamePortal/lib/utils/content-parser.tsx))
+- O helper `splitContentForMidArticleAd` analisa os blocos de texto e conta unicamente parágrafos autênticos, ignorando cabeçalhos `#`, blockquotes `>`, listas `-` ou blocos de código ````.
+- O bloco `in-article-mid` é inserido de forma não-destrutiva exatamente após o 3º parágrafo da matéria, maximizando o CTR (Click-Through Rate) e respeitando as normas da Coalition for Better Ads.
+
+### 8.3 Fallback Inteligente & Prevenção de Banners Vazios (Zero Blank Space)
+O sistema foi arquitetado para **nunca deixar espaços pretos/brancos vazios** no portal:
+- **Estratégia Default-Visible**: O banner de Fallback ("Destaques Gamer" com ofertas da Amazon Brasil ou Telegram) permanece montado e visível por padrão desde o primeiro instante de renderização.
+- **Detecção Confiável por `MutationObserver`**: O componente monitora o atributo oficial `data-ad-status` no `<ins class="adsbygoogle">`. Apenas quando o Google AdSense reporta explicitamente `data-ad-status="filled"` o fallback dá lugar ao anúncio programático.
+- **Tratamento de Ambientes Restritos**: Em `localhost`, redes com bloqueador de anúncios (AdBlock) ou em contas do AdSense com domínios pendentes de aprovação pelo Google, o AdSense não entrega criativos. O sistema detecta esse comportamento em 1.2 segundos (ou instantaneamente em erros/unfilled) e mantém a exibição do Fallback sem qualquer falha visual.
+- **Roteamento Comissionado Protegido**: Todos os cliques em produtos no fallback trafegam por `/api/out/[id]` com atributos `rel="sponsored nofollow"` e rastreamento assíncrono de telemetria.
+
+### 8.4 Carregamento Não-Bloqueante de Scripts ([app/layout.tsx](file:///d:/IAProjects/AIGamePortal/app/layout.tsx))
+- A biblioteca `pagead2.googlesyndication.com/pagead/js/adsbygoogle.js` é carregada via `<Script strategy="afterInteractive" />` do Next.js.
+- Isso assegura que o download da biblioteca externa não bloqueie o parser HTML nem penalize as métricas **First Contentful Paint (FCP)** e **Largest Contentful Paint (LCP)**.
+
+
 

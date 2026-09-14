@@ -244,3 +244,59 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
 - **Tipo**: Client Component
 - **Prevenção de Hydration Mismatch**: Utiliza flag `mounted` com `useEffect` para aguardar a montagem no cliente antes de renderizar o ícone correspondente ao tema resolvido.
 - **Micro-animação**: Rotação suave do ícone do sol (`rotate-45`) e da lua (`-rotate-12`).
+
+---
+
+## 5. Componentes de Monetização Programática & Core Web Vitals (Fase 3)
+
+### `<AdBanner format={format} slotId={slotId} fallbackProduct={fallbackProduct} />`
+- **Arquivo**: [components/AdBanner.tsx](file:///d:/IAProjects/AIGamePortal/components/AdBanner.tsx)
+- **Tipo**: Client Component (`"use client"`)
+- **Props**:
+  ```typescript
+  export type AdFormat = "in-article-top" | "in-article-mid" | "sidebar-sticky";
+
+  export interface AdBannerProps {
+    format: AdFormat;
+    slotId?: string;
+    fallbackProduct?: AffiliateProduct | null;
+    className?: string;
+    showTelegramFallback?: boolean;
+  }
+  ```
+- **Formatos e Dimensões Otimizadas**:
+  * `in-article-top`: Banner horizontal após o título/TL;DR (728x90 no desktop / 300x250 no mobile).
+  * `in-article-mid`: Bloco retangular responsivo posicionado no corpo do artigo (300x250 ou fluido até 336x280).
+  * `sidebar-sticky`: Banner vertical skyscraper fixo na barra lateral da página de leitura (300x600 Half-Page ou 300x250 com ancoragem limpa).
+- **Garantia Absoluta de CLS = 0 (Cumulative Layout Shift)**:
+  * Contêiner com altura mínima reservada via CSS antes da hidratação (`min-h-[280px] md:min-h-[114px]` no topo, `min-h-[290px]` no meio e `min-h-[630px]` na barra lateral).
+  * Fundo sutil e borda delimitadora em tons neutros com efeito glassmorphism que isola o layout contra saltos de conteúdo quando o iframe do anúncio carrega.
+  * Label regulatória `"PUBLICIDADE"` com ícone de verificação de segurança no topo do bloco, atendendo às diretrizes do Google AdSense e Better Ads Coalition.
+- **Prevenção de Banners Vazios & Fallback Resiliente (Zero Blank Space)**:
+  * **Fallback Ativo por Padrão**: O card promocional interno (**"Destaques Gamer"** da Amazon ou Telegram) permanece **sempre ativo e visível**, eliminando qualquer risco de exibição de caixas pretas ou brancas vazias ao usuário.
+  * **Detecção Confiável via `MutationObserver`**: O componente escuta o atributo oficial `data-ad-status` injetado pelo Google AdSense. Ele só oculta o fallback e exibe o anúncio se o Google explicitamente retornar `data-ad-status="filled"`.
+  * **Tolerância a `localhost`, AdBlock e Contas em Análise**: Em ambientes de desenvolvimento (`localhost:3000`), redes com AdBlocker ou durante o período de aprovação de domínio da conta do Google, o AdSense não entrega anúncios reais. O portal trata isso de forma transparente, mantendo a monetização ativa através de produtos de afiliados.
+  * **Normalização Defensiva de ID**: Converte automaticamente identificadores informados como `pub-XXXXXXXXXXXXXXXX` para o padrão obrigatório `ca-pub-XXXXXXXXXXXXXXXX`.
+- **Arquitetura da Barra Lateral de Leitura**:
+  * Desacoplamento de classes `sticky` dentro do componente para prevenir conflitos de *nested sticky context*.
+  * O bloco de "Destaques do Portal" permanece no fluxo normal no topo da sidebar e o banner `sidebar-sticky` fica ancorado em `<div className="sticky top-24 pt-2">` logo abaixo, garantindo rolagem sem sobreposições.
+
+---
+
+### `<ParsedArticleContent content={content} adSlot={adSlot} paragraphThreshold={3} />`
+- **Arquivo**: [lib/utils/content-parser.tsx](file:///d:/IAProjects/AIGamePortal/lib/utils/content-parser.tsx)
+- **Tipo**: Server / Client Component compatível
+- **Props**:
+  ```typescript
+  export interface ParsedArticleContentProps {
+    content: string;
+    adSlot?: React.ReactNode;
+    paragraphThreshold?: number;
+    className?: string;
+  }
+  ```
+- **Funcionalidades**:
+  * `splitContentForMidArticleAd`: Analisa o conteúdo Markdown ou HTML, contabiliza apenas blocos que são parágrafos de texto autênticos (desconsiderando títulos `#`, blockquotes `>`, listas `-` e blocos de código ````) e divide o artigo exatamente após o 3º parágrafo.
+  * Injeção Não-Destrutiva: Renderiza a primeira metade via `<MarkdownContent />`, insere o slot `<AdBanner format="in-article-mid" />`, e renderiza a segunda metade preservando todos os links de afiliados contextuais e estilos tipográficos.
+  * Tratamento Defensivo: Em notícias curtas com menos de 3 parágrafos, insere o bloco após o último parágrafo disponível sem truncar o texto.
+

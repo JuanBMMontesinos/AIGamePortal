@@ -23,6 +23,11 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 | `TWITTER_ACCESS_SECRET`| **Privado** (Pipeline / Script) | Opcional (Fase 2) | User Access Token Secret associado para assinatura OAuth 1.0a. | `eXamPleAccessSecret789...` |
 | `NEXT_PUBLIC_AMAZON_AFFILIATE_TAG` | Público (Browser & Server) | Sim (Fase 3) | Tag oficial de parceiro associado da Amazon Brasil para links de afiliados e auto-cadastro. | `aigameportal-20` |
 | `ADMIN_SECRET_KEY` | **Privado** (Servidor / Admin) | Sim (Fase 3) | Senha/chave mestra exigida para login no painel `/admin/afiliados` e endpoints administrativos. | `aigameportal_admin_2026` |
+| `NEXT_PUBLIC_ADSENSE_CLIENT_ID` | Público (Browser & Server) | Opcional (Fase 3) | ID da conta do Google AdSense (`ca-pub-XXXXXXXXXXXXXXXX`). Se omitido, ativa o Fallback Inteligente. | `ca-pub-1234567890123456` |
+| `NEXT_PUBLIC_ADSENSE_SLOT_TOP` | Público (Browser & Server) | Opcional (Fase 3) | ID do slot de anúncio AdSense para o banner superior horizontal (`in-article-top`). | `1234567890` |
+| `NEXT_PUBLIC_ADSENSE_SLOT_MID` | Público (Browser & Server) | Opcional (Fase 3) | ID do slot de anúncio AdSense para o bloco no meio do texto (`in-article-mid`). | `1234567891` |
+| `NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR` | Público (Browser & Server) | Opcional (Fase 3) | ID do slot de anúncio AdSense para o banner lateral sticky (`sidebar-sticky`). | `1234567892` |
+| `NEXT_PUBLIC_TELEGRAM_URL` | Público (Browser & Server) | Opcional (Fase 3) | Link público para o canal do Telegram utilizado no Fallback Promocional. | `https://t.me/aigameportal_noticias` |
 
 ---
 
@@ -102,6 +107,37 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 
 ---
 
+### 2.10 `NEXT_PUBLIC_ADSENSE_CLIENT_ID` (Fase 3)
+- **Utilizada em**: [app/layout.tsx](file:///d:/IAProjects/AIGamePortal/app/layout.tsx) e [components/AdBanner.tsx](file:///d:/IAProjects/AIGamePortal/components/AdBanner.tsx).
+- **Provedor**: Google AdSense / Google Publisher Tag.
+- **Formato Canônico**: `ca-pub-XXXXXXXXXXXXXXXX` (16 dígitos numéricos do **ID do Publisher**).
+- **Atenção — Diferença Crítica de IDs no Painel do Google**:
+  - **ID do Publisher (`pub-5055819087281911`)**: É o identificador correto a ser usado nas tags web.
+  - **ID do Cliente (`3781269196`)**: É apenas o Customer ID administrativo de 10 dígitos para faturamento e suporte do Google, **não deve ser usado no AdSense web**.
+- **Normalização Automática**: O portal possui guarda defensiva: se informado como `pub-XXXXXXXXXXXXXXXX` ou apenas os dígitos numéricos, ele automaticamente prefixa com `ca-pub-` antes de injetar os scripts.
+- **Comportamento e Resiliência**:
+  - Quando preenchida, o Next.js injeta globalmente a biblioteca `adsbygoogle.js` no `app/layout.tsx` com `strategy="afterInteractive"`.
+  - Como o Google AdSense **não entrega anúncios reais em `localhost`** ou em domínios pendentes de aprovação, o portal detecta a ausência do criativo via `MutationObserver` e mantém o **Fallback Inteligente** ("Destaques Gamer" da Amazon e Telegram) sempre visível, sem exibir caixas vazias ou quebrar o layout.
+
+---
+
+### 2.11 `NEXT_PUBLIC_ADSENSE_SLOT_*` (`TOP`, `MID`, `SIDEBAR`) (Fase 3)
+- **Utilizada em**: [components/AdBanner.tsx](file:///d:/IAProjects/AIGamePortal/components/AdBanner.tsx).
+- **Finalidade**: Identificadores numéricos dos blocos de anúncios criados no painel do Google AdSense para segmentação de formatos específicos:
+  - `NEXT_PUBLIC_ADSENSE_SLOT_TOP`: Banner horizontal 728x90 / 300x250 após o resumo.
+  - `NEXT_PUBLIC_ADSENSE_SLOT_MID`: Bloco 300x250 injetado automaticamente após o 3º parágrafo da notícia.
+  - `NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR`: Skyscraper 300x600 fixo na barra lateral da leitura.
+- **Opcionalidade**: Caso não preenchidos, o AdSense utiliza o formato automático responsivo (`data-ad-format="auto"`).
+
+---
+
+### 2.12 `NEXT_PUBLIC_TELEGRAM_URL` (Fase 3)
+- **Utilizada em**: [components/AdBanner.tsx](file:///d:/IAProjects/AIGamePortal/components/AdBanner.tsx).
+- **Finalidade**: Define o link direto para a comunidade oficial do Telegram no fallback dos banners de anúncio.
+- **Valor padrão**: `https://t.me/aigameportal_noticias`.
+
+---
+
 ## 3. Arquivos de Ambiente no Repositório
 
 1. **[.env.example](file:///d:/IAProjects/AIGamePortal/.env.example)**: Modelo público versionado no Git contendo apenas os nomes das variáveis e valores fictícios seguros.
@@ -114,6 +150,11 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
    - `NEXT_PUBLIC_SITE_URL`
    - `NEXT_PUBLIC_AMAZON_AFFILIATE_TAG`
    - `ADMIN_SECRET_KEY`
+   - `NEXT_PUBLIC_ADSENSE_CLIENT_ID`
+   - `NEXT_PUBLIC_ADSENSE_SLOT_TOP` (Opcional)
+   - `NEXT_PUBLIC_ADSENSE_SLOT_MID` (Opcional)
+   - `NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR` (Opcional)
+   - `NEXT_PUBLIC_TELEGRAM_URL` (Opcional)
    - *(Opcional - Fase 2)* `TELEGRAM_BOT_TOKEN`
    - *(Opcional - Fase 2)* `TELEGRAM_CHAT_ID`
    - *(Opcional - Fase 2)* `TWITTER_API_KEY`

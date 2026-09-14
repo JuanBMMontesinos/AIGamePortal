@@ -35,7 +35,10 @@ O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre j
 5. **Metadados Estruturados de Jogos**: Salva plataformas, nota Metacritic, estúdio desenvolvedor e data de lançamento em formato JSONB tipado.
 6. **Transparência E-E-A-T**: Atribui autoria ao modelo de IA e exibe link canônico direto e transparente para a matéria original.
 7. **Entrega Ultra-Rápida (Core Web Vitals 95+)**: Páginas pré-renderizadas estaticamente no build (SSG) com revalidação sob demanda (ISR) disparada instantaneamente após a gravação no banco.
-8. **Monetização Automatizada & Afiliados Inteligentes (Fase 3)**: Injeção contextual de links de afiliados em conformidade total com as diretrizes do Google (E-E-A-T) com `rel="sponsored nofollow"` e exibição de card gamer de recomendação (`AffiliateDealCard`) ao final da matéria.
+8. **Monetização Híbrida de Alto Desempenho (Fase 3)**:
+   - **Blocos de Anúncios Responsivos (`AdBanner`)**: Suporte a Google AdSense e mídia programática nos formatos `in-article-top` (728x90/300x250), `in-article-mid` (300x250 após o 3º parágrafo via `content-parser.tsx`) e `sidebar-sticky` (300x600 skyscraper) com altura reservada e isolamento contra **Cumulative Layout Shift (CLS = 0)**.
+   - **Fallback Inteligente**: Ativação automática de banners promocionais internos ("Destaques Gamer" da Amazon e convite ao canal VIP do Telegram) em caso de AdBlock ou ausência do AdSense.
+   - **Afiliados Inteligentes & E-E-A-T**: Injeção contextual com `rel="sponsored nofollow"`, card de recomendação (`AffiliateDealCard`) e redirecionador com telemetria (`/api/out/[id]`).
 
 ---
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -67,12 +68,28 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const categories = await getCategories();
+  const rawClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID?.trim();
+  const adsenseClientId = rawClientId
+    ? rawClientId.startsWith("ca-pub-")
+      ? rawClientId
+      : rawClientId.startsWith("pub-")
+      ? `ca-${rawClientId}`
+      : `ca-pub-${rawClientId}`
+    : undefined;
 
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${outfit.variable} font-sans min-h-screen flex flex-col bg-zinc-50 dark:bg-gamer-950 text-zinc-900 dark:text-zinc-100 antialiased selection:bg-brand-purple selection:text-white transition-colors duration-200`}
       >
+        {adsenseClientId && (
+          <Script
+            id="google-adsense"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}
+            strategy="afterInteractive"
+            crossOrigin="anonymous"
+          />
+        )}
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

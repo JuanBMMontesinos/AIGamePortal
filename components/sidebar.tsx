@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Flame, TrendingUp, ArrowUpRight } from "lucide-react";
 import { Post, Category } from "@/types/database";
 import { formatRelativeTime } from "@/lib/utils";
+import { AdBanner } from "@/components/AdBanner";
 
 interface PulseItem {
   name: string;
@@ -119,9 +120,15 @@ interface SidebarProps {
   trendingPosts: Post[];
   categories: Category[];
   pulsePosts?: Post[];
+  showAdBanner?: boolean;
 }
 
-export function Sidebar({ trendingPosts, categories, pulsePosts }: SidebarProps) {
+export function Sidebar({
+  trendingPosts,
+  categories,
+  pulsePosts,
+  showAdBanner = true,
+}: SidebarProps) {
   const pulseItems = extractPulseItems(pulsePosts);
 
   return (
@@ -231,6 +238,13 @@ export function Sidebar({ trendingPosts, categories, pulsePosts }: SidebarProps)
           ))}
         </div>
       </div>
+
+      {/* 4. Banner Publicitário Fixo na Barra Lateral */}
+      {showAdBanner && (
+        <div className="pt-2">
+          <AdBanner format="sidebar-sticky" />
+        </div>
+      )}
     </aside>
   );
 }

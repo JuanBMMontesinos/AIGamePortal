@@ -22,6 +22,8 @@ import { NewsCard } from "@/components/news-card";
 import { RumorBanner } from "@/components/RumorBanner";
 import { ArticleCoverImage } from "@/components/article-cover-image";
 import { AffiliateDealCard } from "@/components/AffiliateDealCard";
+import { AdBanner } from "@/components/AdBanner";
+import { ParsedArticleContent } from "@/lib/utils/content-parser";
 import { getActiveAffiliateProducts, findBestAffiliateDeal } from "@/lib/data/affiliates";
 import { injectAffiliateLinks } from "@/lib/services/affiliate-matcher";
 
@@ -227,7 +229,7 @@ export default async function PostPage({ params }: PostPageProps) {
   };
 
   return (
-    <article className="max-w-4xl mx-auto py-4 sm:py-8">
+    <div className="max-w-7xl mx-auto py-4 sm:py-8">
       {/* Structured Data Script */}
       <script
         type="application/ld+json"
@@ -254,128 +256,195 @@ export default async function PostPage({ params }: PostPageProps) {
 
       {/* Banner de Alerta para Rumores / Vazamentos (Topo da Matéria) */}
       {post.is_rumor && (
-        <RumorBanner
-          warning={post.rumor_warning}
-          reliabilityScore={post.reliability_score}
-        />
+        <div className="mb-6">
+          <RumorBanner
+            warning={post.rumor_warning}
+            reliabilityScore={post.reliability_score}
+          />
+        </div>
       )}
 
-      {/* Editorial Header */}
-      <header className="space-y-5">
-        {/* Category & AI Supervision Badges */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/categoria/${categorySlug}`}
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-purple/10 text-brand-purple border border-brand-purple/30 hover:bg-brand-purple hover:text-white transition-colors"
-            >
-              {categoryName}
-            </Link>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/25">
-              <Sparkles className="w-3 h-3" />
-              Síntese Autônoma por IA
-            </span>
+      {/* Layout de Leitura Responsivo: Matéria Principal (8 cols) + Sidebar Sticky (4 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        {/* Coluna Principal da Notícia */}
+        <article className="lg:col-span-8 min-w-0">
+          {/* Editorial Header */}
+          <header className="space-y-5">
+            {/* Category & AI Supervision Badges */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/categoria/${categorySlug}`}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-purple/10 text-brand-purple border border-brand-purple/30 hover:bg-brand-purple hover:text-white transition-colors"
+                >
+                  {categoryName}
+                </Link>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/25">
+                  <Sparkles className="w-3 h-3" />
+                  Síntese Autônoma por IA
+                </span>
+              </div>
+
+              {/* Share Buttons top */}
+              <ShareButtons title={post.title} />
+            </div>
+
+            {/* Title */}
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white leading-tight">
+              {post.title}
+            </h1>
+
+            {/* Excerpt */}
+            {post.excerpt && (
+              <p className="text-base sm:text-xl text-zinc-600 dark:text-zinc-300 leading-relaxed font-normal">
+                {post.excerpt}
+              </p>
+            )}
+
+            {/* Author & Editorial Trust Block */}
+            <div className="pt-4 border-t border-b border-zinc-200 dark:border-gamer-800 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-brand-purple to-brand-cyan text-white shadow-neon-purple shrink-0">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-zinc-900 dark:text-white">
+                      IA Curadoria & Redação Editorial
+                    </span>
+                    <Link
+                      href="/transparencia-editorial"
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 hover:underline"
+                      title="Ver política anti-alucinação"
+                    >
+                      <ShieldCheck className="w-3 h-3" />
+                      Anti-Alucinação
+                    </Link>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-brand-cyan" />
+                      {formattedDate} ({relativeDate})
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-brand-purple" />
+                      {readingTime} min de leitura
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-xs text-zinc-400">
+                Fonte Primária: <strong className="text-zinc-600 dark:text-zinc-300">{post.sources?.name || "Feed Oficial"}</strong>
+              </div>
+            </div>
+          </header>
+
+          {/* Featured Cover Image */}
+          <div className="mt-6">
+            <ArticleCoverImage
+              src={post.cover_image_url}
+              alt={post.cover_image_alt || post.title}
+            />
           </div>
 
-          {/* Share Buttons top */}
-          <ShareButtons title={post.title} />
-        </div>
+          {/* TL;DR (Resumo em 30 Segundos) */}
+          <div className="mt-6">
+            <TldrBox bullets={post.tldr} />
+          </div>
 
-        {/* Title */}
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white leading-tight">
-          {post.title}
-        </h1>
+          {/* SLOT 1: Banner Horizontal de Topo (in-article-top: 728x90 desktop / 300x250 mobile) */}
+          <div className="my-6">
+            <AdBanner format="in-article-top" fallbackProduct={dealProduct} />
+          </div>
 
-        {/* Excerpt */}
-        {post.excerpt && (
-          <p className="text-base sm:text-xl text-zinc-600 dark:text-zinc-300 leading-relaxed font-normal">
-            {post.excerpt}
-          </p>
-        )}
+          {/* Ficha Técnica do Jogo */}
+          <div className="my-6">
+            <GameMetadataCard metadata={post.game_metadata} />
+          </div>
 
-        {/* Author & Editorial Trust Block */}
-        <div className="pt-4 border-t border-b border-zinc-200 dark:border-gamer-800 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-brand-purple to-brand-cyan text-white shadow-neon-purple shrink-0">
-              <Bot className="w-6 h-6" />
+          {/* SLOT 2: Inserção Dinâmica no Meio do Artigo (após o 3º parágrafo da notícia) */}
+          <div className="my-8">
+            <ParsedArticleContent
+              content={processedContent}
+              paragraphThreshold={3}
+              adSlot={<AdBanner format="in-article-mid" fallbackProduct={dealProduct} />}
+            />
+          </div>
+
+          {/* Card de Oferta Recomendada de Afiliado (Fase 3) */}
+          {dealProduct && (
+            <div className="my-10">
+              <AffiliateDealCard product={dealProduct} postId={post.id} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-zinc-900 dark:text-white">
-                  IA Curadoria & Redação Editorial
-                </span>
-                <Link
-                  href="/transparencia-editorial"
-                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 hover:underline"
-                  title="Ver política anti-alucinação"
-                >
-                  <ShieldCheck className="w-3 h-3" />
-                  Anti-Alucinação
+          )}
+
+          {/* O Que a Comunidade Está Dizendo */}
+          <div className="my-8">
+            <CommunitySentimentBox sentimentText={post.community_sentiment} />
+          </div>
+
+          {/* Box de Atribuição E-E-A-T */}
+          <div className="my-8">
+            <EeatAttributionBox
+              sourceOriginalUrl={post.source_original_url}
+              sourceOriginalTitle={post.source_original_title}
+              source={post.sources}
+            />
+          </div>
+
+          {/* Bottom Share & Feedback Bar */}
+          <div className="mt-12 pt-6 border-t border-zinc-200 dark:border-gamer-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="text-xs text-zinc-500">
+              Gostou deste resumo inteligente? Compartilhe com outros gamers:
+            </span>
+            <ShareButtons title={post.title} />
+          </div>
+        </article>
+
+        {/* SLOT 3: Barra Lateral de Leitura com Banner Fixo (sidebar-sticky: 300x600 Half-Page) */}
+        <aside className="lg:col-span-4 space-y-6">
+          {/* 1. Bloco de Notícias Relacionadas em Alta para Retenção */}
+          {relatedPosts.length > 0 && (
+            <div className="rounded-2xl border border-zinc-200 dark:border-gamer-800 bg-white dark:bg-gamer-900 p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-brand-purple">
+                  Destaques do Portal
+                </h3>
+                <Link href="/" className="text-[10px] text-zinc-400 hover:text-brand-purple transition-colors">
+                  Ver todos
                 </Link>
               </div>
-              <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-brand-cyan" />
-                  {formattedDate} ({relativeDate})
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-brand-purple" />
-                  {readingTime} min de leitura
-                </span>
+
+              <div className="space-y-3.5 divide-y divide-zinc-100 dark:divide-gamer-800/80">
+                {relatedPosts.map((rPost, idx) => (
+                  <div key={rPost.id} className={idx === 0 ? "" : "pt-3.5"}>
+                    <Link href={`/noticias/${rPost.slug}`} className="group block">
+                      <span className="text-[10px] font-bold text-brand-cyan uppercase">
+                        {rPost.categories?.name || "Games"}
+                      </span>
+                      <h4 className="font-semibold text-xs text-zinc-800 dark:text-zinc-200 group-hover:text-brand-purple transition-colors line-clamp-2 leading-snug mt-0.5">
+                        {rPost.title}
+                      </h4>
+                      <span className="text-[10px] text-zinc-400 mt-1 block">
+                        {formatRelativeTime(rPost.published_at)}
+                      </span>
+                    </Link>
+                  </div>
+                ))}
               </div>
             </div>
+          )}
+
+          {/* 2. Banner Fixo Skyscraper (Doca suavemente no topo durante a rolagem do artigo) */}
+          <div className="sticky top-24 pt-2">
+            <AdBanner format="sidebar-sticky" fallbackProduct={dealProduct} />
           </div>
-
-          <div className="text-xs text-zinc-400">
-            Fonte Primária: <strong className="text-zinc-600 dark:text-zinc-300">{post.sources?.name || "Feed Oficial"}</strong>
-          </div>
-        </div>
-      </header>
-
-      {/* Featured Cover Image */}
-      <ArticleCoverImage
-        src={post.cover_image_url}
-        alt={post.cover_image_alt || post.title}
-      />
-
-      {/* TL;DR (Resumo em 30 Segundos) */}
-      <TldrBox bullets={post.tldr} />
-
-      {/* Ficha Técnica do Jogo */}
-      <GameMetadataCard metadata={post.game_metadata} />
-
-      {/* Full Article Content */}
-      <div className="my-10">
-        <MarkdownContent content={processedContent} />
+        </aside>
       </div>
 
-      {/* Card de Oferta Recomendada de Afiliado (Fase 3) */}
-      {dealProduct && (
-        <div className="my-10">
-          <AffiliateDealCard product={dealProduct} postId={post.id} />
-        </div>
-      )}
-
-      {/* O Que a Comunidade Está Dizendo */}
-      <CommunitySentimentBox sentimentText={post.community_sentiment} />
-
-      {/* Box de Atribuição E-E-A-T */}
-      <EeatAttributionBox
-        sourceOriginalUrl={post.source_original_url}
-        sourceOriginalTitle={post.source_original_title}
-        source={post.sources}
-      />
-
-      {/* Bottom Share & Feedback Bar */}
-      <div className="mt-12 pt-6 border-t border-zinc-200 dark:border-gamer-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <span className="text-xs text-zinc-500">
-          Gostou deste resumo inteligente? Compartilhe com outros gamers:
-        </span>
-        <ShareButtons title={post.title} />
-      </div>
-
-      {/* Related News Section */}
+      {/* Related News Section (Inferior em Grid Completo) */}
       {relatedPosts.length > 0 && (
         <section className="mt-16 pt-8 border-t border-zinc-200 dark:border-gamer-800">
           <div className="flex items-center justify-between mb-6">
@@ -396,6 +465,6 @@ export default async function PostPage({ params }: PostPageProps) {
           </div>
         </section>
       )}
-    </article>
+    </div>
   );
 }
