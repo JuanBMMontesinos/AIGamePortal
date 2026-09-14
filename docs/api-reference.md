@@ -385,13 +385,63 @@ Registra assincronamente a ocorrência de clique para geração de relatórios d
   ```
 
 ### `findBestAffiliateDeal(post, products)`
-Algoritmo de pontuação e relevância que cruza título, conteúdo, plataformas (`game_metadata`) e categorias para identificar o produto gamer mais aderente à matéria.
+Algoritmo de pontuação e relevância que cruza título, conteúdo, plataformas (`game_metadata`) e categorias para identificar o produto gamer mais aderente à matéria. Se nenhum produto estático der match, aciona o gerador de Smart Search na Amazon Brasil.
 - **Assinatura**:
   ```typescript
   export function findBestAffiliateDeal(
     post: Partial<Post>,
     products: AffiliateProduct[]
   ): AffiliateProduct | null
+  ```
+
+### `createSmartSearchProduct(query, category)`
+Cria ou recupera um produto de busca genérica para a Amazon Brasil com a tag oficial, permitindo monetizar matérias sem produtos cadastrados previamente.
+- **Assinatura**:
+  ```typescript
+  export async function createSmartSearchProduct(
+    query: string,
+    category: AffiliateCategory = 'Jogo'
+  ): Promise<AffiliateProduct>
+  ```
+
+### `getAllAffiliateProductsAdmin()`
+Consulta administrativa que retorna todos os produtos (ativos e inativos) com contagem agregada de cliques para o dashboard `/admin/afiliados`.
+- **Assinatura**:
+  ```typescript
+  export async function getAllAffiliateProductsAdmin(): Promise<AffiliateProductWithStats[]>
+  ```
+
+### `toggleAffiliateProductActive(id, currentStatus)`
+Alterna o status de ativação (`is_active: !currentStatus`) de um produto no banco de dados.
+- **Assinatura**:
+  ```typescript
+  export async function toggleAffiliateProductActive(
+    id: string,
+    currentStatus: boolean
+  ): Promise<boolean>
+  ```
+
+### `createAffiliateProductAdmin(productData)`
+Cadastra manualmente um novo produto no catálogo de afiliados.
+- **Assinatura**:
+  ```typescript
+  export async function createAffiliateProductAdmin(
+    productData: AffiliateProductInsert
+  ): Promise<AffiliateProduct | null>
+  ```
+
+### `deleteAffiliateProductAdmin(id)`
+Remove um produto do catálogo e seus registros de cliques associados (on delete cascade).
+- **Assinatura**:
+  ```typescript
+  export async function deleteAffiliateProductAdmin(id: string): Promise<boolean>
+  ```
+
+### `getAffiliateKPIs()`
+Computa métricas globais para o dashboard administrativo: total de produtos, produtos ativos, cliques totais e taxa de ativação.
+- **Assinatura**:
+  ```typescript
+  export async function getAffiliateKPIs(): Promise<AffiliateKPIs>
   ```
 
 ---
@@ -421,7 +471,7 @@ Analisa o texto Markdown original de uma notícia e insere hiperlinks contextuai
 
 ---
 
-## 9. Rota de Redirecionamento & Tracking (`GET /api/out/[id]`)
+## 9. Rota de Redirecionamento & Tracking Direto (`GET /api/out/[id]`)
 
 Endpoint dinâmico Next.js para rastreamento de links patrocinados e encaminhamento transparente de leitores.
 
@@ -434,3 +484,48 @@ Endpoint dinâmico Next.js para rastreamento de links patrocinados e encaminhame
   4. Caso válido:
      - Grava evento assíncrono em `affiliate_clicks`.
      - Retorna **HTTP 307 (Temporary Redirect)** para a `affiliate_url` com cabeçalhos anti-cache (`Cache-Control: no-store, no-cache, must-revalidate`).
+
+---
+
+## 10. Rota de Busca Inteligente Fallback (`GET /api/out/search`)
+
+Endpoint dinâmico para monetização de matérias sem produtos físicos específicos mapeados no acervo.
+
+- **Método**: `GET`
+- **URL**: `/api/out/search?q=...&category=...&postId=...`
+- **Fluxo de Processamento**:
+  1. Sanitiza a query de busca (`q`).
+  2. Registra o produto de busca ou associa a busca em `affiliate_products`.
+  3. Registra assincronamente o clique em `affiliate_clicks`.
+  4. Redireciona via **HTTP 307** para a URL de busca na Amazon Brasil com a tag `aigameportal-20`.
+
+---
+
+## 11. Endpoints Administrativos (`/api/admin/*`)
+
+Conjunto de rotas protegidas por autenticação segura via cookie `admin_session`.
+
+### `POST /api/admin/auth`
+- **Finalidade**: Validação de credencial mestra e emissão de cookie de sessão.
+- **Corpo da Requisição**: `{ "password": "..." }`
+- **Ações**:
+  - Se a senha corresponder a `process.env.ADMIN_SECRET_KEY`: Define cookie `admin_session` com `HttpOnly, SameSite=Strict, Max-Age=86400` e retorna `{ "authenticated": true }`.
+  - Se a senha for inválida: Retorna HTTP 401 `{ "error": "Senha incorreta" }`.
+- **Logout**: Chamada `DELETE /api/admin/auth` remove o cookie da sessão.
+
+### `GET /api/admin/affiliates`
+- **Finalidade**: Retorna a lista completa de produtos e o sumário de KPIs analíticos.
+- **Retorno**: `{ "products": [...], "kpis": { "totalProducts": ..., "activeProducts": ..., "totalClicks": ..., "activeRatio": ... } }`.
+
+### `PATCH /api/admin/affiliates`
+- **Finalidade**: Alterna o status liga/desliga (`is_active`) de um produto.
+- **Corpo da Requisição**: `{ "id": "uuid", "is_active": boolean }`.
+
+### `POST /api/admin/affiliates`
+- **Finalidade**: Cadastra manualmente um novo produto de afiliado.
+- **Corpo da Requisição**: `{ "title": "...", "category": "...", "keywords": [...], "store_name": "...", "affiliate_url": "...", "image_url": "...", "price_estimate": 199.90, "is_active": true }`.
+
+### `DELETE /api/admin/affiliates`
+- **Finalidade**: Exclui um produto do banco de dados.
+- **Corpo da Requisição**: `{ "id": "uuid" }`.
+

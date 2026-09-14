@@ -116,21 +116,52 @@ export interface Database {
       };
       affiliate_products: {
         Row: AffiliateProduct;
-        Insert: Omit<AffiliateProduct, "id" | "created_at" | "updated_at"> & {
+        Insert: {
           id?: string;
+          title: string;
+          category: string;
+          keywords?: string[];
+          store_name: string;
+          affiliate_url: string;
+          image_url: string;
+          price_estimate?: number | null;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<AffiliateProduct>;
+        Update: {
+          id?: string;
+          title?: string;
+          category?: string;
+          keywords?: string[];
+          store_name?: string;
+          affiliate_url?: string;
+          image_url?: string;
+          price_estimate?: number | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
         Relationships: [];
       };
       affiliate_clicks: {
         Row: AffiliateClick;
-        Insert: Omit<AffiliateClick, "id" | "clicked_at"> & {
+        Insert: {
           id?: string;
+          product_id: string;
+          post_id?: string | null;
+          referrer?: string | null;
+          user_agent?: string | null;
           clicked_at?: string;
         };
-        Update: Partial<AffiliateClick>;
+        Update: {
+          id?: string;
+          product_id?: string;
+          post_id?: string | null;
+          referrer?: string | null;
+          user_agent?: string | null;
+          clicked_at?: string;
+        };
         Relationships: [];
       };
     };

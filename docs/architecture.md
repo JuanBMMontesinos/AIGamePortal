@@ -32,13 +32,16 @@ flowchart TD
         SOC -->|twitter-api-v2: OAuth 1.0a <= 280c| TW[X / Twitter Oficial]
     end
 
-    subgraph Modulo_Afiliados ["Módulo de Afiliados Inteligentes (Fase 3)"]
-        AFF_DB[(Supabase: affiliate_products)] -->|Cache ISR / SSR| MATCHER["Affiliate Matcher (lib/services/affiliate-matcher.ts)"]
+    subgraph Modulo_Afiliados ["Módulo de Afiliados Inteligentes & Automação 100%"]
+        SCRIPT -.->|Auto-Cadastro de Jogo por IA| AFF_DB[(Supabase: affiliate_products)]
+        AFF_DB -->|Cache ISR / SSR| MATCHER["Affiliate Matcher (lib/services/affiliate-matcher.ts)"]
         MATCHER -->|rel='sponsored nofollow'| MD_RENDER["Renderizador Markdown / Post Detail"]
-        MD_RENDER -->|Card de Oferta| DEAL_CARD["AffiliateDealCard.tsx"]
-        USER -->|Clique em Link / Card| OUT_ROUTE["/api/out/[id]?postId=..."]
+        MD_RENDER -->|Card de Oferta / Fallback| DEAL_CARD["AffiliateDealCard.tsx"]
+        USER -->|Clique em Link / Card| OUT_ROUTE["/api/out/[id] ou /api/out/search"]
         OUT_ROUTE -.->|Gravação Assíncrona| CLICK_DB[(Supabase: affiliate_clicks)]
-        OUT_ROUTE -->|HTTP 307 Redirect| PARTNER_STORE["Loja Parceira (Amazon / KaBuM! / Nuuvem)"]
+        OUT_ROUTE -->|HTTP 307 Redirect| PARTNER_STORE["Amazon Brasil (aigameportal-20)"]
+        ADMIN([Administrador]) -->|Autenticação Cookie Seguro| ADMIN_UI["/admin/afiliados (Dashboard)"]
+        ADMIN_UI -->|Toggles / CRUD / Métricas| AFF_DB
     end
 
     subgraph Frontend_Nextjs ["Frontend Next.js (App Router)"]
@@ -249,4 +252,16 @@ O sistema de afiliados foi desenhado para maximizar a conversão orgânica sem c
 - Destaca a melhor oferta identificada para o jogo ou console em questão (`findBestAffiliateDeal`).
 - Inclui badge *"Oferta Recomendada"*, preço estimado em BRL, nome da loja parceira e call-to-action de alta conversão.
 - Exibe de forma transparente o aviso E-E-A-T: *"Comprando pelos nossos links, o portal pode receber uma comissão sem custo adicional para você."*
+
+### 7.4 As 4 Camadas de Automação Integral
+1. **Auto-Cadastro por IA (`scripts/sync-news.ts`)**: No momento em que o pipeline jornalístico publica uma notícia de jogo, o sistema cadastra autonomamente o produto na Amazon Brasil com a tag `aigameportal-20`.
+2. **Smart Search Fallback (`app/api/out/search/route.ts`)**: Para matérias sem produtos físicos específicos, o sistema gera links de busca direcionada na Amazon Brasil com tracking completo, alcançando 100% de cobertura de monetização passiva.
+3. **Auditoria Autônoma por Cron (`scripts/sync-affiliates.ts`)**: Rotina de background para auditar e reforçar a tag da Amazon Brasil em todos os links e garantir que parceiros inativos (KaBuM! e Nuuvem) permaneçam pausados até liberação.
+4. **Portal Administrativo Visual (`/admin/afiliados`)**: Interface visual para controle total pelo administrador.
+
+### 7.5 Subsistema de Administração Segura (`/admin/afiliados`)
+- **Autenticação Server-Side**: Proteção via cookie HTTP-only `admin_session` gerado por comparação segura com `ADMIN_SECRET_KEY`.
+- **Prevenção de Indexação**: Metadados de página configurados com `robots: { index: false, follow: false }` e bloqueio explícito no `robots.txt` para proteger a área contra indexação nos motores de busca.
+- **Operação em Tempo Real**: Gestão visual de catálogo, métricas de cliques por produto e botões liga/desliga integrados diretamente ao banco Supabase.
+
 

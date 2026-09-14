@@ -123,16 +123,6 @@ VALUES
         true
     ),
     (
-        'Placa de Vídeo ASUS Dual GeForce RTX 4060 EVO OC 8GB GDDR6',
-        'Hardware',
-        ARRAY['rtx 4060', 'geforce rtx 4060', 'placa rtx 4060', 'nvidia rtx 4060', 'rtx 4070'],
-        'KaBuM!',
-        'https://www.kabum.com.br/produto/525642/placa-de-video-rtx-4060-asus?partner=aigameportal',
-        'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=800&auto=format&fit=crop',
-        2199.90,
-        true
-    ),
-    (
         'Console Xbox Series X 1TB Preto',
         'Console',
         ARRAY['xbox series x', 'series x', 'xbox', 'game pass ultimate'],
@@ -153,14 +143,55 @@ VALUES
         true
     ),
     (
-        'Elden Ring: Shadow of the Erdtree Edition (PC Steam)',
+        'Headset Gamer Sem Fio Sony Pulse Elite para PS5 e PC',
+        'Acessórios',
+        ARRAY['pulse elite', 'headset pulse', 'audio 3d tempest', 'pulse 3d'],
+        'Amazon Brasil',
+        'https://www.amazon.com.br/dp/B0CP9M84P4?tag=aigameportal-20',
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop',
+        999.00,
+        true
+    ),
+    (
+        'Placa de Vídeo ASUS Dual GeForce RTX 4060 8GB GDDR6 (Amazon)',
+        'Hardware',
+        ARRAY['rtx 4060', 'geforce rtx 4060', 'placa rtx 4060', 'nvidia rtx 4060'],
+        'Amazon Brasil',
+        'https://www.amazon.com.br/s?k=GeForce+RTX+4060&tag=aigameportal-20',
+        'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=800&auto=format&fit=crop',
+        2249.00,
+        true
+    ),
+    (
+        'Elden Ring: Shadow of the Erdtree Edition (Amazon)',
         'Jogo',
         ARRAY['elden ring', 'shadow of the erdtree', 'fromsoftware', 'hidetaka miyazaki'],
+        'Amazon Brasil',
+        'https://www.amazon.com.br/s?k=Elden+Ring+Shadow+of+the+Erdtree&tag=aigameportal-20',
+        'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=800&auto=format&fit=crop',
+        249.90,
+        true
+    ),
+    -- PRODUTOS DE PARCEIROS PENDENTES DE APROVAÇÃO (DESATIVADOS INICIALMENTE)
+    (
+        'Placa de Vídeo ASUS Dual GeForce RTX 4060 EVO OC 8GB GDDR6',
+        'Hardware',
+        ARRAY['rtx 4060 kabum', 'rtx 4060 oc'],
+        'KaBuM!',
+        'https://www.kabum.com.br/produto/525642/placa-de-video-rtx-4060-asus?partner=aigameportal',
+        'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=800&auto=format&fit=crop',
+        2199.90,
+        false
+    ),
+    (
+        'Elden Ring: Shadow of the Erdtree Edition (PC Steam)',
+        'Jogo',
+        ARRAY['elden ring nuuvem'],
         'Nuuvem',
         'https://www.nuuvem.com/item/elden-ring-shadow-of-the-erdtree?partner=aigameportal',
         'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=800&auto=format&fit=crop',
         199.90,
-        true
+        false
     ),
     (
         'Placa de Vídeo Galax GeForce RTX 4070 Super 1-Click OC 12GB',
@@ -170,16 +201,6 @@ VALUES
         'https://www.kabum.com.br/produto/519532/placa-de-video-rtx-4070-super-galax?partner=aigameportal',
         'https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=800&auto=format&fit=crop',
         4399.00,
-        true
-    ),
-    (
-        'Headset Gamer Sem Fio Sony Pulse Elite para PS5 e PC',
-        'Acessórios',
-        ARRAY['pulse elite', 'headset pulse', 'audio 3d tempest', 'pulse 3d'],
-        'Amazon Brasil',
-        'https://www.amazon.com.br/dp/B0CP9M84P4?tag=aigameportal-20',
-        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop',
-        999.00,
-        true
+        false
     )
 ON CONFLICT DO NOTHING;

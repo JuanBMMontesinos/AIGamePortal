@@ -68,8 +68,19 @@ O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre j
 d:/IAProjects/AIGamePortal/
 ├── app/                                # Next.js App Router (Páginas, layouts e APIs)
 │   ├── api/
+│   │   ├── admin/
+│   │   │   ├── affiliates/route.ts     # CRUD de produtos e KPIs de afiliados
+│   │   │   └── auth/route.ts           # Autenticação administrativa com cookie HttpOnly
+│   │   ├── out/
+│   │   │   ├── [id]/route.ts           # Tracking e redirecionamento de afiliados (HTTP 307)
+│   │   │   └── search/route.ts         # Fallback de busca inteligente na Amazon Brasil
 │   │   └── revalidate/
 │   │       └── route.ts                # Endpoint ISR sob demanda (GET/POST)
+│   ├── admin/
+│   │   └── afiliados/                  # Painel de controle restrito de afiliados
+│   │       ├── admin-view.tsx          # Dashboard interativo com métricas e toggles
+│   │       ├── login-form.tsx          # Formulário de login com chave mestra
+│   │       └── page.tsx                # Server Component protegido contra crawlers
 │   ├── categoria/
 │   │   └── [slug]/
 │   │       └── page.tsx                # Feed dinâmico por categoria/plataforma
@@ -88,13 +99,14 @@ d:/IAProjects/AIGamePortal/
 │   ├── robots.ts                       # Diretivas crawler com apontamento de sitemaps
 │   └── sitemap.ts                      # Sitemap padrão completo do portal
 ├── components/                         # Componentes de interface modulares
+│   ├── AffiliateDealCard.tsx           # Card gamer de oferta recomendada
 │   ├── community-sentiment-box.tsx     # Card de repercussão Reddit/X
 │   ├── eeat-attribution-box.tsx        # Box de transparência e link da fonte
 │   ├── footer.tsx                      # Rodapé institucional
 │   ├── game-metadata-card.tsx          # Ficha técnica do jogo (Metacritic, specs)
 │   ├── header.tsx                      # Header fixo com navegação e tema
 │   ├── hero-featured.tsx               # Banner principal de destaque
-│   ├── markdown-content.tsx            # Renderizador leve de markdown semântico
+│   ├── markdown-content.tsx            # Renderizador de markdown com injeção de afiliados
 │   ├── news-card.tsx                   # Card de matéria no feed com TL;DR
 │   ├── share-buttons.tsx               # Botões de compartilhamento social
 │   ├── sidebar.tsx                     # Mais lidas, pulso de sentimento e fontes
@@ -102,30 +114,42 @@ d:/IAProjects/AIGamePortal/
 │   ├── theme-toggle.tsx                # Botão alternador Claro/Escuro
 │   └── tldr-box.tsx                    # Resumo em 30 segundos (3-4 bullets)
 ├── docs/                               # Suíte de Documentação Técnica
+│   ├── affiliate-system.md             # Módulo de Afiliados, automações 100% e /admin/afiliados
 │   ├── ai-context.md                   # Diretrizes canônicas para agentes de IA
 │   ├── api-reference.md                # Referência de funções e utilitários
 │   ├── architecture.md                 # Arquitetura e ciclo de vida
 │   ├── components.md                   # Documentação detalhada dos componentes
 │   ├── database.md                     # Modelagem relacional e índices
 │   ├── environment-variables.md        # Dicionário de variáveis de ambiente
+│   ├── gemini-redator-prompt.md        # Especificação do Agente Redator & Otimizador SEO
 │   ├── index.md                        # Este documento
 │   ├── routes-and-isr.md               # Rotas, SSG e webhook de revalidação
-│   └── seo-and-indexing.md             # SEO Técnico, Schema.org e Google News/Discover
+│   ├── seo-and-indexing.md             # SEO Técnico, Schema.org e Google News/Discover
+│   └── social-automation.md            # Módulo de Distribuição Multi-canal
 ├── public/                             # Ativos estáticos públicos
 │   ├── logo.png                        # Logotipo retangular oficial (600x60)
 │   └── og-image.png                    # Fallback OpenGraph em alta resolução (1200x630)
 ├── lib/                                # Utilitários e camada de dados
 │   ├── data/
+│   │   ├── affiliates.ts               # Camada de dados e consultas de afiliados
 │   │   ├── api.ts                      # Funções de busca com fallback gracioso
 │   │   └── mock-news.ts                # Dados mockados enriquecidos para preview
+│   ├── services/
+│   │   ├── affiliate-matcher.ts        # Injetor contextual E-E-A-T de links
+│   │   └── social-publisher.ts         # Publicador multi-canal (Telegram, X)
 │   ├── supabase/
 │   │   ├── client.ts                   # Cliente browser Supabase
 │   │   └── server.ts                   # Cliente Server Components Supabase
 │   └── utils.ts                        # Utilitários de classes, datas e Metacritic
+├── scripts/                            # Automações autônomas
+│   ├── sync-affiliates.ts              # Auditoria de links e integridade de afiliados
+│   └── sync-news.ts                    # Pipeline de ingestão, IA e auto-cadastro
 ├── supabase/                           # Infraestrutura como código Supabase
 │   ├── migrations/
-│   │   └── 20260912000001_initial_schema.sql # Schema mestre com pgvector e RLS
+│   │   ├── 20260912000001_initial_schema.sql  # Schema mestre com pgvector e RLS
+│   │   └── 20260914000002_affiliate_system.sql # Tabelas affiliate_products e clicks
 │   └── seed.sql                        # Categorias e fontes iniciais
+
 ├── types/
 │   └── database.ts                     # Interfaces TypeScript estritas do banco
 ├── .env.example                        # Template de variáveis públicas

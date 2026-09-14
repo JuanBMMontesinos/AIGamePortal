@@ -974,6 +974,11 @@ export async function runNewsSync() {
           reliabilityScore: reliabilityScore,
           platforms: generated.game_metadata?.platforms,
         });
+
+        // --------------------------------------------------------------------
+        // PASSO H: Auto-Cadastro de Produto Afiliado na Amazon (Forma 1 de Automação)
+        // --------------------------------------------------------------------
+        await autoRegisterAffiliateProductFromNews(supabase, generated, scraped.imageUrl);
       } catch (insertCatch: any) {
         console.error(`     ❌ Erro ao salvar artigo no Supabase: ${insertCatch?.message || insertCatch}`);
         totalErrors++;
@@ -996,6 +1001,78 @@ export async function runNewsSync() {
   console.log(`🎉 Artigos inéditos publicados: ${totalPublished}`);
   console.log(`⚠️ Falhas ou erros pontuais: ${totalErrors}`);
   console.log("====================================================================\n");
+}
+
+/**
+ * Auto-Cadastro Inteligente de Produtos de Afiliado na Amazon (Forma 1 de Automação)
+ * Extrai o jogo dos metadados e insere no Supabase affiliate_products com a tag oficial.
+ */
+async function autoRegisterAffiliateProductFromNews(
+  supabase: SupabaseClient,
+  generated: AIArticleOutput,
+  imageUrl: string | null
+): Promise<void> {
+  const gameName = generated.game_metadata?.game_name?.trim();
+  if (!gameName || gameName.length < 3 || gameName.toLowerCase().includes("desconhecido")) {
+    return;
+  }
+
+  const amazonTag = process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_TAG || "aigameportal-20";
+  const cleanName = gameName.replace(/[^\w\s-]/gi, "").trim();
+  const lowerName = cleanName.toLowerCase();
+
+  try {
+    // 1. Verifica se já existe produto cadastrado para este título
+    const { data: existing } = await supabase
+      .from("affiliate_products")
+      .select("id, title")
+      .ilike("title", `%${cleanName}%`)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      return; // Já cadastrado anteriormente
+    }
+
+    // 2. Determina palavras-chave
+    const extraKeywords = (generated.keywords || [])
+      .map((k) => k.toLowerCase().trim())
+      .filter((k) => k.length >= 3 && k !== lowerName)
+      .slice(0, 4);
+
+    const keywords = Array.from(new Set([lowerName, ...extraKeywords]));
+
+    // 3. Monta URL com a tag oficial da Amazon
+    const encodedSearch = encodeURIComponent(cleanName);
+    const affiliateUrl = `https://www.amazon.com.br/s?k=${encodedSearch}&tag=${amazonTag}`;
+
+    let category = "Jogo";
+    if (generated.suggested_category === "Hardware") category = "Hardware";
+    else if (
+      generated.suggested_category === "PlayStation" ||
+      generated.suggested_category === "Xbox" ||
+      generated.suggested_category === "Nintendo"
+    ) {
+      category = "Console";
+    }
+
+    const { error } = await supabase.from("affiliate_products").insert({
+      title: `${cleanName} (Edições e Acessórios)`,
+      category,
+      keywords,
+      store_name: "Amazon Brasil",
+      affiliate_url: affiliateUrl,
+      image_url:
+        imageUrl ||
+        "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?q=80&w=800&auto=format&fit=crop",
+      is_active: true,
+    } as any);
+
+    if (!error) {
+      console.log(`     🛒 Produto afiliado auto-cadastrado na Amazon Brasil: "${cleanName}"`);
+    }
+  } catch (err) {
+    console.warn("     ⚠️ Aviso: Erro não-crítico ao auto-cadastrar produto afiliado:", err);
+  }
 }
 
 // Execução direta via CLI (tsx scripts/sync-news.ts)

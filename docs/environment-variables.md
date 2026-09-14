@@ -21,6 +21,8 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 | `TWITTER_API_SECRET` | **Privado** (Pipeline / Script) | Opcional (Fase 2) | Consumer API Secret Key correspondente no Developer Portal do X. | `eXamPleApiSecret456...` |
 | `TWITTER_ACCESS_TOKEN` | **Privado** (Pipeline / Script) | Opcional (Fase 2) | User Access Token gerado com permissões de 'Read and Write' na API v2. | `12345678-eXamPleToken...` |
 | `TWITTER_ACCESS_SECRET`| **Privado** (Pipeline / Script) | Opcional (Fase 2) | User Access Token Secret associado para assinatura OAuth 1.0a. | `eXamPleAccessSecret789...` |
+| `NEXT_PUBLIC_AMAZON_AFFILIATE_TAG` | Público (Browser & Server) | Sim (Fase 3) | Tag oficial de parceiro associado da Amazon Brasil para links de afiliados e auto-cadastro. | `aigameportal-20` |
+| `ADMIN_SECRET_KEY` | **Privado** (Servidor / Admin) | Sim (Fase 3) | Senha/chave mestra exigida para login no painel `/admin/afiliados` e endpoints administrativos. | `aigameportal_admin_2026` |
 
 ---
 
@@ -85,19 +87,37 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 
 ---
 
+### 2.8 `NEXT_PUBLIC_AMAZON_AFFILIATE_TAG` (Fase 3)
+- **Utilizada em**: [lib/data/affiliates.ts](file:///d:/IAProjects/AIGamePortal/lib/data/affiliates.ts), [scripts/sync-news.ts](file:///d:/IAProjects/AIGamePortal/scripts/sync-news.ts) e [scripts/sync-affiliates.ts](file:///d:/IAProjects/AIGamePortal/scripts/sync-affiliates.ts).
+- **Finalidade**: Define a tag oficial de parceiro associado da Amazon Brasil inserida em todos os links contextuais, no auto-cadastro de produtos por IA e no Smart Search Fallback (`https://www.amazon.com.br/s?k=...&tag=...`).
+- **Valor padrão**: `aigameportal-20`.
+
+---
+
+### 2.9 `ADMIN_SECRET_KEY` (Fase 3)
+- **Utilizada em**: [app/api/admin/auth/route.ts](file:///d:/IAProjects/AIGamePortal/app/api/admin/auth/route.ts) e [app/api/admin/affiliates/route.ts](file:///d:/IAProjects/AIGamePortal/app/api/admin/affiliates/route.ts).
+- **Segurança**: Senha administrativa que **nunca** deve conter o prefixo `NEXT_PUBLIC_`. Protege o acesso exclusivo do administrador ao painel `/admin/afiliados`.
+- **Valor padrão local**: `aigameportal_admin_2026`.
+- **Recomendação para Produção**: Definir uma senha forte de pelo menos 24 caracteres e mantê-la apenas no `.env.local` e nas variáveis de ambiente da plataforma de hospedagem (Vercel, Railway, etc.).
+
+---
+
 ## 3. Arquivos de Ambiente no Repositório
 
 1. **[.env.example](file:///d:/IAProjects/AIGamePortal/.env.example)**: Modelo público versionado no Git contendo apenas os nomes das variáveis e valores fictícios seguros.
 2. **[.env.local](file:///d:/IAProjects/AIGamePortal/.env.local)**: Arquivo local privado contendo suas chaves ativas de desenvolvimento. **Nunca é enviado ao repositório** graças à regra de exclusão configurada no [.gitignore](file:///d:/IAProjects/AIGamePortal/.gitignore).
-3. **GitHub Secrets**: Em produção, configure em `Settings > Secrets and variables > Actions`:
+3. **Variáveis e Secrets de Produção**:
    - `GEMINI_API_KEY`
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `REVALIDATE_SECRET`
    - `NEXT_PUBLIC_SITE_URL`
+   - `NEXT_PUBLIC_AMAZON_AFFILIATE_TAG`
+   - `ADMIN_SECRET_KEY`
    - *(Opcional - Fase 2)* `TELEGRAM_BOT_TOKEN`
    - *(Opcional - Fase 2)* `TELEGRAM_CHAT_ID`
    - *(Opcional - Fase 2)* `TWITTER_API_KEY`
    - *(Opcional - Fase 2)* `TWITTER_API_SECRET`
    - *(Opcional - Fase 2)* `TWITTER_ACCESS_TOKEN`
    - *(Opcional - Fase 2)* `TWITTER_ACCESS_SECRET`
+
