@@ -51,6 +51,14 @@ export const MOCK_SOURCES: Record<string, Source> = {
     is_active: true,
     created_at: "2026-01-01T00:00:00Z",
   },
+  "gamesindustry-biz": {
+    id: "src-6",
+    name: "GamesIndustry.biz",
+    feed_url: "https://www.gamesindustry.biz/feed",
+    website_url: "https://www.gamesindustry.biz",
+    is_active: true,
+    created_at: "2026-01-01T00:00:00Z",
+  },
 };
 
 export const MOCK_POSTS: Post[] = [
@@ -343,5 +351,72 @@ Com a migração para blades baseadas no hardware customizado do Xbox Series X c
     updated_at: "2026-09-10T14:00:00Z",
     categories: MOCK_CATEGORIES[1],
     sources: MOCK_SOURCES["xbox-wire"],
+  },
+  {
+    id: "post-7",
+    title: "Mercado Global de Games projeta receita de US$ 213,9 bilhões em 2026 impulsionado por grandes franquias",
+    slug: "mercado-global-games-receita-213-bilhoes-2026-newzoo",
+    tldr: [
+      "Relatório anual da Newzoo projeta avanço de 6,1% no faturamento da indústria global de games em 2026.",
+      "Estados Unidos e China continuam concentrando mais de 50% de todos os gastos de consumidores com jogos eletrônicos.",
+      "O segmento de consoles lidera o crescimento no ano, beneficiado pelo ciclo maduro da geração atual e antecipação de novos hardwares.",
+      "Investimentos em estúdios de médio porte voltam a acelerar após sucessivas rodadas de reestruturação do setor.",
+    ],
+    content: `
+O mercado global de videogames está a caminho de movimentar **US$ 213,9 bilhões** ao longo de 2026, representando um crescimento sólido de **6,1% ano a ano**, de acordo com o mais recente relatório analítico divulgado pela **Newzoo**.
+
+O levantamento aponta uma recuperação sustentável após períodos de desaceleração e reestruturações corporativas que marcaram os anos anteriores, impulsionada principalmente por um calendário repleto de lançamentos de grande escala e a consolidação de ecossistemas multiplataforma.
+
+### Concentração de Receita e Dinâmica de Plataformas
+
+Mais da metade de toda a receita global (52%) continua concentrada em dois polos econômicos determinantes: **China** e **Estados Unidos**.
+
+- **Consoles Domésticos**: Apresentam o maior ritmo de aceleração, com avanço de 7,4% na receita, alavancados pela base instalada de mais de 85 milhões de unidades somadas entre PS5 e Xbox Series, além da expectativa pelo novo hardware da Nintendo.
+- **PC Gaming**: Mantém trajetória contínua de expansão (+4,8%), impulsionada pela explosão de jogos independentes de sucesso viral no Steam e pelo modelo de publicação simultânea adotado por grandes publicadoras japonesas e ocidentais.
+- **Mobile**: Embora permaneça o maior segmento em volume financeiro absoluto (49% do total), registra crescimento mais moderado de 3,2%, devido a pressões regulatórias globais sobre lojas de aplicativos e taxas de comissão.
+
+### Ficha Técnica da Análise de Mercado
+
+| Métrica | Dados Projetados (2026) | Variação Anual |
+| :--- | :--- | :--- |
+| Receita Global Estimada | US$ 213,9 Bilhões | +6,1% YoY |
+| Jogadores Ativos no Mundo | 3,42 Bilhões de usuários | +4,2% YoY |
+| Maior Segmento por Faturamento | Mobile (US$ 104,8 Bilhões) | +3,2% YoY |
+| Segmento com Maior Crescimento | Consoles (US$ 54,2 Bilhões) | +7,4% YoY |
+| Principais Mercados Consumidores | China e EUA (52% do total) | Estável |
+
+### Oportunidades em Estúdios Menores e Eficiência
+
+O estudo também destaca uma mudança estratégica nas rodadas de investimento de risco (Venture Capital) e fusões. Após a era dos megaconglomerados, publicadoras e investidores estão direcionando aportes para desenvolvedoras independentes e de médio porte (AA), reconhecendo nelas uma relação risco-retorno muito mais eficiente e ágil em comparação com produções de orçamentos inflacionados acima de US$ 200 milhões.
+
+*Fonte de dados e apuração: GamesIndustry.biz via Newzoo Global Games Market Report.*
+    `.trim(),
+    excerpt: "Newzoo projeta faturamento de US$ 213,9 bilhões para a indústria de games em 2026, com consoles liderando o avanço anual de 6,1%. Confira a análise completa.",
+    cover_image_url: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1600&auto=format&fit=crop",
+    cover_image_alt: "Gráfico de mercado e tecnologia simbolizando o crescimento financeiro da indústria de games",
+    category_id: "cat-6",
+    source_id: "src-6",
+    source_original_url: "https://www.gamesindustry.biz/newzoo-global-games-market-to-generate-2139bn-in-2026-up-61-yoy",
+    source_original_title: "Newzoo: Global games market to generate $213.9bn in 2026, up 6.1% YoY",
+    game_metadata: {
+      game_name: "Mercado Global de Games (Indústria)",
+      platforms: ["Multiplataforma", "Consoles", "PC", "Mobile"],
+      metacritic_score: null,
+      release_date: "2026-09-14",
+      developer: "Newzoo Market Research",
+      publisher: "GamesIndustry.biz",
+      genre: "Relatório de Mercado / Negócios",
+    },
+    community_sentiment: "Analistas e desenvolvedores celebram a estabilização do ecossistema e o retorno de investimentos a estúdios de médio porte após dois anos de volatilidade e demissões no setor.",
+    is_rumor: false,
+    reliability_score: 5,
+    rumor_warning: null,
+    status: "published",
+    views_count: 7340,
+    published_at: "2026-09-13T18:00:00Z",
+    created_at: "2026-09-13T18:00:00Z",
+    updated_at: "2026-09-13T18:00:00Z",
+    categories: MOCK_CATEGORIES[5],
+    sources: MOCK_SOURCES["gamesindustry-biz"],
   },
 ];

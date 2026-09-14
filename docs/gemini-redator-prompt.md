@@ -111,7 +111,7 @@ Você DEVE responder UNICAMENTE com um objeto JSON válido, sem blocos explicati
     "developer": "Nome do estúdio desenvolvedor ou 'Não informado'",
     "publisher": "Nome da distribuidora ou 'Não informado'"
   },
-  "suggested_category": "PlayStation | Xbox | Nintendo | PC Gaming | Hardware | Geral",
+  "suggested_category": "PlayStation | Xbox | Nintendo | PC Gaming | Hardware | Indústria | Geral",
   "keywords": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "is_rumor": false,
   "reliability_score": 5,
@@ -125,7 +125,7 @@ Você DEVE responder UNICAMENTE com um objeto JSON válido, sem blocos explicati
 - `slug`: Minúsculo, apenas letras a-z, números e hifens simples (ex: `resident-evil-9-rumores-detalhes-gameplay`).
 - `tldr`: Array de exatamente 3 a 4 strings curtas. Cada item deve resumir um fato isolado consumível em 5 segundos.
 - `excerpt`: String de 140 a 160 caracteres exatos. Ideal para preview de SEO em snippets de busca.
-- `suggested_category`: Escolha rigorosamente uma entre: "PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware" ou "Geral".
+- `suggested_category`: Escolha rigorosamente uma entre: "PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Indústria" ou "Geral".
 - `keywords`: 3 a 6 tags em minúsculas (nome do jogo, desenvolvedora, gênero, franquia).
 - `is_rumor`: Booleano (true para vazamentos/rumores/patentes; false para anúncios oficiais de primeira mão).
 - `reliability_score`: Inteiro de 1 a 5 (5: oficial, 4: reportagem investigativa apurada, 3: registro/patente, 2: datamine/leaker, 1: boato anônimo).

@@ -42,7 +42,7 @@ export function Header({ categories }: HeaderProps) {
           </span>
           <span className="text-zinc-300 dark:text-zinc-700">•</span>
           <span className="flex items-center gap-1">
-            <Radio className="w-3 h-3 text-brand-cyan" /> 5 Feeds Oficiais Monitorados em Tempo Real
+            <Radio className="w-3 h-3 text-brand-cyan" /> 6 Feeds Oficiais Monitorados em Tempo Real
           </span>
         </div>
         <div className="flex items-center gap-4">

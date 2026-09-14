@@ -109,7 +109,7 @@ export default function EditorialTransparencyPage() {
               1
             </span>
             <div>
-              <strong>Monitoramento Oficial de Feeds:</strong> Nossos crawlers no n8n consultam apenas canais de primeira mão (como PlayStation Blog, Xbox Wire, Nintendo Life e Eurogamer) em intervalos programados.
+              <strong>Monitoramento Oficial de Feeds:</strong> Nossos crawlers consultam apenas canais de primeira mão (como PlayStation Blog, Xbox Wire, Nintendo Life, Eurogamer, PC Gamer e GamesIndustry.biz) em intervalos programados.
             </div>
           </li>
           <li className="flex items-start gap-3">
@@ -152,6 +152,7 @@ export default function EditorialTransparencyPage() {
             { name: "Nintendo Life", url: "https://www.nintendolife.com" },
             { name: "PC Gamer", url: "https://www.pcgamer.com" },
             { name: "Eurogamer", url: "https://www.eurogamer.net" },
+            { name: "GamesIndustry.biz", url: "https://www.gamesindustry.biz" },
           ].map((src) => (
             <div
               key={src.name}

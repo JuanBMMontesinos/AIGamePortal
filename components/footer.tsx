@@ -90,6 +90,11 @@ export function Footer() {
                   Hardware & GPUs
                 </Link>
               </li>
+              <li>
+                <Link href="/categoria/industria" className="hover:text-brand-purple transition-colors">
+                  Indústria & Mercado
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -136,6 +141,7 @@ export function Footer() {
                 "Nintendo Life",
                 "PC Gamer",
                 "Eurogamer",
+                "GamesIndustry.biz",
               ].map((source) => (
                 <span
                   key={source}

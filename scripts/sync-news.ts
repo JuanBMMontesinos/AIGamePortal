@@ -66,6 +66,12 @@ const OFFICIAL_FEEDS: FeedConfig[] = [
     websiteUrl: "https://www.ign.com",
     defaultCategorySlug: "geral",
   },
+  {
+    name: "GamesIndustry.biz",
+    url: "https://www.gamesindustry.biz/feed",
+    websiteUrl: "https://www.gamesindustry.biz",
+    defaultCategorySlug: "industria",
+  },
 ];
 
 // Limite de itens por feed em cada execução (para respeitar limites de tempo e quota de IA)
@@ -90,6 +96,14 @@ const FALLBACK_COVERS_BY_CATEGORY: Record<string, string[]> = {
   "pc-gaming": [
     "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=1200&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop",
+  ],
+  hardware: [
+    "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=1200&auto=format&fit=crop",
+  ],
+  industria: [
+    "https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
   ],
   geral: [
     "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop",
@@ -170,7 +184,7 @@ Você DEVE responder UNICAMENTE com um objeto JSON válido correspondente ao sch
 - 'slug': Minúsculo, apenas a-z, números e hifens simples (ex: 'diablo-5-anuncio-oficial-blizzcon-2026').
 - 'tldr': Array de exatamente 3 a 4 strings curtas com os fatos principais.
 - 'excerpt': String persuasiva de 140 a 160 caracteres para meta description.
-- 'suggested_category': Estritamente uma entre: "PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Geral".
+- 'suggested_category': Estritamente uma entre: "PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Indústria", "Geral".
 - 'keywords': Array com 3 a 6 tags curtas em minúsculas.
 - 'is_rumor': Booleano (true para rumores/vazamentos/patentes, false para comunicados oficiais).
 - 'reliability_score': Inteiro de 1 a 5 avaliando a solidez da fonte.
@@ -194,7 +208,7 @@ interface AIArticleOutput {
     developer: string;
     publisher: string;
   };
-  suggested_category: "PlayStation" | "Xbox" | "Nintendo" | "PC Gaming" | "Hardware" | "Geral";
+  suggested_category: "PlayStation" | "Xbox" | "Nintendo" | "PC Gaming" | "Hardware" | "Indústria" | "Geral";
   keywords: string[];
   is_rumor: boolean;
   reliability_score: number;
@@ -510,7 +524,7 @@ ${scraped.cleanText}`;
               },
               suggested_category: {
                 type: Type.STRING,
-                enum: ["PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Geral"],
+                enum: ["PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Indústria", "Geral"],
               },
               keywords: {
                 type: Type.ARRAY,

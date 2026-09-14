@@ -23,7 +23,8 @@ VALUES
     ('Xbox Wire', 'https://news.xbox.com/en-us/feed/', 'https://news.xbox.com', true),
     ('Nintendo Life', 'https://www.nintendolife.com/feeds/news', 'https://www.nintendolife.com', true),
     ('PC Gamer', 'https://www.pcgamer.com/rss/', 'https://www.pcgamer.com', true),
-    ('Eurogamer', 'https://www.eurogamer.net/feed/news', 'https://www.eurogamer.net', true)
+    ('Eurogamer', 'https://www.eurogamer.net/feed/news', 'https://www.eurogamer.net', true),
+    ('GamesIndustry.biz', 'https://www.gamesindustry.biz/feed', 'https://www.gamesindustry.biz', true)
 ON CONFLICT (feed_url) DO UPDATE
 SET 
     name = EXCLUDED.name,
