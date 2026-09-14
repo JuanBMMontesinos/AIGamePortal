@@ -10,6 +10,8 @@ Esta documentação detalha a arquitetura de dados, modelagem, estratégias de i
 erDiagram
     CATEGORIES ||--o{ POSTS : categorizes
     SOURCES ||--o{ POSTS : originates
+    AFFILIATE_PRODUCTS ||--o{ AFFILIATE_CLICKS : tracks
+    POSTS ||--o{ AFFILIATE_CLICKS : generates
 
     CATEGORIES {
         uuid id PK
@@ -51,6 +53,29 @@ erDiagram
         timestamptz published_at
         timestamptz created_at
         timestamptz updated_at
+    }
+
+    AFFILIATE_PRODUCTS {
+        uuid id PK
+        text title
+        text category
+        text[] keywords
+        text store_name
+        text affiliate_url
+        text image_url
+        numeric price_estimate
+        boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    AFFILIATE_CLICKS {
+        uuid id PK
+        uuid product_id FK
+        uuid post_id FK
+        text referrer
+        text user_agent
+        timestamptz clicked_at
     }
 ```
 
@@ -130,6 +155,41 @@ Entidade central contendo o conteúdo das matérias geradas e estruturadas por I
 
 ---
 
+### 2.4 Tabela `public.affiliate_products` (Fase 3 - Afiliados)
+
+Catálogo de produtos gamer monitorados para injeção contextual em notícias e exibição no card de recomendação final.
+
+| Coluna | Tipo | Modificadores | Descrição |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Identificador único do produto |
+| `title` | `TEXT` | `NOT NULL` | Nome completo comercial do produto |
+| `category` | `TEXT` | `NOT NULL CHECK ('Hardware', 'Console', 'PC', 'Jogo', 'Acessórios')` | Segmento gamer |
+| `keywords` | `TEXT[]` | `NOT NULL DEFAULT '{}'::TEXT[]` | Palavras-chave para casamento contextual no Markdown |
+| `store_name` | `TEXT` | `NOT NULL` | Loja parceira (ex: *Amazon Brasil*, *KaBuM!*, *Nuuvem*) |
+| `affiliate_url` | `TEXT` | `NOT NULL` | URL de destino com tags de associado do portal |
+| `image_url` | `TEXT` | `NOT NULL` | Imagem oficial do produto |
+| `price_estimate` | `NUMERIC(10, 2)` | `NULL` | Preço de referência aproximado em BRL |
+| `is_active` | `BOOLEAN` | `NOT NULL DEFAULT true` | Flag para ativação/desativação imediata da oferta |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Data de cadastro |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Atualização cadastral (via trigger automático) |
+
+---
+
+### 2.5 Tabela `public.affiliate_clicks` (Fase 3 - Afiliados)
+
+Registro analítico de redirecionamentos para mensuração de CTR, conversão por artigo e auditoria de tráfego.
+
+| Coluna | Tipo | Modificadores | Descrição |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Identificador único do evento de clique |
+| `product_id` | `UUID` | `FK -> affiliate_products.id ON DELETE CASCADE` | Produto clicado |
+| `post_id` | `UUID` | `FK -> posts.id ON DELETE SET NULL` | Notícia de onde partiu o clique (se aplicável) |
+| `referrer` | `TEXT` | `NULL` | HTTP Referer de origem do usuário |
+| `user_agent` | `TEXT` | `NULL` | Navegador e dispositivo do leitor |
+| `clicked_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Carimbo de data/hora do redirecionamento |
+
+---
+
 ## 3. Estratégia de Indexação e Performance
 
 | Nome do Índice | Tipo | Tabela / Colunas | Justificativa |
@@ -143,6 +203,11 @@ Entidade central contendo o conteúdo das matérias geradas e estruturadas por I
 | `idx_posts_status_published_at` | B-Tree Composto | `posts(status, published_at DESC)` | Garante index-only scans para queries públicas |
 | `idx_posts_source_original_url` | B-Tree | `posts(source_original_url)` | Deduplicação determinística no n8n antes do embedding |
 | `idx_posts_embedding_hnsw` | HNSW (`vector_cosine_ops`) | `posts(embedding)` | Busca por vizinhos mais próximos (ANN) com distância de cosseno |
+| `idx_affiliate_products_is_active` | B-Tree | `affiliate_products(is_active)` | Busca instantânea de produtos disponíveis para injeção |
+| `idx_affiliate_products_keywords` | GIN | `affiliate_products(keywords)` | Busca eficiente de correspondência em arrays de palavras-chave |
+| `idx_affiliate_clicks_product_id` | B-Tree | `affiliate_clicks(product_id)` | Agrupamento de cliques por produto para dashboards |
+| `idx_affiliate_clicks_post_id` | B-Tree | `affiliate_clicks(post_id)` | Métricas de conversão por artigo |
+| `idx_affiliate_clicks_clicked_at` | B-Tree | `affiliate_clicks(clicked_at DESC)` | Análise temporal de conversão e relatórios |
 
 ### Por que HNSW em vez de IVFFlat?
 1. **Sem necessidade de retreino:** O IVFFlat necessita que a tabela já contenha centenas de registros para construir listas de Voronoi eficazes e perde precisão conforme novos dados entram sem `REINDEX`.
@@ -220,3 +285,9 @@ Todas as tabelas possuem `ENABLE ROW LEVEL SECURITY`.
 3. **`public.posts`**:
    - `SELECT`: Liberado para `anon` e `authenticated` **estritamente onde `status = 'published'`**. Rascunhos (`draft`) e arquivados (`archived`) são invisíveis publicamente.
    - `ALL`: Restrito a `service_role` (usado com chave secreta no n8n para CRUD completo).
+4. **`public.affiliate_products`** (Fase 3):
+   - `SELECT`: Liberado para `anon` e `authenticated` onde `is_active = true`.
+   - `ALL`: Restrito a `service_role` (para gerenciamento seguro de links e comissões).
+5. **`public.affiliate_clicks`** (Fase 3):
+   - `INSERT`: Liberado para `anon`, `authenticated` e `service_role` (para rastreamento transparente em redirecionamentos).
+   - `SELECT`: Restrito a `service_role` (para resguardar dados sensíveis de conversão e parceiros).

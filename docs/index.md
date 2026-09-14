@@ -21,6 +21,7 @@ Esta documentação foi estruturada para servir tanto a engenheiros humanos de s
 | **[ai-context.md](file:///d:/IAProjects/AIGamePortal/docs/ai-context.md)** | Guia canônico para agentes de IA: regras de negócio, pipeline n8n + Gemini, diretrizes E-E-A-T e política anti-alucinação. | Agentes de IA & Engenheiros |
 | **[gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md)** | Especificação do Agente Redator & Otimizador SEO: System Prompt definitivo, Few-Shot, JSON Schema e parâmetros Gemini 1.5. | Engenheiros de IA & Redação |
 | **[social-automation.md](file:///d:/IAProjects/AIGamePortal/docs/social-automation.md)** | Módulo de Distribuição Multi-canal: Telegram Bot API, X/Twitter API v2, copywriter gamer e resiliência non-blocking. | Social Media & Engenheiros |
+| **[affiliate-system.md](file:///d:/IAProjects/AIGamePortal/docs/affiliate-system.md)** | Módulo de Afiliados Inteligentes (Fase 3): Modelagem, conformidade E-E-A-T (rel="sponsored nofollow"), tracking /api/out/[id] e AffiliateDealCard. | Monetização, Engenheiros & E-commerce |
 
 ---
 
@@ -34,6 +35,7 @@ O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre j
 5. **Metadados Estruturados de Jogos**: Salva plataformas, nota Metacritic, estúdio desenvolvedor e data de lançamento em formato JSONB tipado.
 6. **Transparência E-E-A-T**: Atribui autoria ao modelo de IA e exibe link canônico direto e transparente para a matéria original.
 7. **Entrega Ultra-Rápida (Core Web Vitals 95+)**: Páginas pré-renderizadas estaticamente no build (SSG) com revalidação sob demanda (ISR) disparada instantaneamente após a gravação no banco.
+8. **Monetização Automatizada & Afiliados Inteligentes (Fase 3)**: Injeção contextual de links de afiliados em conformidade total com as diretrizes do Google (E-E-A-T) com `rel="sponsored nofollow"` e exibição de card gamer de recomendação (`AffiliateDealCard`) ao final da matéria.
 
 ---
 

@@ -32,6 +32,15 @@ flowchart TD
         SOC -->|twitter-api-v2: OAuth 1.0a <= 280c| TW[X / Twitter Oficial]
     end
 
+    subgraph Modulo_Afiliados ["Módulo de Afiliados Inteligentes (Fase 3)"]
+        AFF_DB[(Supabase: affiliate_products)] -->|Cache ISR / SSR| MATCHER["Affiliate Matcher (lib/services/affiliate-matcher.ts)"]
+        MATCHER -->|rel='sponsored nofollow'| MD_RENDER["Renderizador Markdown / Post Detail"]
+        MD_RENDER -->|Card de Oferta| DEAL_CARD["AffiliateDealCard.tsx"]
+        USER -->|Clique em Link / Card| OUT_ROUTE["/api/out/[id]?postId=..."]
+        OUT_ROUTE -.->|Gravação Assíncrona| CLICK_DB[(Supabase: affiliate_clicks)]
+        OUT_ROUTE -->|HTTP 307 Redirect| PARTNER_STORE["Loja Parceira (Amazon / KaBuM! / Nuuvem)"]
+    end
+
     subgraph Frontend_Nextjs ["Frontend Next.js (App Router)"]
         REVAL -->|revalidatePath| CACHE[(Next.js Data & HTML Cache)]
         CACHE -->|HTML Ultra-Rápido| USER([Navegador do Usuário / Core Web Vitals 95+])
@@ -212,3 +221,32 @@ Para maximizar a tração orgânica e o engajamento imediato com a comunidade ga
   - Integração oficial com `twitter-api-v2` sob OAuth 1.0a User Context.
   - Algoritmo de compressão dinâmico com garantia matemática de cumprimento do limite estrito de **280 caracteres** (compensando os 23 caracteres fixos da URL via `t.co`).
   - Hashtags estratégicas geradas dinamicamente com base na categoria e plataformas do jogo.
+
+---
+
+## 7. Módulo de Afiliados Inteligentes & Monetização (Fase 3)
+
+O sistema de afiliados foi desenhado para maximizar a conversão orgânica sem comprometer a experiência de leitura e mantendo **estrita conformidade com as diretrizes de links pagos do Google (E-E-A-T)**.
+
+### 7.1 Injetor Inteligente de Links Contextuais ([lib/services/affiliate-matcher.ts](file:///d:/IAProjects/AIGamePortal/lib/services/affiliate-matcher.ts))
+- **Casamento de Palavras-chave com Prioridade**: As palavras-chave do catálogo são ordenadas pelo comprimento em ordem decrescente (ex: `"PlayStation 5 Pro"` tem precedência sobre `"PS5"`, evitando substituições fragmentadas).
+- **Proteção Estrutural de Conteúdo**: O analisador ignora cabeçalhos Markdown (`#`, `##`, `###`), blocos de código e links pré-existentes.
+- **Teto de Densidade**: Limita a inserção a no máximo 2 a 3 links contextuais por artigo, evitando poluição visual e alertas anti-spam.
+- **Conformidade Google E-E-A-T**: Todo link contextual gerado inclui obrigatoriamente os atributos:
+  ```html
+  rel="sponsored nofollow" target="_blank"
+  ```
+  Isso protege o portal de penalizações manuais ou algorítmicas de PageRank do Google.
+
+### 7.2 Rota de Redirecionamento e Rastreamento ([app/api/out/[id]/route.ts](file:///d:/IAProjects/AIGamePortal/app/api/out/[id]/route.ts))
+- **Tratamento de Requisição**: `GET /api/out/[id]?postId=...`
+- **Registro Assíncrono de Métricas**: O evento de clique é gravado de forma não-bloqueante na tabela `affiliate_clicks` com `referrer` e `user_agent`.
+- **Redirecionamento Rápido**: Retorna status **HTTP 307 (Temporary Redirect)** diretamente para a `affiliate_url` do parceiro com cabeçalhos `Cache-Control: no-store` para assegurar a contagem exata de cada acesso.
+- **Fail-Safe**: Identificadores inválidos ou produtos desativados redirecionam instantaneamente para a Home do portal, sem expor mensagens de erro cruas ao usuário.
+
+### 7.3 Card Gamer de Recomendação ([components/AffiliateDealCard.tsx](file:///d:/IAProjects/AIGamePortal/components/AffiliateDealCard.tsx))
+- Posicionado estrategicamente ao término da matéria.
+- Destaca a melhor oferta identificada para o jogo ou console em questão (`findBestAffiliateDeal`).
+- Inclui badge *"Oferta Recomendada"*, preço estimado em BRL, nome da loja parceira e call-to-action de alta conversão.
+- Exibe de forma transparente o aviso E-E-A-T: *"Comprando pelos nossos links, o portal pode receber uma comissão sem custo adicional para você."*
+

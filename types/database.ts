@@ -64,6 +64,31 @@ export interface Post {
   sources?: Source | null;
 }
 
+export type AffiliateCategory = "Hardware" | "Console" | "PC" | "Jogo" | "Acessórios";
+
+export interface AffiliateProduct {
+  id: string;
+  title: string;
+  category: AffiliateCategory | string;
+  keywords: string[];
+  store_name: string;
+  affiliate_url: string;
+  image_url: string;
+  price_estimate: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AffiliateClick {
+  id: string;
+  product_id: string;
+  post_id: string | null;
+  referrer: string | null;
+  user_agent: string | null;
+  clicked_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -87,6 +112,25 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Post>;
+        Relationships: [];
+      };
+      affiliate_products: {
+        Row: AffiliateProduct;
+        Insert: Omit<AffiliateProduct, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<AffiliateProduct>;
+        Relationships: [];
+      };
+      affiliate_clicks: {
+        Row: AffiliateClick;
+        Insert: Omit<AffiliateClick, "id" | "clicked_at"> & {
+          id?: string;
+          clicked_at?: string;
+        };
+        Update: Partial<AffiliateClick>;
         Relationships: [];
       };
     };

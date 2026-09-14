@@ -21,6 +21,9 @@ import { MarkdownContent } from "@/components/markdown-content";
 import { NewsCard } from "@/components/news-card";
 import { RumorBanner } from "@/components/RumorBanner";
 import { ArticleCoverImage } from "@/components/article-cover-image";
+import { AffiliateDealCard } from "@/components/AffiliateDealCard";
+import { getActiveAffiliateProducts, findBestAffiliateDeal } from "@/lib/data/affiliates";
+import { injectAffiliateLinks } from "@/lib/services/affiliate-matcher";
 
 export const revalidate = 300; // ISR revalidate fallback a cada 5 minutos
 
@@ -128,6 +131,20 @@ export default async function PostPage({ params }: PostPageProps) {
   // Fetch related posts for bottom section
   const allLatest = await getLatestPosts(4);
   const relatedPosts = allLatest.filter((p) => p.slug !== post.slug).slice(0, 3);
+
+  // Afiliados Inteligentes (Fase 3): Busca de produtos ativos e injeção contextual
+  const affiliateProducts = await getActiveAffiliateProducts();
+  const { processedContent, matchedProducts } = injectAffiliateLinks(
+    post.content,
+    affiliateProducts,
+    { postId: post.id, maxLinks: 3 }
+  );
+
+  // Seleciona a oferta mais relevante para o card ao final da matéria
+  const dealProduct =
+    matchedProducts.length > 0
+      ? matchedProducts[0]
+      : findBestAffiliateDeal(post, affiliateProducts);
 
   // Schema.org Structured Data (NewsArticle + BreadcrumbList)
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com").replace(/\/+$/, "");
@@ -330,8 +347,15 @@ export default async function PostPage({ params }: PostPageProps) {
 
       {/* Full Article Content */}
       <div className="my-10">
-        <MarkdownContent content={post.content} />
+        <MarkdownContent content={processedContent} />
       </div>
+
+      {/* Card de Oferta Recomendada de Afiliado (Fase 3) */}
+      {dealProduct && (
+        <div className="my-10">
+          <AffiliateDealCard product={dealProduct} postId={post.id} />
+        </div>
+      )}
 
       {/* O Que a Comunidade Está Dizendo */}
       <CommunitySentimentBox sentimentText={post.community_sentiment} />

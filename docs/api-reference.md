@@ -348,3 +348,89 @@ Envia publicação com capa (`sendPhoto`) ou texto (`sendMessage`) via Telegram 
 
 ### `sendToTwitter(payload, copy)`
 Envia tweet via `twitter-api-v2` utilizando OAuth 1.0a User Context, respeitando rigorosamente o limite de 280 caracteres.
+
+---
+
+## 7. Módulo de Afiliados e Monetização (`lib/data/affiliates.ts`)
+
+Gerenciamento de produtos ativos, consulta com fallback mock offline e registro analítico de conversão.
+
+### `getActiveAffiliateProducts()`
+Obtém a lista de produtos afiliados ativos no banco de dados Supabase com fallback transparente para o catálogo mock.
+- **Assinatura**:
+  ```typescript
+  export async function getActiveAffiliateProducts(): Promise<AffiliateProduct[]>
+  ```
+- **Retorno**: `Promise<AffiliateProduct[]>` contendo produtos habilitados ordenados por data de criação.
+
+### `getAffiliateProductById(id)`
+Busca um produto afiliado pelo seu identificador primário.
+- **Assinatura**:
+  ```typescript
+  export async function getAffiliateProductById(id: string): Promise<AffiliateProduct | null>
+  ```
+- **Parâmetros**: `id` (`string`): UUID do produto ou identificador mock.
+- **Retorno**: Objeto `AffiliateProduct` ou `null`.
+
+### `recordAffiliateClick(payload)`
+Registra assincronamente a ocorrência de clique para geração de relatórios de conversão e métricas de engajamento por matéria.
+- **Assinatura**:
+  ```typescript
+  export async function recordAffiliateClick(payload: {
+    productId: string;
+    postId?: string | null;
+    referrer?: string | null;
+    userAgent?: string | null;
+  }): Promise<{ success: boolean; id?: string }>
+  ```
+
+### `findBestAffiliateDeal(post, products)`
+Algoritmo de pontuação e relevância que cruza título, conteúdo, plataformas (`game_metadata`) e categorias para identificar o produto gamer mais aderente à matéria.
+- **Assinatura**:
+  ```typescript
+  export function findBestAffiliateDeal(
+    post: Partial<Post>,
+    products: AffiliateProduct[]
+  ): AffiliateProduct | null
+  ```
+
+---
+
+## 8. Injetor Inteligente de Links Contextuais (`lib/services/affiliate-matcher.ts`)
+
+Analisa o texto Markdown original de uma notícia e insere hiperlinks contextuais seguros com conformidade Google E-E-A-T.
+
+### `injectAffiliateLinks(content, products, options)`
+- **Assinatura**:
+  ```typescript
+  export function injectAffiliateLinks(
+    content: string,
+    products: AffiliateProduct[],
+    options?: AffiliateMatchOptions
+  ): AffiliateMatchResult
+  ```
+- **Parâmetros**:
+  - `content` (`string`): Texto Markdown da matéria.
+  - `products` (`AffiliateProduct[]`): Lista de produtos cadastrados.
+  - `options` (`AffiliateMatchOptions`): `{ maxLinks?: number; postId?: string | null }`. Padrão de `maxLinks` é `3`.
+- **Regras Operacionais**:
+  - Não injeta em títulos (`#`, `##`, `###`), blocos de código ou links pré-existentes.
+  - Transforma apenas a 1ª ocorrência de cada produto.
+  - Adiciona estritamente `rel="sponsored nofollow"` e `target="_blank"`.
+  - Retorna `{ processedContent, matchedProducts, linksCount }`.
+
+---
+
+## 9. Rota de Redirecionamento & Tracking (`GET /api/out/[id]`)
+
+Endpoint dinâmico Next.js para rastreamento de links patrocinados e encaminhamento transparente de leitores.
+
+- **Método**: `GET`
+- **URL**: `/api/out/[id]?postId=...&ref=...`
+- **Fluxo de Processamento**:
+  1. Extrai `id` do produto e metadados de requisição (`postId`, `Referer`, `User-Agent`).
+  2. Valida se o produto existe e está com `is_active: true`.
+  3. Caso inválido: Redireciona com HTTP 307 para a Home do portal (`/`).
+  4. Caso válido:
+     - Grava evento assíncrono em `affiliate_clicks`.
+     - Retorna **HTTP 307 (Temporary Redirect)** para a `affiliate_url` com cabeçalhos anti-cache (`Cache-Control: no-store, no-cache, must-revalidate`).

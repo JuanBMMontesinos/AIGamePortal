@@ -210,7 +210,30 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
   ```
 - **Funcionalidades**:
   - Converte Markdown semântico em elementos HTML puros (`<h2>`, `<h3>`, `<blockquote>`, `<ul>`, `<p>`, `<strong>`, `<em>`).
+  - Suporte a tags HTML `<a>` com `rel="sponsored nofollow"` e `target="_blank"` injetadas pelo módulo de afiliados.
+  - Suporte a links Markdown `[texto](url)` com estilização gamer neon (`text-brand-purple hover:text-brand-cyan`).
   - Zero dependências pesadas de parsing no cliente, gerando saída HTML ultraleve com estilização `.article-content`.
+
+---
+
+### `<AffiliateDealCard product={product} postId={postId} />` (Fase 3)
+- **Arquivo**: [components/AffiliateDealCard.tsx](file:///d:/IAProjects/AIGamePortal/components/AffiliateDealCard.tsx)
+- **Tipo**: Client Component (`"use client"`)
+- **Props**:
+  ```typescript
+  interface AffiliateDealCardProps {
+    product: AffiliateProduct | null;
+    postId?: string | null;
+    className?: string;
+  }
+  ```
+- **Funcionalidades**:
+  - Card gamer moderno com visual dark/glassmorphism e luzes difusas neon.
+  - Badge *"Oferta Recomendada"* com ícone `Sparkles` e tag da categoria gamer.
+  - Imagem do produto otimizada com `next/image` e fallback elegante para erros de carregamento.
+  - Exibição de preço formatado em Real brasileiro (`R$`) com alta legibilidade.
+  - Botão de ação (CTA) com gradiente gamer apontando para a rota de saída `/api/out/[id]?postId=...` com `rel="sponsored nofollow"` e `target="_blank"`.
+  - Aviso de transparência e conformidade Google E-E-A-T: *"Comprando pelos nossos links, o portal pode receber uma comissão sem custo adicional para você."*
 
 ---
 
