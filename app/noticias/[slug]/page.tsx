@@ -20,6 +20,7 @@ import { ShareButtons } from "@/components/share-buttons";
 import { MarkdownContent } from "@/components/markdown-content";
 import { NewsCard } from "@/components/news-card";
 import { RumorBanner } from "@/components/RumorBanner";
+import { ArticleCoverImage } from "@/components/article-cover-image";
 
 export const revalidate = 300; // ISR revalidate fallback a cada 5 minutos
 
@@ -316,18 +317,10 @@ export default async function PostPage({ params }: PostPageProps) {
       </header>
 
       {/* Featured Cover Image */}
-      {isValidImageUrl(post.cover_image_url) && (
-        <div className="my-8 rounded-2xl md:rounded-3xl overflow-hidden border border-zinc-200 dark:border-gamer-800 shadow-lg relative aspect-[16/9] w-full bg-zinc-900">
-          <Image
-            src={post.cover_image_url!}
-            alt={post.cover_image_alt || post.title}
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 896px"
-            className="object-cover object-center"
-          />
-        </div>
-      )}
+      <ArticleCoverImage
+        src={post.cover_image_url}
+        alt={post.cover_image_alt || post.title}
+      />
 
       {/* TL;DR (Resumo em 30 Segundos) */}
       <TldrBox bullets={post.tldr} />

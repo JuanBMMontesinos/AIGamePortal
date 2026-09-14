@@ -35,6 +35,14 @@ export const MOCK_SOURCES: Record<string, Source> = {
     is_active: true,
     created_at: "2026-01-01T00:00:00Z",
   },
+  "nintendo-everything": {
+    id: "src-8",
+    name: "Nintendo Everything",
+    feed_url: "https://nintendoeverything.com/feed/",
+    website_url: "https://nintendoeverything.com",
+    is_active: true,
+    created_at: "2026-01-01T00:00:00Z",
+  },
   "pc-gamer": {
     id: "src-4",
     name: "PC Gamer",
@@ -94,7 +102,7 @@ A montanha que dá nome ao título não é apenas um pano de fundo visual deslum
 O jogo contará com áudio 3D Tempest totalmente remapeado para fones e suporte completo aos gatilhos adaptáveis do controle DualSense, transmitindo o atrito do aço e a tensão da corda do arco.
     `.trim(),
     excerpt: "Sucker Punch exibe 18 minutos de combate visceral de Ghost of Yōtei no PS5 Pro. Veja detalhes de empunhadura dupla e ambientação no Monte Yōtei.",
-    cover_image_url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1600&auto=format&fit=crop",
+    cover_image_url: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=1600&auto=format&fit=crop",
     cover_image_alt: "Paisagem montanhosa japonesa com neve e névoa representando Ghost of Yōtei",
     category_id: "cat-1",
     source_id: "src-1",
@@ -196,7 +204,7 @@ O console híbrido da **Nintendo** promete sanar os maiores gargalos de desempen
 - **Joy-Cons Magnéticos**: Novo sistema de trilho com travas magnéticas indutivas que eliminam folgas mecânicas.
     `.trim(),
     excerpt: "Sucessor do Switch deve vir equipado com painel OLED de 120Hz, dock com refrigeração e retrocompatibilidade total com seus jogos atuais.",
-    cover_image_url: "https://images.unsplash.com/photo-1612287233207-6b68b7ca28e9?q=80&w=1600&auto=format&fit=crop",
+    cover_image_url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1600&auto=format&fit=crop",
     cover_image_alt: "Console portátil estilizado em ambiente minimalista gamer",
     category_id: "cat-3",
     source_id: "src-3",

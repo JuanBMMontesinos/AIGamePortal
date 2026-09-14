@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Clock, Calendar, ArrowRight, Zap, Sparkles } from "lucide-react";
@@ -9,17 +12,19 @@ interface HeroFeaturedProps {
 }
 
 export function HeroFeatured({ post }: HeroFeaturedProps) {
+  const [imgError, setImgError] = useState(false);
   const readingTime = calculateReadingTime(post.content);
   const relativeDate = formatRelativeTime(post.published_at);
   const categoryName = post.categories?.name || "Geral";
   const platforms = post.game_metadata?.platforms || [];
   const hasValidImage = isValidImageUrl(post.cover_image_url);
+  const showImage = hasValidImage && !imgError;
 
   return (
     <section className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden border border-zinc-200 dark:border-gamer-800 bg-zinc-900 group shadow-lg hover:shadow-neon-purple/20 transition-all duration-500">
       {/* Background Image with Dark Gamer Gradient Overlays */}
-      <div className="absolute inset-0 z-0">
-        {hasValidImage ? (
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {showImage ? (
           <Image
             src={post.cover_image_url!}
             alt={post.cover_image_alt || post.title}
@@ -27,6 +32,7 @@ export function HeroFeatured({ post }: HeroFeaturedProps) {
             priority
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
             className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out brightness-75 dark:brightness-50"
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-gamer-900 via-gamer-850 to-brand-purple/20" />

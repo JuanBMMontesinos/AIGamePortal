@@ -138,6 +138,7 @@ export function Footer() {
               {[
                 "PlayStation Blog",
                 "Xbox Wire",
+                "Nintendo Everything",
                 "Nintendo Life",
                 "PC Gamer",
                 "Eurogamer",

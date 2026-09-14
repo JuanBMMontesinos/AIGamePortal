@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Clock, Calendar, Zap, Sparkles } from "lucide-react";
@@ -10,6 +13,7 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ post, priority = false }: NewsCardProps) {
+  const [imgError, setImgError] = useState(false);
   const readingTime = calculateReadingTime(post.content);
   const relativeDate = formatRelativeTime(post.published_at);
   const categoryName = post.categories?.name || "Geral";
@@ -17,12 +21,13 @@ export function NewsCard({ post, priority = false }: NewsCardProps) {
   const platforms = post.game_metadata?.platforms || [];
   const quickTldr = post.tldr && post.tldr.length > 0 ? post.tldr[0] : null;
   const hasValidImage = isValidImageUrl(post.cover_image_url);
+  const showImage = hasValidImage && !imgError;
 
   return (
     <article className="group relative flex flex-col rounded-2xl overflow-hidden border border-zinc-200 dark:border-gamer-800/80 bg-white dark:bg-gamer-900 hover:border-brand-purple/50 dark:hover:border-brand-purple/50 hover:shadow-neon-purple/15 transition-all duration-300">
       {/* Cover Image Container */}
       <Link href={`/noticias/${post.slug}`} className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-900 block">
-        {hasValidImage ? (
+        {showImage ? (
           <Image
             src={post.cover_image_url!}
             alt={post.cover_image_alt || post.title}
@@ -30,6 +35,7 @@ export function NewsCard({ post, priority = false }: NewsCardProps) {
             priority={priority}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-gamer-850 text-zinc-500">

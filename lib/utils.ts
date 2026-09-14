@@ -67,20 +67,41 @@ export function getMetacriticColor(score: number | null | undefined): {
 }
 
 /**
- * Valida se uma string é uma URL válida de imagem HTTP/HTTPS e descarta áudios/vídeos (ex: podcasts .mp3)
+ * Valida se uma string é uma URL válida de imagem de capa HTTP/HTTPS,
+ * descartando áudios/vídeos, SVGs de placeholder, pixels de rastreamento e CDNs bloqueados.
  */
 export function isValidImageUrl(url?: string | null): boolean {
   if (!url || typeof url !== "string") return false;
   const trimmed = url.trim();
   if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) return false;
+
   // Rejeita extensões de áudio e vídeo comumente encontradas em enclosures de podcasts
   if (/\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm|mkv|avi)(\?.*)?$/i.test(trimmed)) {
     return false;
   }
-  // Rejeita CDNs que utilizam Cloudflare Bot Challenge bloqueando hotlinking
-  if (trimmed.includes("images.nintendolife.com")) {
+
+  // Rejeita SVGs (geralmente ícones, logos ou placeholders 1x1, como o placeholder.svg do PlayStation Blog)
+  if (/\.svg(\?.*)?$/i.test(trimmed)) {
     return false;
   }
+
+  // Rejeita termos comuns de imagens de placeholder ou rastreadores
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.includes("placeholder") ||
+    lower.includes("blank.gif") ||
+    lower.includes("pixel.gif") ||
+    lower.includes("spacer.gif") ||
+    lower.includes("/1x1.")
+  ) {
+    return false;
+  }
+
+  // Rejeita CDNs que utilizam Cloudflare Bot Challenge bloqueando hotlinking (ex: Nintendo Life)
+  if (lower.includes("images.nintendolife.com")) {
+    return false;
+  }
+
   return true;
 }
 

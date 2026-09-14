@@ -149,6 +149,7 @@ export default function EditorialTransparencyPage() {
           {[
             { name: "PlayStation Blog", url: "https://blog.playstation.com" },
             { name: "Xbox Wire", url: "https://news.xbox.com" },
+            { name: "Nintendo Everything", url: "https://nintendoeverything.com" },
             { name: "Nintendo Life", url: "https://www.nintendolife.com" },
             { name: "PC Gamer", url: "https://www.pcgamer.com" },
             { name: "Eurogamer", url: "https://www.eurogamer.net" },

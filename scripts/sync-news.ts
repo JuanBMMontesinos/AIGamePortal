@@ -49,9 +49,9 @@ const OFFICIAL_FEEDS: FeedConfig[] = [
     defaultCategorySlug: "xbox",
   },
   {
-    name: "Nintendo Life",
-    url: "https://www.nintendolife.com/feeds/news",
-    websiteUrl: "https://www.nintendolife.com",
+    name: "Nintendo Everything",
+    url: "https://nintendoeverything.com/feed/",
+    websiteUrl: "https://nintendoeverything.com",
     defaultCategorySlug: "nintendo",
   },
   {
@@ -271,20 +271,40 @@ function cleanHtmlText(html: string): string {
 }
 
 /**
- * Valida se uma string é uma URL válida de imagem HTTP/HTTPS e descarta áudios/vídeos (ex: podcasts .mp3)
+ * Valida se uma string é uma URL válida de imagem HTTP/HTTPS e descarta áudios/vídeos, SVGs e placeholders
  */
 function isValidImageUrl(url?: string | null): boolean {
   if (!url || typeof url !== "string") return false;
   const trimmed = url.trim();
   if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) return false;
+
   // Rejeita extensões de áudio e vídeo comuns em feeds/enclosures
   if (/\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm|mkv|avi)(\?.*)?$/i.test(trimmed)) {
     return false;
   }
-  // Rejeita CDNs que utilizam Cloudflare Bot Challenge bloqueando hotlinking
-  if (trimmed.includes("images.nintendolife.com")) {
+
+  // Rejeita SVGs (geralmente ícones, logos ou placeholders 1x1, como o placeholder.svg do PlayStation Blog)
+  if (/\.svg(\?.*)?$/i.test(trimmed)) {
     return false;
   }
+
+  // Rejeita termos comuns de imagens de placeholder ou rastreadores
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.includes("placeholder") ||
+    lower.includes("blank.gif") ||
+    lower.includes("pixel.gif") ||
+    lower.includes("spacer.gif") ||
+    lower.includes("/1x1.")
+  ) {
+    return false;
+  }
+
+  // Rejeita CDNs que utilizam Cloudflare Bot Challenge bloqueando hotlinking (ex: Nintendo Life)
+  if (lower.includes("images.nintendolife.com")) {
+    return false;
+  }
+
   return true;
 }
 
@@ -348,7 +368,7 @@ async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise
   let imageUrl: string | null = null;
   const rawItem = item as any;
 
-  // 1. Tentar obter imagem das tags media:content ou media:thumbnail (Nintendo Life, IGN, PC Gamer)
+  // 1. Tentar obter imagem das tags media:content ou media:thumbnail (Nintendo Everything, IGN, PC Gamer)
   const mediaContentUrl = extractMediaUrl(rawItem.mediaContent || rawItem["media:content"]);
   const mediaThumbnailUrl = extractMediaUrl(rawItem.mediaThumbnail || rawItem["media:thumbnail"]);
 
@@ -366,7 +386,29 @@ async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise
     }
   }
 
-  // 3. Tentar obter imagem embutida no HTML do feed (content:encoded ou item.content)
+  // 3. Para feeds sem media:content (como PlayStation Blog), buscar diretamente a capa OpenGraph na página
+  // A capa OpenGraph é a imagem destacada oficial em alta resolução (1080p), superior a imagens inline
+  if (!imageUrl && url) {
+    const ogImg = await fetchOgImage(url);
+    if (ogImg) {
+      imageUrl = ogImg;
+    }
+  }
+
+  // 4. Extração primária do texto via @extractus/article-extractor
+  try {
+    const article = await extract(url);
+    if (article && article.content) {
+      cleanText = cleanHtmlText(article.content);
+      if (!imageUrl && isValidImageUrl(article.image)) {
+        imageUrl = article.image!;
+      }
+    }
+  } catch (error: any) {
+    // Falha esperada em sites com anti-bot
+  }
+
+  // 5. Tentar obter imagem embutida no HTML do feed caso ainda não tenhamos capa
   const rawFeedHtml =
     rawItem.contentEncoded || rawItem["content:encoded"] || item.content || item.contentSnippet || rawItem.summary || "";
 
@@ -380,35 +422,14 @@ async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise
     });
   }
 
-  // 4. Extração primária do texto via @extractus/article-extractor
-  try {
-    const article = await extract(url);
-    if (article && article.content) {
-      cleanText = cleanHtmlText(article.content);
-      if (!imageUrl && isValidImageUrl(article.image)) {
-        imageUrl = article.image!;
-      }
-    }
-  } catch (error: any) {
-    // Falha esperada em sites com anti-bot (ex: 403 no Nintendo Life / IGN)
-  }
-
-  // 5. Fallback para conteúdo embutido no feed caso o extrator tenha falhado
+  // 6. Fallback para conteúdo embutido no feed caso o extrator tenha falhado
   if (!cleanText || cleanText.length < 150) {
     if (rawFeedHtml) {
       cleanText = cleanHtmlText(rawFeedHtml);
     }
   }
 
-  // 6. Tentar capturar OpenGraph image diretamente da página caso ainda não tenhamos capa
-  if (!imageUrl && url) {
-    const ogImg = await fetchOgImage(url);
-    if (ogImg) {
-      imageUrl = ogImg;
-    }
-  }
-
-  // 7. Fallback final temático por plataforma/categoria
+  // 7. Fallback final temático por plataforma/categoria com URLs verificadas
   if (!imageUrl) {
     const categoryCovers =
       FALLBACK_COVERS_BY_CATEGORY[feedConfig.defaultCategorySlug] || FALLBACK_COVERS_BY_CATEGORY.geral;
