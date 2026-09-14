@@ -73,6 +73,47 @@ const mockPayload: SocialArticlePayload = {
   platforms: ["PS5"],
 };
 
+import { createClient } from "@supabase/supabase-js";
+
+async function getArticlePayload(): Promise<SocialArticlePayload> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.vercel.app").replace(/\/+$/, "");
+
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data } = await supabase
+        .from("posts")
+        .select("title, slug, tldr, cover_image_url, is_rumor, reliability_score, game_metadata")
+        .eq("status", "published")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data && data.slug) {
+        console.log(`📰 Usando artigo REAL do seu banco: "${data.title}"`);
+        return {
+          title: data.title,
+          slug: data.slug,
+          url: `${siteUrl}/noticias/${data.slug}`,
+          tldr: data.tldr || [],
+          category: "geral",
+          coverImageUrl: data.cover_image_url,
+          isRumor: data.is_rumor,
+          reliabilityScore: data.reliability_score,
+          platforms: data.game_metadata?.platforms,
+        };
+      }
+    } catch (e) {
+      // fallback
+    }
+  }
+
+  console.log("ℹ️ Usando artigo fictício (mock) para testes.");
+  return mockPayload;
+}
+
 async function run() {
   console.log("====================================================================");
   console.log("🧪 [Teste Social Publisher] Verificação de Configurações");
@@ -83,11 +124,13 @@ async function run() {
     return;
   }
 
+  const payload = await getArticlePayload();
+
   if (isTelegramOnly) {
     console.log("\n🚀 Testando ENVIO REAL para o Telegram...");
-    const copy = generateSocialCopy(mockPayload);
+    const copy = generateSocialCopy(payload);
     const { sendToTelegram } = await import("../lib/services/social-publisher");
-    const result = await sendToTelegram(mockPayload, copy.telegram);
+    const result = await sendToTelegram(payload, copy.telegram);
     console.log("\nResultado Telegram:", JSON.stringify(result, null, 2));
     return;
   }
@@ -101,7 +144,7 @@ async function run() {
   console.log(`   - TWITTER_ACCESS_SECRET: ${process.env.TWITTER_ACCESS_SECRET ? "✅ Configurado" : "❌ Ausente"}`);
 
   console.log("\n2. Teste de Formatação de Cópias (Preview):");
-  const copies = generateSocialCopy(mockPayload);
+  const copies = generateSocialCopy(payload);
   console.log("\n--- [X / Twitter Copy] ---");
   console.log(copies.twitter);
   console.log(`Caracteres: ${copies.twitter.length}/280`);
@@ -170,7 +213,7 @@ async function run() {
   }
 
   console.log("\n🚀 Executando publicação REAL em modo --live...");
-  const result = await publishToSocialNetworks(mockPayload);
+  const result = await publishToSocialNetworks(payload);
   console.log("\nResultado final:", JSON.stringify(result, null, 2));
 }
 
