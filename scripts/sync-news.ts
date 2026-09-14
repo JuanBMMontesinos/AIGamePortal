@@ -590,7 +590,7 @@ ${scraped.cleanText}`;
 
       return parsed;
     } catch (error: any) {
-      // Se der erro de cota ou modelo 404, tenta o próximo modelo
+      console.warn(`    ⚠️ [Gemini ${model}] Erro: ${error?.message || error}`);
     }
   }
 

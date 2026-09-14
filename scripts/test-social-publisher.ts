@@ -5,7 +5,57 @@ dotenv.config();
 import { TwitterApi } from "twitter-api-v2";
 import { generateSocialCopy, publishToSocialNetworks, SocialArticlePayload } from "../lib/services/social-publisher";
 
+const isTelegramOnly = process.argv.includes("--telegram");
+const isFindId = process.argv.includes("--find-id");
 const isLive = process.argv.includes("--live");
+
+async function checkTelegramUpdates() {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  if (!token) {
+    console.error("❌ TELEGRAM_BOT_TOKEN não encontrado no .env.local");
+    return;
+  }
+  console.log("🔍 Consultando mensagens recentes enviadas para o bot...");
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
+    const data = await res.json();
+    if (!data.ok) {
+      console.error("❌ Erro da API do Telegram:", data.description);
+      return;
+    }
+
+    const updates = data.result || [];
+    if (updates.length === 0) {
+      console.log("\n⚠️ Nenhuma mensagem encontrada ainda!");
+      console.log("👉 Faça o seguinte no Telegram:");
+      console.log("   1. Abra o Telegram e procure pelo seu bot: @aigameportalbot");
+      console.log("   2. Clique em Iniciar (ou envie qualquer mensagem, como 'olá')");
+      console.log("   3. Rode novamente este comando: npx tsx scripts/test-social-publisher.ts --find-id");
+      return;
+    }
+
+    console.log(`\n🎉 Foram encontradas ${updates.length} interação(ões) recentes:\n`);
+    const seenChats = new Set<string>();
+
+    for (const u of updates) {
+      const msg = u.message || u.channel_post || u.my_chat_member;
+      const chat = msg?.chat;
+      if (chat && !seenChats.has(String(chat.id))) {
+        seenChats.add(String(chat.id));
+        console.log("------------------------------------------------------------");
+        console.log(`📌 Tipo: ${chat.type.toUpperCase()}`);
+        console.log(`👤 Nome: ${chat.first_name || chat.title || "N/A"} ${chat.last_name || ""}`);
+        if (chat.username) console.log(`🔗 Username: @${chat.username}`);
+        console.log(`🆔 SEU TELEGRAM_CHAT_ID: ${chat.id}`);
+        console.log("------------------------------------------------------------");
+        console.log(`Copie e cole no seu .env.local:`);
+        console.log(`TELEGRAM_CHAT_ID=${chat.id}\n`);
+      }
+    }
+  } catch (err: any) {
+    console.error("❌ Erro ao conectar ao Telegram:", err?.message || err);
+  }
+}
 
 const mockPayload: SocialArticlePayload = {
   title: "PlayStation anuncia novo State of Play com grandes novidades para 2026",
@@ -27,6 +77,20 @@ async function run() {
   console.log("====================================================================");
   console.log("🧪 [Teste Social Publisher] Verificação de Configurações");
   console.log("====================================================================");
+
+  if (isFindId) {
+    await checkTelegramUpdates();
+    return;
+  }
+
+  if (isTelegramOnly) {
+    console.log("\n🚀 Testando ENVIO REAL para o Telegram...");
+    const copy = generateSocialCopy(mockPayload);
+    const { sendToTelegram } = await import("../lib/services/social-publisher");
+    const result = await sendToTelegram(mockPayload, copy.telegram);
+    console.log("\nResultado Telegram:", JSON.stringify(result, null, 2));
+    return;
+  }
 
   console.log("\n1. Verificando Variáveis de Ambiente:");
   console.log(`   - TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "✅ Configurado" : "❌ Ausente"}`);
@@ -51,6 +115,36 @@ async function run() {
     console.log("👉 Para testar a publicação real agora, execute:");
     console.log("   npx tsx scripts/test-social-publisher.ts --live");
     console.log("====================================================================");
+
+    // Testar autenticação do Telegram Bot API
+    if (process.env.TELEGRAM_BOT_TOKEN) {
+      console.log("\n🔍 Testando credenciais do Telegram Bot...");
+      try {
+        const token = process.env.TELEGRAM_BOT_TOKEN.trim();
+        const getMeRes = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+        const getMeData = await getMeRes.json();
+        if (getMeData.ok) {
+          console.log(`   ✅ Bot autenticado: @${getMeData.result.username} (${getMeData.result.first_name})`);
+        } else {
+          console.error(`   ❌ Token do Telegram inválido: ${getMeData.description}`);
+        }
+
+        const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+        if (chatId) {
+          console.log(`🔍 Testando acesso ao Chat/Canal: "${chatId}"...`);
+          const getChatRes = await fetch(`https://api.telegram.org/bot${token}/getChat?chat_id=${encodeURIComponent(chatId)}`);
+          const getChatData = await getChatRes.json();
+          if (getChatData.ok) {
+            console.log(`   ✅ Chat/Canal encontrado: "${getChatData.result.title || getChatData.result.username}" (Tipo: ${getChatData.result.type})`);
+          } else {
+            console.error(`   ❌ Falha ao acessar chat "${chatId}": ${getChatData.description}`);
+            console.error(`      💡 Dica: Se for um canal ou grupo, certifique-se de que o bot foi adicionado como ADMINISTRADOR.`);
+          }
+        }
+      } catch (tgErr: any) {
+        console.error(`   ❌ Erro de conexão com Telegram:`, tgErr?.message || tgErr);
+      }
+    }
 
     // Testar autenticação da API do Twitter sem postar
     if (process.env.TWITTER_API_KEY && process.env.TWITTER_ACCESS_TOKEN) {
