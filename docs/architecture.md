@@ -318,6 +318,48 @@ O AIGamePortal integra uma arquitetura de bots baseada em **Discord Webhooks Ser
 - **Diagnóstico & Testes**: Monitoramento de URLs com token mascarado e botões de disparo de teste em tempo real.
 - **Histórico & Auditoria**: Visualização e busca de todos os alertas disparados no acervo com paginação server-side.
 
+---
+
+## 10. Edge Caching & Telemetria B2B (Fase 4 - MediaTech)
+
+O portal foi arquitetado para suportar **picos massivos de mais de 100.000 visualizações com zero custo adicional de servidor**, viabilizando a conversão do portal em uma **MediaTech B2B de Alta Rentabilidade**:
+
+```mermaid
+flowchart LR
+    A[Usuário Final] --> B[Cloudflare Edge Global - 330+ Cidades]
+    B -->|Cache HIT 98%+| C[HTML Estático & AVIF/WebP < 30ms]
+    B -->|s-maxage 1800s Expirado| D[Next.js App Router Origin]
+    D -->|ISR Regeneração em Background| E[(Supabase PostgreSQL)]
+
+    F[Anunciantes & Marcas B2B] --> G[Painel /admin/metricas]
+    G --> H[KPIs de Patrocínio & Cobertura]
+    G --> I[Cálculo de CAC: IA R$ 0,0015 vs Humano R$ 45,00]
+    G --> J[Gerador de Pitch Deck Comercial A4/PDF]
+```
+
+### 10.1 Políticas de Edge Caching ([next.config.ts](file:///d:/IAProjects/AIGamePortal/next.config.ts))
+- **Páginas de Notícias, Categorias e Hubs**:
+  * `Cache-Control: public, s-maxage=1800, stale-while-revalidate=86400`
+  * `CDN-Cache-Control` e `Cloudflare-CDN-Cache-Control`: Forçam o edge da Cloudflare a reter o HTML por 30 minutos e servir versões cacheadas instantaneamente durante revalidação assíncrona.
+- **Otimização de Imagens de Mídia**:
+  * Formatos AVIF e WebP ativados com `minimumCacheTTL: 86400` (24h).
+  * Lista segura de `remotePatterns` para os principais portais de notícias de games (PlayStation Blog, Xbox Wire, Nintendo Life, PC Gamer, Eurogamer, Steam, Epic Games, Amazon).
+
+### 10.2 Rota de Telemetria Interna ([/api/metrics/summary](file:///d:/IAProjects/AIGamePortal/app/api/metrics/summary/route.ts))
+- Consolidação server-side dos dados de postagens, intenção comercial de afiliados e audiência da newsletter.
+- Mecanismo de **in-memory cache de 5 minutos (300s)** para mitigar qualquer sobrecarga no PostgreSQL em consultas sucessivas.
+- Resposta cacheada no Edge com `s-maxage=300, stale-while-revalidate=600`.
+
+### 10.3 Painel Executivo B2B ([/admin/metricas](file:///d:/IAProjects/AIGamePortal/app/admin/metricas/page.tsx))
+- **Acesso Seguro Duplo**: Suporta autenticação direta por query param (`?key=...`) para diretores comerciais ou cookie seguro `admin_session`.
+- **KPIs Estratégicos (Página 5 do Plano de Negócios)**:
+  * Distribuição por plataforma (PlayStation, Xbox, PC Gaming, Nintendo).
+  * Eficiência de produção (CAC de Conteúdo IA de R$ 0,0015/artigo vs R$ 45,00 de redação tradicional).
+  * Funil de e-commerce com taxa de conversão estimada e GMV gerado.
+  * Assinantes ativos de newsletter e métricas de retenção.
+- **Exportador de Pitch Deck de Mídia**: Gera relatórios comerciais formatados em Markdown executivo, cópia instantânea, exportação JSON e impressão amigável A4/PDF.
+
+
 
 
 

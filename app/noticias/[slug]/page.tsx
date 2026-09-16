@@ -28,7 +28,7 @@ import { ParsedArticleContent } from "@/lib/utils/content-parser";
 import { getActiveAffiliateProducts, findBestAffiliateDeal } from "@/lib/data/affiliates";
 import { injectAffiliateLinks } from "@/lib/services/affiliate-matcher";
 
-export const revalidate = 300; // ISR revalidate fallback a cada 5 minutos
+export const revalidate = 1800; // 30 minutos (1800s) para Edge Caching Cloudflare/Vercel (stale-while-revalidate)
 
 interface PostPageProps {
   params: Promise<{

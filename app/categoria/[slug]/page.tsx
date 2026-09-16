@@ -9,7 +9,7 @@ import {
 } from "@/lib/data/api";
 import { NewsCard } from "@/components/news-card";
 
-export const revalidate = 120; // ISR 2 minutos
+export const revalidate = 1800; // 30 minutos (1800s) para Edge Caching Cloudflare/Vercel
 
 interface CategoryPageProps {
   params: Promise<{

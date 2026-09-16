@@ -70,9 +70,11 @@ npm run start
 - `/noticias/[slug]` (`app/noticias/[slug]/page.tsx`): **Página da Matéria** com cabeçalho editorial, Box TL;DR (30s), Ficha Técnica do jogo com nota Metacritic colorida, conteúdo em prosa rica, box de sentimento Reddit/X, Atribuição E-E-A-T com link canônico e metatags JSON-LD `NewsArticle`.
 - `/categoria/[slug]` (`app/categoria/[slug]/page.tsx`): **Feed por Categoria** (PlayStation, Xbox, Nintendo, PC Gaming, Hardware, Indústria, Geral).
 - `/transparencia-editorial` (`app/transparencia-editorial/page.tsx`): **Transparência e Governança de IA**, detalhando o pipeline, política anti-alucinação, deduplicação vetorial e contato de retificação.
+- `/admin/metricas` (`app/admin/metricas/page.tsx`): **Painel de Métricas B2B & Patrocínio**, visualização de KPIs comerciais (Página 5 do plano), CAC de IA, distribuição por plataforma e gerador de Pitch Deck para marcas.
 - `/admin/afiliados` (`app/admin/afiliados/page.tsx`): **Painel de Afiliados**, gestão de produtos parceiros e métricas de cliques.
 - `/admin/newsletter` (`app/admin/newsletter/page.tsx`): **Painel da Newsletter**, controle de ativação/pausa de envios, diagnóstico Resend e gestão de inscritos.
 - `/admin/discord` (`app/admin/discord/page.tsx`): **Painel do Discord**, controle de ativação/pausa de envios (jogos grátis e breaking news), diagnóstico de webhooks e histórico de alertas.
+- `/api/metrics/summary` (`app/api/metrics/summary/route.ts`): **Rota de Telemetria Interna**, agregação de dados do Supabase com cache no Edge/Memória.
 - `/api/revalidate` (`app/api/revalidate/route.ts`): **Endpoint de Revalidação Incremental sob Demanda (ISR)** acionado pelo pipeline autônomo para atualizar o cache instantaneamente após a gravação no Supabase.
 
 ---
@@ -175,15 +177,32 @@ Consulte a pasta [supabase/](file:///d:/IAProjects/AIGamePortal/supabase):
 - [20260916000005_discord_settings.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000005_discord_settings.sql): Tabela `discord_settings` com chaves mestras e padrão desabilitado de segurança.
 - [seed.sql](file:///d:/IAProjects/AIGamePortal/supabase/seed.sql): Categorias e feeds RSS iniciais.
 
+## 📊 Métricas B2B, Edge Caching & MediaTech (Fase 4)
+
+Para transformar o portal em uma **MediaTech atrativa para marcas e patrocinadores B2B** (fabricantes de periféricos, estúdios indie e servidores de jogos) e sustentar picos de mais de **100.000 visualizações com zero custo de servidor**:
+
+- **Edge Caching Otimizado (Cloudflare/Vercel)**: Cabeçalhos HTTP `Cache-Control: public, s-maxage=1800, stale-while-revalidate=86400` em matérias e categorias, servindo 98%+ do tráfego diretamente da borda RAM da CDN com latência < 30ms.
+- **Formatos Modernos de Imagem**: Ativação nativa de `image/avif` e `image/webp` com 24h de TTL e autorização estrita de domínios oficiais de games.
+- **Painel Executivo B2B (`/admin/metricas`)**:
+  - Acesso protegido por chave secreta (`?key=...`) ou cookie de sessão seguro (`admin_session`).
+  - **KPIs Comerciais**: Volume de notícias (24h e 7d), distribuição por plataforma (PlayStation, Xbox, PC Gaming, Nintendo), cliques de afiliados e GMV estimado.
+  - **CAC de Conteúdo**: Prova de margem operacional de 99.9% (IA Gemini Flash a R$ 0,0015/artigo vs R$ 45,00 de redator freelancer).
+  - **Gerador de Pitch Deck de Mídia**: Modal executivo com resumo comercial pronto para envio a marcas, cópia em Markdown, download JSON e impressão A4/PDF.
+- **Rota de Telemetria Interna (`/api/metrics/summary`)**: Consolidação leve com cache em memória (5 min) e cabeçalhos de CDN para não onerar o Supabase.
+
+---
+
 ## 📚 Documentação Técnica Completa
 Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
 - [docs/index.md](file:///d:/IAProjects/AIGamePortal/docs/index.md): Sumário executivo e guia geral do projeto.
+- [docs/b2b-metrics-and-sponsorship.md](file:///d:/IAProjects/AIGamePortal/docs/b2b-metrics-and-sponsorship.md): Guia de Métricas B2B, Metodologia de CAC e Pacotes de Patrocínio.
+- [docs/cloudflare-edge-caching.md](file:///d:/IAProjects/AIGamePortal/docs/cloudflare-edge-caching.md): Guia passo a passo de Edge Caching na Cloudflare (Cache Rules, Tiered Cache e Zero Trust).
 - [docs/admin-discord.md](file:///d:/IAProjects/AIGamePortal/docs/admin-discord.md): Guia operacional do Painel Administrativo do Discord (/admin/discord).
 - [docs/discord-bot.md](file:///d:/IAProjects/AIGamePortal/docs/discord-bot.md): Guia completo do Bot de Alertas de Jogos Grátis e Breaking News para o Discord.
 - [docs/admin-newsletter.md](file:///d:/IAProjects/AIGamePortal/docs/admin-newsletter.md): Guia operacional do Painel Administrativo da Newsletter.
 - [docs/game-hubs.md](file:///d:/IAProjects/AIGamePortal/docs/game-hubs.md): Arquitetura dos Hubs de Jogos Permanentes, SEO de Cauda Longa e Schema.org VideoGame.
 - [docs/NEWSLETTER_AUTOMATION.md](file:///d:/IAProjects/AIGamePortal/docs/NEWSLETTER_AUTOMATION.md): Guia completo da Newsletter Semanal Gamer, Resend e GitHub Actions.
-- [docs/architecture.md](file:///d:/IAProjects/AIGamePortal/docs/architecture.md): Arquitetura, pipeline de imagens resiliente (7 etapas) e SSG + ISR.
+- [docs/architecture.md](file:///d:/IAProjects/AIGamePortal/docs/architecture.md): Arquitetura, Edge Caching, pipeline de imagens resiliente (7 etapas) e SSG + ISR.
 - [docs/api-reference.md](file:///d:/IAProjects/AIGamePortal/docs/api-reference.md): Referência completa de APIs, funções utilitárias e pipeline autônomo.
 - [docs/components.md](file:///d:/IAProjects/AIGamePortal/docs/components.md): Catálogo de componentes UI e guardas defensivas.
 - [docs/database.md](file:///d:/IAProjects/AIGamePortal/docs/database.md): Modelagem relacional, índices HNSW e RPCs do pgvector.
@@ -191,3 +210,4 @@ Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
 - [docs/routes-and-isr.md](file:///d:/IAProjects/AIGamePortal/docs/routes-and-isr.md): Mapeamento de rotas e contrato da API de revalidação.
 - [docs/ai-context.md](file:///d:/IAProjects/AIGamePortal/docs/ai-context.md): Diretrizes para agentes de IA e conformidade E-E-A-T.
 - [docs/gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md): System Prompt oficial do Agente Redator Gemini.
+

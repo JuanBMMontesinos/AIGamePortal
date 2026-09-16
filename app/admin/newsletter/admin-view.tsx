@@ -25,6 +25,9 @@ import {
   ShoppingBag,
   Sliders,
   Check,
+  BarChart3,
+  DollarSign,
+  MessageSquare,
 } from "lucide-react";
 import { NewsletterSettings, NewsletterSubscriber } from "@/types/database";
 import { NewsletterAdminKPIs } from "@/lib/data/newsletter-admin";
@@ -230,6 +233,50 @@ export function AdminNewsletterView({
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Barra de Navegação Administrativa Unificada */}
+        <nav className="flex flex-wrap items-center justify-between gap-4 p-3 bg-zinc-900/80 border border-zinc-800 rounded-2xl backdrop-blur-md">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/metricas"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Métricas B2B & Patrocínio
+            </Link>
+
+            <Link
+              href="/admin/afiliados"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            >
+              <DollarSign className="w-4 h-4" />
+              Afiliados & Lojas
+            </Link>
+
+            <Link
+              href="/admin/newsletter"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-brand-purple text-white shadow-md shadow-brand-purple/30"
+            >
+              <Mail className="w-4 h-4" />
+              Newsletter
+            </Link>
+
+            <Link
+              href="/admin/discord"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Discord & Alertas
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Edge Cache 1800s Ativo
+            </span>
+          </div>
+        </nav>
+
         {/* 1. Header do Painel */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
           <div>

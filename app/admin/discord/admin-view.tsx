@@ -24,6 +24,7 @@ import {
   Monitor,
   ShoppingBag,
   Mail,
+  BarChart3,
 } from "lucide-react";
 import { DiscordSettings, FreeGameHistory } from "@/types/database";
 import { DiscordAdminKPIs } from "@/lib/data/discord-admin";
@@ -262,6 +263,14 @@ export function AdminDiscordView({
 
         {/* Barra de Ações e Links para os demais Painéis */}
         <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="/admin/metricas"
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-brand-purple/20 border border-brand-purple/40 text-brand-purple hover:bg-brand-purple/30 transition-colors flex items-center gap-1.5"
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-brand-purple" />
+            <span>Métricas B2B</span>
+          </a>
+
           <a
             href="/admin/afiliados"
             className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors flex items-center gap-1.5"

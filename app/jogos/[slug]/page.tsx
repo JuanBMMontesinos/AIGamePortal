@@ -24,7 +24,7 @@ import { getActiveAffiliateProducts } from "@/lib/data/affiliates";
 import { formatDate, formatRelativeTime, isValidImageUrl, calculateReadingTime } from "@/lib/utils";
 import { AffiliateProduct } from "@/types/database";
 
-export const revalidate = 300; // ISR revalidate fallback a cada 5 minutos
+export const revalidate = 1800; // 30 minutos (1800s) para Edge Caching Cloudflare/Vercel
 
 interface GameHubPageProps {
   params: Promise<{

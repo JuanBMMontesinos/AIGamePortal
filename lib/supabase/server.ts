@@ -21,3 +21,16 @@ export function createServerClient() {
     },
   });
 }
+
+export function createAdminClient() {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
+  return createClient<Database>(supabaseUrl, key, {
+    auth: {
+      persistSession: false,
+    },
+  });
+}
+
