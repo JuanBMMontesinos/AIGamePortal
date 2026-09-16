@@ -109,6 +109,24 @@ erDiagram
         timestamptz posted_at
         timestamptz created_at
     }
+
+    DISCORD_SETTINGS {
+        text id PK
+        boolean is_deals_enabled
+        boolean is_news_enabled
+        text deals_disabled_reason
+        text news_disabled_reason
+        text deals_webhook_url
+        text news_webhook_url
+        timestamptz last_deals_dispatched_at
+        text last_deals_dispatch_status
+        text last_deals_dispatch_log
+        timestamptz last_news_dispatched_at
+        text last_news_dispatch_status
+        text last_news_dispatch_log
+        timestamptz created_at
+        timestamptz updated_at
+    }
 ```
 
 ---
@@ -264,6 +282,30 @@ Histórico de ofertas de jogos 100% gratuitos disparadas no Discord para preven�
 
 ---
 
+### 2.8 Tabela `public.discord_settings` (Fase 4 - Painel Administrativo do Discord)
+
+Parâmetros globais de controle, chaves mestras e telemetria dos envios automatizados para o Discord.
+
+| Coluna | Tipo | Modificadores | Descrição |
+| :--- | :--- | :--- | :--- |
+| `id` | `TEXT` | `PRIMARY KEY DEFAULT 'default'` | Registro único singleton de configuração |
+| `is_deals_enabled` | `BOOLEAN` | `NOT NULL DEFAULT false` | Chave mestre de envio de jogos grátis (inicia desabilitado) |
+| `is_news_enabled` | `BOOLEAN` | `NOT NULL DEFAULT false` | Chave mestre de envio de breaking news (inicia desabilitado) |
+| `deals_disabled_reason` | `TEXT` | `NULL` | Justificativa administrativa para a pausa de jogos grátis |
+| `news_disabled_reason` | `TEXT` | `NULL` | Justificativa administrativa para a pausa de breaking news |
+| `deals_webhook_url` | `TEXT` | `NULL` | Override opcional de webhook de promoções |
+| `news_webhook_url` | `TEXT` | `NULL` | Override opcional de webhook de notícias |
+| `last_deals_dispatched_at` | `TIMESTAMPTZ` | `NULL` | Data/hora do último ciclo de checagem/envio de deals |
+| `last_deals_dispatch_status` | `TEXT` | `NOT NULL DEFAULT 'idle'` | Status da última execução: `idle`, `success`, `failed` ou `skipped` |
+| `last_deals_dispatch_log` | `TEXT` | `NULL` | Resumo textual da última execução do bot de deals |
+| `last_news_dispatched_at` | `TIMESTAMPTZ` | `NULL` | Data/hora do último alerta urgente de notícia disparado |
+| `last_news_dispatch_status` | `TEXT` | `NOT NULL DEFAULT 'idle'` | Status do último disparo de breaking news |
+| `last_news_dispatch_log` | `TEXT` | `NULL` | Resumo textual da última notícia urgente disparada |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Criação cadastral |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Atualização automática via trigger |
+
+---
+
 ## 3. Estratégia de Indexação e Performance
 
 | Nome do Índice | Tipo | Tabela / Colunas | Justificativa |
@@ -374,3 +416,6 @@ Todas as tabelas possuem `ENABLE ROW LEVEL SECURITY`.
 6. **`public.free_games_history`** (Fase 4):
    - `SELECT`: Liberado para `anon` e `authenticated` (permite leitura pública para feeds ou widgets comunitários).
    - `ALL`: Restrito a `service_role` (apenas bots autorizados inserem ou alteram o histórico).
+7. **`public.discord_settings`** (Fase 4):
+   - `SELECT`: Liberado para `anon`, `authenticated` e `service_role` (para leitura de status pelos clientes).
+   - `ALL`: Restrito exclusivamente a `service_role` (protege alteração de chaves mestras e webhooks contra edições não autorizadas).

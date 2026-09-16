@@ -574,4 +574,39 @@ Monta o Rich Embed vermelho (`#DC2626`) para notícias urgentes nível 5/5 (anú
   ): Promise<DiscordSendResult>
   ```
 
+---
+
+## 13. Módulo `lib/data/discord-admin.ts` (Fase 4)
+
+Camada de dados e telemetria exclusiva para o painel `/admin/discord`.
+
+### `getDiscordSettingsAdmin()`
+Carrega as configurações do Discord garantindo fallback seguro com `is_deals_enabled: false` e `is_news_enabled: false`.
+- **Assinatura**: `export async function getDiscordSettingsAdmin(): Promise<DiscordSettings>`
+
+### `updateDiscordSettingsAdmin(payload)`
+Atualiza chaves mestras e parâmetros em `public.discord_settings`.
+- **Assinatura**: `export async function updateDiscordSettingsAdmin(payload: Partial<DiscordSettings>): Promise<{ success: boolean; settings?: DiscordSettings; error?: string }>`
+
+### `getDiscordKPIsAdmin()`
+Consolida métricas de ofertas enviadas, status de webhooks com mascaramento de segurança e data do último disparo.
+- **Assinatura**: `export async function getDiscordKPIsAdmin(): Promise<DiscordAdminKPIs>`
+
+### `getDiscordDealsHistoryAdmin(options?)`
+Consulta paginada do histórico de promoções já notificadas no Discord a partir da tabela `free_games_history`.
+- **Assinatura**: `export async function getDiscordDealsHistoryAdmin(options?: { search?: string; limit?: number; page?: number }): Promise<{ items: FreeGameHistory[]; total: number; page: number; totalPages: number }>`
+
+---
+
+## 14. Endpoint Administrativo do Discord (`/api/admin/discord`)
+
+Rotas protegidas por autenticação via cookie `admin_session` ou header `x-admin-key`.
+
+- **`GET /api/admin/discord`**: Retorna `{ settings, kpis, history }` com suporte a paginação e busca textual.
+- **`PATCH /api/admin/discord`**: Atualiza switches de habilitação (`is_deals_enabled`, `is_news_enabled`) e justificativas de pausa.
+- **`POST /api/admin/discord`**: Dispara alertas de teste controlados diretamente para os webhooks:
+  - `{ "action": "test_deal" }`: Homologa o canal de jogos grátis com um Rich Embed de demonstração.
+  - `{ "action": "test_news" }`: Homologa o canal de breaking news com um Rich Embed urgente de demonstração.
+
+
 

@@ -22,10 +22,22 @@ Diferente de bots legados que exigem um processo Node.js persistente mantendo um
 
 ```
 AIGamePortal/
+├── app/
+│   ├── admin/
+│   │   └── discord/                     # Painel Administrativo exclusivo (/admin/discord)
+│   │       ├── page.tsx                 # Server Component autenticado
+│   │       ├── login-form.tsx           # Formulário de acesso por chave mestra
+│   │       └── admin-view.tsx           # Dashboard com switches e histórico
+│   └── api/
+│       └── admin/
+│           └── discord/
+│               └── route.ts             # API REST (GET, PATCH e POST de testes)
 ├── .github/
 │   └── workflows/
 │       └── cron-discord-deals.yml       # Agendamento no GitHub Actions (a cada 2 horas)
 ├── lib/
+│   ├── data/
+│   │   └── discord-admin.ts             # Dados e telemetria para o painel admin
 │   └── services/
 │       └── discord-notifier.ts          # Serviço central tipado de disparo de webhooks
 ├── scripts/
@@ -33,9 +45,11 @@ AIGamePortal/
 │   └── sync-news.ts                     # Ingestão com disparo integrado de Breaking News (5/5)
 ├── supabase/
 │   └── migrations/
-│       └── 20260916000004_free_games_history.sql # Tabela de histórico de promoções enviadas
+│       ├── 20260916000004_free_games_history.sql # Histórico de promoções enviadas
+│       └── 20260916000005_discord_settings.sql   # Tabela de controle (default: desabilitado)
 └── docs/
-    └── discord-bot.md                   # Esta documentação completa
+    ├── discord-bot.md                   # Esta documentação técnica
+    └── admin-discord.md                 # Guia operacional do Painel Administrativo
 ```
 
 ---
@@ -147,3 +161,16 @@ O workflow `.github/workflows/cron-discord-deals.yml` roda automaticamente em am
 2. **Pausa Entre Disparos**: O bot aplica uma pausa de 1,5 segundo entre postagens sucessivas, garantindo estabilidade e respeito às diretrizes de uso da API do Discord.
 3. **Fallback para Rejeição de Componentes (HTTP 400)**: Caso algum webhook não tenha permissão de postar botões interativos (`components`), o despachante remove os botões automaticamente e reenvia apenas os Embeds e links Markdown.
 4. **Isolamento de Falhas no Pipeline**: Se a API do Discord oscilar ou falhar durante a publicação de uma notícia, o pipeline principal (`sync-news.ts`) registra o erro em log e continua normalmente sem interromper a publicação do site ou das demais redes sociais.
+
+---
+
+## 10. Controle e Painel Administrativo (`/admin/discord`)
+
+Todos os envios para o Discord contam com um painel de gerenciamento exclusivo e seguro acessível em [http://localhost:3000/admin/discord](http://localhost:3000/admin/discord):
+
+- **Padrão Desabilitado por Segurança**: Inicializa com envios 100% desligados (`is_deals_enabled: false` e `is_news_enabled: false`) até que você ative expressamente no painel.
+- **Toggles Independentes**: Habilite ou pause os alertas de Jogos Grátis ou de Breaking News de forma isolada.
+- **Diagnóstico com Disparos de Teste**: Botões para validação instantânea dos webhooks com Rich Embeds de homologação.
+- **Auditoria de Histórico**: Tabela de acompanhamento de todas as ofertas já enviadas no canal.
+- Para instruções operacionais detalhadas, consulte o **[Guia do Painel Administrativo do Discord](file:///d:/IAProjects/AIGamePortal/docs/admin-discord.md)**.
+

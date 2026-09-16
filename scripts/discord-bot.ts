@@ -171,6 +171,65 @@ async function markDealAsPosted(deal: FreeGameDeal): Promise<void> {
   }
 }
 
+/**
+ * Verifica se os envios de jogos grátis estão autorizados no painel administrativo (/admin/discord)
+ */
+async function checkDealsEnabled(): Promise<{ isEnabled: boolean; reason: string | null }> {
+  if (!supabase) {
+    return {
+      isEnabled: false,
+      reason: "Supabase não conectado (padrão de segurança: desabilitado).",
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("discord_settings")
+      .select("is_deals_enabled, deals_disabled_reason")
+      .eq("id", "default")
+      .maybeSingle();
+
+    if (error || !data) {
+      return {
+        isEnabled: false,
+        reason: "Configuração discord_settings não encontrada (padrão de segurança: desabilitado).",
+      };
+    }
+
+    const row = data as any;
+    return {
+      isEnabled: row.is_deals_enabled === true,
+      reason: row.deals_disabled_reason || "Envios de jogos grátis desabilitados no painel /admin/discord",
+    };
+  } catch (err: any) {
+    return {
+      isEnabled: false,
+      reason: err?.message || "Erro ao consultar configurações do Discord.",
+    };
+  }
+}
+
+/**
+ * Atualiza o status e log da execução na tabela discord_settings
+ */
+async function updateDispatchStatus(
+  status: "idle" | "success" | "failed" | "skipped",
+  log: string
+): Promise<void> {
+  if (!supabase) return;
+  try {
+    await (supabase.from("discord_settings") as any).upsert({
+      id: "default",
+      last_deals_dispatched_at: new Date().toISOString(),
+      last_deals_dispatch_status: status,
+      last_deals_dispatch_log: log.slice(0, 1000),
+      updated_at: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.warn(`  ⚠️ Falha ao atualizar telemetria em discord_settings: ${err?.message || err}`);
+  }
+}
+
 // ==============================================================================
 // CONSUMO DA API DE JOGOS GRÁTIS
 // ==============================================================================
@@ -217,6 +276,24 @@ async function runDiscordDealsBot() {
   console.log(`💾 Persistência Supabase: ${supabase ? "CONECTADO" : "FALLBACK LOCAL"}`);
   console.log(`📢 Webhook Alvo: ${DISCORD_WEBHOOK_URL ? "CONFIGURADO" : "AUSENTE (dry-run recomendado)"}`);
   console.log("--------------------------------------------------------------------\n");
+
+  // 0. Verifica se o envio está autorizado no painel administrativo (/admin/discord)
+  console.log("🔒 [0/2] Verificando autorização de envio no painel administrativo...");
+  const { isEnabled, reason } = await checkDealsEnabled();
+
+  if (!isEnabled) {
+    if (isDryRun || isForce) {
+      console.log("⚠️ [AVISO] O envio de alertas está DESABILITADO no painel administrativo.");
+      console.log(`📌 Motivo registrado: "${reason}"`);
+      console.log(`🧪 Flag --${isDryRun ? "dry-run" : "force"} ativa: Continuando execução apenas para simulação.`);
+    } else {
+      console.log("🛑 [BLOQUEIO DE SEGURANÇA] O envio de alertas para o Discord está DESABILITADO.");
+      console.log(`📌 Motivo da pausa: "${reason}"`);
+      console.log("💡 Para reativar, acesse o painel administrativo: /admin/discord");
+      await updateDispatchStatus("skipped", `Envio pausado via painel admin. Motivo: ${reason}`);
+      return;
+    }
+  }
 
   let deals: FreeGameDeal[] = [];
 
@@ -308,6 +385,20 @@ async function runDiscordDealsBot() {
   console.log(`⏭️ Ofertas já notificadas (puladas): ${totalSkipped}`);
   console.log(`⚠️ Erros encontrados: ${totalErrors}`);
   console.log("====================================================================\n");
+
+  if (!isDryRun) {
+    if (totalErrors > 0 && totalPosted === 0) {
+      await updateDispatchStatus(
+        "failed",
+        `Execução falhou com ${totalErrors} erros. Nenhuma oferta enviada.`
+      );
+    } else {
+      await updateDispatchStatus(
+        "success",
+        `Executado com sucesso. ${totalPosted} novas ofertas enviadas ao Discord, ${totalSkipped} já existentes puladas.`
+      );
+    }
+  }
 
   if (totalErrors > 0 && totalPosted === 0 && !isDryRun) {
     process.exit(1);

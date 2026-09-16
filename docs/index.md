@@ -23,6 +23,7 @@ Esta documentação foi estruturada para servir tanto a engenheiros humanos de s
 | **[social-automation.md](file:///d:/IAProjects/AIGamePortal/docs/social-automation.md)** | Módulo de Distribuição Multi-canal: Telegram Bot API, X/Twitter API v2, copywriter gamer e resiliência non-blocking. | Social Media & Engenheiros |
 | **[affiliate-system.md](file:///d:/IAProjects/AIGamePortal/docs/affiliate-system.md)** | Módulo de Afiliados Inteligentes (Fase 3): Modelagem, conformidade E-E-A-T (rel="sponsored nofollow"), tracking /api/out/[id] e AffiliateDealCard. | Monetização, Engenheiros & E-commerce |
 | **[discord-bot.md](file:///d:/IAProjects/AIGamePortal/docs/discord-bot.md)** | Bot de Alertas de Jogos Grátis & Breaking News no Discord (Fase 4): Webhook serverless, GamerPower API, Rich Embeds e cron. | Comunidade, DevOps & IA |
+| **[admin-discord.md](file:///d:/IAProjects/AIGamePortal/docs/admin-discord.md)** | Guia operacional do Painel Administrativo do Discord (/admin/discord): Chaves mestras de envio, testes e histórico. | Administradores, DevOps & IA |
 
 ---
 

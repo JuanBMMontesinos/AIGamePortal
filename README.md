@@ -72,6 +72,7 @@ npm run start
 - `/transparencia-editorial` (`app/transparencia-editorial/page.tsx`): **Transparência e Governança de IA**, detalhando o pipeline, política anti-alucinação, deduplicação vetorial e contato de retificação.
 - `/admin/afiliados` (`app/admin/afiliados/page.tsx`): **Painel de Afiliados**, gestão de produtos parceiros e métricas de cliques.
 - `/admin/newsletter` (`app/admin/newsletter/page.tsx`): **Painel da Newsletter**, controle de ativação/pausa de envios, diagnóstico Resend e gestão de inscritos.
+- `/admin/discord` (`app/admin/discord/page.tsx`): **Painel do Discord**, controle de ativação/pausa de envios (jogos grátis e breaking news), diagnóstico de webhooks e histórico de alertas.
 - `/api/revalidate` (`app/api/revalidate/route.ts`): **Endpoint de Revalidação Incremental sob Demanda (ISR)** acionado pelo pipeline autônomo para atualizar o cache instantaneamente após a gravação no Supabase.
 
 ---
@@ -171,11 +172,13 @@ Consulte a pasta [supabase/](file:///d:/IAProjects/AIGamePortal/supabase):
 - [20260916000002_game_hubs.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000002_game_hubs.sql): Tabela `game_hubs`, relacionamento com `posts.game_hub_id`, índices e seeds de GTA VI, Elden Ring e Monster Hunter Wilds.
 - [20260916000003_newsletter_settings.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000003_newsletter_settings.sql): Tabela de controle e habilitação de envio da newsletter.
 - [20260916000004_free_games_history.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000004_free_games_history.sql): Tabela `free_games_history` para prevenção de alertas duplicados no Discord.
+- [20260916000005_discord_settings.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000005_discord_settings.sql): Tabela `discord_settings` com chaves mestras e padrão desabilitado de segurança.
 - [seed.sql](file:///d:/IAProjects/AIGamePortal/supabase/seed.sql): Categorias e feeds RSS iniciais.
 
 ## 📚 Documentação Técnica Completa
 Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
 - [docs/index.md](file:///d:/IAProjects/AIGamePortal/docs/index.md): Sumário executivo e guia geral do projeto.
+- [docs/admin-discord.md](file:///d:/IAProjects/AIGamePortal/docs/admin-discord.md): Guia operacional do Painel Administrativo do Discord (/admin/discord).
 - [docs/discord-bot.md](file:///d:/IAProjects/AIGamePortal/docs/discord-bot.md): Guia completo do Bot de Alertas de Jogos Grátis e Breaking News para o Discord.
 - [docs/admin-newsletter.md](file:///d:/IAProjects/AIGamePortal/docs/admin-newsletter.md): Guia operacional do Painel Administrativo da Newsletter.
 - [docs/game-hubs.md](file:///d:/IAProjects/AIGamePortal/docs/game-hubs.md): Arquitetura dos Hubs de Jogos Permanentes, SEO de Cauda Longa e Schema.org VideoGame.

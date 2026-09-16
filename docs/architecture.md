@@ -311,6 +311,14 @@ O AIGamePortal integra uma arquitetura de bots baseada em **Discord Webhooks Ser
 - Avalia gatilhos de impacto crítico (consoles de nova geração, revelações mundiais e abalos de mercado).
 - Dispara Rich Embed vermelho `#DC2626` imediatamente para o canal `#plantao-noticias` via webhook assíncrono e tolerante a falhas.
 
+### 9.3 Painel Administrativo Exclusivo ([/admin/discord](file:///d:/IAProjects/AIGamePortal/app/admin/discord/page.tsx))
+- **Isolamento Modular**: Painel independente dos módulos de afiliados e newsletter com autenticação via `admin_session`.
+- **Padrão Desabilitado por Segurança**: Inicializa com envios 100% desabilitados em `public.discord_settings` (`is_deals_enabled: false` e `is_news_enabled: false`), bloqueando execuções de cron e disparos de notícias até habilitação expressa.
+- **Controles Granulares**: Chaves mestras independentes para Deals e News, com campo de justificativa de pausa.
+- **Diagnóstico & Testes**: Monitoramento de URLs com token mascarado e botões de disparo de teste em tempo real.
+- **Histórico & Auditoria**: Visualização e busca de todos os alertas disparados no acervo com paginação server-side.
+
+
 
 
 

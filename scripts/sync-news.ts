@@ -770,6 +770,23 @@ function isHighImpactBreakingNews(
   return hasHighImpactMatch || (isOfficialHardware && /\b(novo|an[úu]ncio|revela[çc][ãa]o)\b/i.test(textToScan));
 }
 
+/**
+ * Verifica se os disparos de Breaking News para o Discord estão autorizados no painel admin
+ */
+async function checkDiscordNewsEnabled(supabase: SupabaseClient): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from("discord_settings")
+      .select("is_news_enabled")
+      .eq("id", "default")
+      .maybeSingle();
+
+    return Boolean(data && (data as any).is_news_enabled === true);
+  } catch {
+    return false;
+  }
+}
+
 // ============================================================================
 // PIPELINE PRINCIPAL DE EXECUÇÃO
 // ============================================================================
@@ -1075,20 +1092,25 @@ export async function runNewsSync() {
         // PASSO G.1: Alerta de Breaking News no Discord (Impacto 5/5)
         // --------------------------------------------------------------------
         if (isHighImpactBreakingNews(saved.title, generated.content, reliabilityScore, generated.suggested_category)) {
-          console.log(`        🔥 [DiscordBreakingNews] Notícia de alto impacto detectada (5/5). Disparando alerta prioritário no Discord...`);
-          await sendDiscordNewsAlert({
-            title: saved.title,
-            slug: saved.slug,
-            url: canonicalArticleUrl,
-            tldr: generated.tldr || [],
-            excerpt: generated.excerpt,
-            category: feedConfig.defaultCategorySlug || generated.suggested_category || "geral",
-            coverImageUrl: scraped.imageUrl,
-            isRumor: isRumor,
-            reliabilityScore: reliabilityScore,
-            platforms: generated.game_metadata?.platforms,
-            sourceName: feedConfig.name,
-          });
+          const isNewsAuthorized = await checkDiscordNewsEnabled(supabase);
+          if (isNewsAuthorized) {
+            console.log(`        🔥 [DiscordBreakingNews] Notícia de alto impacto detectada (5/5). Disparando alerta prioritário no Discord...`);
+            await sendDiscordNewsAlert({
+              title: saved.title,
+              slug: saved.slug,
+              url: canonicalArticleUrl,
+              tldr: generated.tldr || [],
+              excerpt: generated.excerpt,
+              category: feedConfig.defaultCategorySlug || generated.suggested_category || "geral",
+              coverImageUrl: scraped.imageUrl,
+              isRumor: isRumor,
+              reliabilityScore: reliabilityScore,
+              platforms: generated.game_metadata?.platforms,
+              sourceName: feedConfig.name,
+            });
+          } else {
+            console.log(`        ℹ️ [DiscordBreakingNews] Notícia de alto impacto detectada (5/5), mas disparos para Discord estão DESABILITADOS em /admin/discord.`);
+          }
         }
 
         // --------------------------------------------------------------------

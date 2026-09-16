@@ -145,6 +145,24 @@ export interface FreeGameHistory {
   created_at: string;
 }
 
+export interface DiscordSettings {
+  id: string;
+  is_deals_enabled: boolean;
+  is_news_enabled: boolean;
+  deals_disabled_reason: string | null;
+  news_disabled_reason: string | null;
+  deals_webhook_url?: string | null;
+  news_webhook_url?: string | null;
+  last_deals_dispatched_at: string | null;
+  last_deals_dispatch_status: "idle" | "success" | "failed" | "skipped" | string;
+  last_deals_dispatch_log: string | null;
+  last_news_dispatched_at: string | null;
+  last_news_dispatch_status: "idle" | "success" | "failed" | "skipped" | string;
+  last_news_dispatch_log: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -311,6 +329,44 @@ export interface Database {
           expires_at?: string | null;
           posted_at?: string;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      discord_settings: {
+        Row: DiscordSettings;
+        Insert: {
+          id?: string;
+          is_deals_enabled?: boolean;
+          is_news_enabled?: boolean;
+          deals_disabled_reason?: string | null;
+          news_disabled_reason?: string | null;
+          deals_webhook_url?: string | null;
+          news_webhook_url?: string | null;
+          last_deals_dispatched_at?: string | null;
+          last_deals_dispatch_status?: string;
+          last_deals_dispatch_log?: string | null;
+          last_news_dispatched_at?: string | null;
+          last_news_dispatch_status?: string;
+          last_news_dispatch_log?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          is_deals_enabled?: boolean;
+          is_news_enabled?: boolean;
+          deals_disabled_reason?: string | null;
+          news_disabled_reason?: string | null;
+          deals_webhook_url?: string | null;
+          news_webhook_url?: string | null;
+          last_deals_dispatched_at?: string | null;
+          last_deals_dispatch_status?: string;
+          last_deals_dispatch_log?: string | null;
+          last_news_dispatched_at?: string | null;
+          last_news_dispatch_status?: string;
+          last_news_dispatch_log?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
