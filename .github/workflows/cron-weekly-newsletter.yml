@@ -1,0 +1,65 @@
+name: Disparo Semanal da Newsletter Gamer (Cron)
+
+on:
+  schedule:
+    # Executa todo domingo às 10:00 BRT (13:00 UTC)
+    - cron: '0 13 * * 0'
+  workflow_dispatch: # Permite disparo manual pelo painel de Actions do GitHub
+    inputs:
+      dry_run:
+        description: 'Executar em modo Dry-Run (apenas simulação, sem enviar e-mails)?'
+        required: false
+        type: boolean
+        default: false
+      test_email:
+        description: 'E-mail para envio de teste exclusivo (opcional)'
+        required: false
+        type: string
+        default: ''
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/cron-weekly-newsletter.yml'
+      - 'scripts/send-weekly-newsletter.ts'
+
+# Evita disparos duplicados concorrentes
+concurrency:
+  group: weekly-gamer-newsletter
+  cancel-in-progress: false
+
+jobs:
+  send-newsletter:
+    name: Compilar Resumo Semanal & Disparar com Resend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js v22 com Cache NPM
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependências de Produção
+        run: npm ci
+
+      - name: Executar Pipeline de Disparo da Newsletter
+        run: |
+          FLAGS=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            FLAGS="$FLAGS --dry-run"
+          fi
+          if [ -n "${{ github.event.inputs.test_email }}" ]; then
+            FLAGS="$FLAGS --test-email=${{ github.event.inputs.test_email }}"
+          fi
+          npm run newsletter:send -- $FLAGS
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}

@@ -89,9 +89,35 @@ export interface AffiliateClick {
   clicked_at: string;
 }
 
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  is_active: boolean;
+  subscribed_at: string;
+  unsubscribed_at: string | null;
+}
+
 export interface Database {
   public: {
     Tables: {
+      newsletter_subscribers: {
+        Row: NewsletterSubscriber;
+        Insert: {
+          id?: string;
+          email: string;
+          is_active?: boolean;
+          subscribed_at?: string;
+          unsubscribed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          is_active?: boolean;
+          subscribed_at?: string;
+          unsubscribed_at?: string | null;
+        };
+        Relationships: [];
+      };
       categories: {
         Row: Category;
         Insert: Omit<Category, "id" | "created_at"> & { id?: string; created_at?: string };

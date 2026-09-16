@@ -23,6 +23,7 @@ import { RumorBanner } from "@/components/RumorBanner";
 import { ArticleCoverImage } from "@/components/article-cover-image";
 import { AffiliateDealCard } from "@/components/AffiliateDealCard";
 import { AdBanner } from "@/components/AdBanner";
+import { NewsletterBox } from "@/components/NewsletterBox";
 import { ParsedArticleContent } from "@/lib/utils/content-parser";
 import { getActiveAffiliateProducts, findBestAffiliateDeal } from "@/lib/data/affiliates";
 import { injectAffiliateLinks } from "@/lib/services/affiliate-matcher";
@@ -437,7 +438,10 @@ export default async function PostPage({ params }: PostPageProps) {
             </div>
           )}
 
-          {/* 2. Banner Fixo Skyscraper (Doca suavemente no topo durante a rolagem do artigo) */}
+          {/* 2. Caixa de Captura da Newsletter Gamer */}
+          <NewsletterBox variant="sidebar" />
+
+          {/* 3. Banner Fixo Skyscraper (Doca suavemente no topo durante a rolagem do artigo) */}
           <div className="sticky top-24 pt-2">
             <AdBanner format="sidebar-sticky" fallbackProduct={dealProduct} />
           </div>

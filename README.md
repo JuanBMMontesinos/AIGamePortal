@@ -106,15 +106,40 @@ Parâmetros suportados:
 
 ---
 
+## 📬 Newsletter Semanal Gamer (Fase 3 - Resend)
+
+O portal compila automaticamente todo domingo às 10:00 BRT os **5 artigos mais lidos** da semana e as **melhores ofertas de afiliados**, disparando um e-mail responsivo moderno para os assinantes ativos via **Resend**:
+
+- **Captura Gamer**: Componente `NewsletterBox.tsx` integrado na Home e nas barras laterais de leitura com validação em tempo real.
+- **Workflow GitHub Actions**: `.github/workflows/cron-weekly-newsletter.yml` agendado para `cron: '0 13 * * 0'` (domingos às 13h UTC = 10h BRT).
+- **Conformidade CAN-SPAM & LGPD**: Link de descadastro (unsubscribe) exclusivo no rodapé com reativação fácil em 1 clique em `/newsletter/unsubscribe`.
+
+### Como rodar o disparo manualmente ou em teste:
+```bash
+# Simulação local com geração de prévia HTML em scratch/newsletter-preview.html (sem gastar créditos)
+npm run newsletter:send -- --dry-run
+
+# Teste direcionado para um e-mail específico
+npm run newsletter:send -- --test-email=seu-email@dominio.com
+
+# Disparo oficial para toda a base ativa
+npm run newsletter:send
+```
+
+---
+
 ## 🗄️ Banco de Dados e Migrações
 
 Consulte a pasta [supabase/](file:///d:/IAProjects/AIGamePortal/supabase):
 - [20260912000001_initial_schema.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260912000001_initial_schema.sql): Migração mestre idempotente com pgvector HNSW, RLS e RPC `match_recent_articles`.
+- [20260914000002_affiliate_system.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260914000002_affiliate_system.sql): Sistema de produtos afiliados, cliques e monetização.
+- [20260916000001_newsletter_subscribers.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000001_newsletter_subscribers.sql): Tabela `newsletter_subscribers` com RLS e índices.
 - [seed.sql](file:///d:/IAProjects/AIGamePortal/supabase/seed.sql): Categorias e feeds RSS iniciais.
 
 ## 📚 Documentação Técnica Completa
 Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
 - [docs/index.md](file:///d:/IAProjects/AIGamePortal/docs/index.md): Sumário executivo e guia geral do projeto.
+- [docs/NEWSLETTER_AUTOMATION.md](file:///d:/IAProjects/AIGamePortal/docs/NEWSLETTER_AUTOMATION.md): Guia completo da Newsletter Semanal Gamer, Resend e GitHub Actions.
 - [docs/architecture.md](file:///d:/IAProjects/AIGamePortal/docs/architecture.md): Arquitetura, pipeline de imagens resiliente (7 etapas) e SSG + ISR.
 - [docs/api-reference.md](file:///d:/IAProjects/AIGamePortal/docs/api-reference.md): Referência completa de APIs, funções utilitárias e pipeline autônomo.
 - [docs/components.md](file:///d:/IAProjects/AIGamePortal/docs/components.md): Catálogo de componentes UI e guardas defensivas.

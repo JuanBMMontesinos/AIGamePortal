@@ -3,6 +3,7 @@ import { getLatestPosts, getTrendingPosts, getCategories } from "@/lib/data/api"
 import { HeroFeatured } from "@/components/hero-featured";
 import { NewsCard } from "@/components/news-card";
 import { Sidebar } from "@/components/sidebar";
+import { NewsletterBox } from "@/components/NewsletterBox";
 import { Sparkles, Newspaper, Zap } from "lucide-react";
 
 export const revalidate = 120; // ISR fallback a cada 2 minutos (também revalidável sob demanda via /api/revalidate)
@@ -78,6 +79,11 @@ export default async function HomePage() {
           />
         </div>
       </div>
+
+      {/* 3. Seção Especial de Inscrição da Newsletter Gamer */}
+      <section className="pt-4">
+        <NewsletterBox variant="default" />
+      </section>
     </div>
   );
 }
