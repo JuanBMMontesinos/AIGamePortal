@@ -94,6 +94,17 @@ export function Header({ categories }: HeaderProps) {
           >
             Início
           </Link>
+          <Link
+            href="/jogos"
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+              pathname.startsWith("/jogos")
+                ? "bg-brand-purple/15 text-brand-purple dark:bg-brand-purple/25 dark:text-white border border-brand-purple/40 shadow-sm"
+                : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-gamer-800"
+            }`}
+          >
+            <Gamepad2 className="w-3.5 h-3.5 text-brand-purple" />
+            <span>Jogos</span>
+          </Link>
           {categories.map((cat) => {
             const isActive = pathname === `/categoria/${cat.slug}`;
             return (
@@ -151,6 +162,17 @@ export function Header({ categories }: HeaderProps) {
               }`}
             >
               Início
+            </Link>
+            <Link
+              href="/jogos"
+              className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 ${
+                pathname.startsWith("/jogos")
+                  ? "bg-brand-purple/20 text-brand-purple"
+                  : "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-gamer-850"
+              }`}
+            >
+              <Gamepad2 className="w-4 h-4 text-brand-purple" />
+              <span>Jogos</span>
             </Link>
             {categories.map((cat) => (
               <Link

@@ -10,6 +10,7 @@ Esta documentação detalha a arquitetura de dados, modelagem, estratégias de i
 erDiagram
     CATEGORIES ||--o{ POSTS : categorizes
     SOURCES ||--o{ POSTS : originates
+    GAME_HUBS ||--o{ POSTS : clusters
     AFFILIATE_PRODUCTS ||--o{ AFFILIATE_CLICKS : tracks
     POSTS ||--o{ AFFILIATE_CLICKS : generates
 
@@ -40,6 +41,7 @@ erDiagram
         text cover_image_alt
         uuid category_id FK
         uuid source_id FK
+        uuid game_hub_id FK
         text source_original_url
         text source_original_title
         jsonb game_metadata
@@ -76,6 +78,23 @@ erDiagram
         text referrer
         text user_agent
         timestamptz clicked_at
+    }
+
+    GAME_HUBS {
+        uuid id PK
+        text name
+        text slug UK
+        text[] aliases
+        text developer
+        text publisher
+        text release_date
+        text[] platforms
+        integer metacritic_score
+        text cover_image_url
+        text banner_image_url
+        text synopsis
+        timestamptz created_at
+        timestamptz updated_at
     }
 ```
 
@@ -190,6 +209,29 @@ Registro analítico de redirecionamentos para mensuração de CTR, conversão po
 
 ---
 
+### 2.6 Tabela `public.game_hubs` (Fase 4 - SEO de Cauda Longa)
+
+Centrais e hubs permanentes de jogos para atração de tráfego orgânico perene e auto-clustering editorial de notícias.
+
+| Coluna | Tipo | Modificadores | Descrição |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Identificador único do hub |
+| `name` | `TEXT` | `NOT NULL` | Nome oficial do título (ex: *Grand Theft Auto VI*) |
+| `slug` | `TEXT` | `NOT NULL UNIQUE` | Slug da rota pública `/jogos/[slug]` |
+| `aliases` | `TEXT[]` | `NOT NULL DEFAULT '{}'` | Sinônimos e termos de busca para matching |
+| `developer` | `TEXT` | `NOT NULL` | Estúdio desenvolvedor |
+| `publisher` | `TEXT` | `NOT NULL` | Editora/publicadora |
+| `release_date` | `TEXT` | `NOT NULL` | Data ou janela de lançamento |
+| `platforms` | `TEXT[]` | `NOT NULL DEFAULT '{}'` | Plataformas confirmadas |
+| `metacritic_score`| `INTEGER` | `NULL` | Nota Metacritic oficial (0 a 100) |
+| `cover_image_url` | `TEXT` | `NOT NULL` | URL da arte vertical da capa |
+| `banner_image_url`| `TEXT` | `NOT NULL` | URL do banner horizontal panorâmico |
+| `synopsis` | `TEXT` | `NOT NULL` | Sinopse rica do jogo |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Criação cadastral |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Atualização automática via trigger |
+
+---
+
 ## 3. Estratégia de Indexação e Performance
 
 | Nome do Índice | Tipo | Tabela / Colunas | Justificativa |
@@ -208,6 +250,10 @@ Registro analítico de redirecionamentos para mensuração de CTR, conversão po
 | `idx_affiliate_clicks_product_id` | B-Tree | `affiliate_clicks(product_id)` | Agrupamento de cliques por produto para dashboards |
 | `idx_affiliate_clicks_post_id` | B-Tree | `affiliate_clicks(post_id)` | Métricas de conversão por artigo |
 | `idx_affiliate_clicks_clicked_at` | B-Tree | `affiliate_clicks(clicked_at DESC)` | Análise temporal de conversão e relatórios |
+| `idx_posts_game_hub_id` | B-Tree | `posts(game_hub_id)` | Associação rápida de matérias ao hub de jogo |
+| `idx_posts_game_hub_published` | B-Tree Composto | `posts(game_hub_id, published_at DESC)` | Consulta instantânea da linha do tempo do hub |
+| `idx_game_hubs_slug` | B-Tree | `game_hubs(slug)` | Resolução de rotas dinâmicas `/jogos/[slug]` |
+| `idx_game_hubs_aliases` | GIN | `game_hubs(aliases)` | Matching ultrarrápido por array de termos |
 
 ### Por que HNSW em vez de IVFFlat?
 1. **Sem necessidade de retreino:** O IVFFlat necessita que a tabela já contenha centenas de registros para construir listas de Voronoi eficazes e perde precisão conforme novos dados entram sem `REINDEX`.

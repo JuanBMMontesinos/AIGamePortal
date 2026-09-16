@@ -1,6 +1,6 @@
 import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
-import { Category, Post } from "@/types/database";
-import { MOCK_CATEGORIES, MOCK_POSTS } from "./mock-news";
+import { Category, GameHub, Post } from "@/types/database";
+import { MOCK_CATEGORIES, MOCK_GAME_HUBS, MOCK_POSTS } from "./mock-news";
 
 export async function getCategories(): Promise<Category[]> {
   if (!isSupabaseConfigured) {
@@ -45,7 +45,8 @@ export async function getLatestPosts(limit: number = 12): Promise<Post[]> {
       .select(`
         *,
         categories (*),
-        sources (*)
+        sources (*),
+        game_hubs (*)
       `)
       .eq("status", "published")
       .order("published_at", { ascending: false })
@@ -81,7 +82,8 @@ export async function getTrendingPosts(limit: number = 5): Promise<Post[]> {
       .select(`
         *,
         categories (*),
-        sources (*)
+        sources (*),
+        game_hubs (*)
       `)
       .eq("status", "published")
       .order("views_count", { ascending: false })
@@ -118,7 +120,8 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
       .select(`
         *,
         categories (*),
-        sources (*)
+        sources (*),
+        game_hubs (*)
       `)
       .eq("slug", slug)
       .eq("status", "published")
@@ -162,7 +165,8 @@ export async function getPostsByCategory(
       .select(`
         *,
         categories (*),
-        sources (*)
+        sources (*),
+        game_hubs (*)
       `)
       .eq("category_id", category.id)
       .eq("status", "published")
@@ -313,5 +317,159 @@ export async function getRecentPostsForNewsSitemap(
     return data as NewsSitemapPostItem[];
   } catch {
     return [];
+  }
+}
+
+// ============================================================================
+// HUBS DE JOGOS PERMANENTES (FASE 4)
+// ============================================================================
+
+export async function getGameHubs(): Promise<GameHub[]> {
+  if (!isSupabaseConfigured) {
+    return MOCK_GAME_HUBS;
+  }
+
+  try {
+    const supabase = createServerClient();
+    if (!supabase) return MOCK_GAME_HUBS;
+
+    const { data, error } = await supabase
+      .from("game_hubs")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      return MOCK_GAME_HUBS;
+    }
+
+    return data as GameHub[];
+  } catch {
+    return MOCK_GAME_HUBS;
+  }
+}
+
+export async function getGameHubBySlug(slug: string): Promise<GameHub | null> {
+  if (!isSupabaseConfigured) {
+    const found = MOCK_GAME_HUBS.find((h) => h.slug === slug);
+    return found || null;
+  }
+
+  try {
+    const supabase = createServerClient();
+    if (!supabase) {
+      return MOCK_GAME_HUBS.find((h) => h.slug === slug) || null;
+    }
+
+    const { data, error } = await supabase
+      .from("game_hubs")
+      .select("*")
+      .eq("slug", slug)
+      .single();
+
+    if (error || !data) {
+      return MOCK_GAME_HUBS.find((h) => h.slug === slug) || null;
+    }
+
+    return data as GameHub;
+  } catch {
+    return MOCK_GAME_HUBS.find((h) => h.slug === slug) || null;
+  }
+}
+
+export async function getAllGameHubSlugs(): Promise<{ slug: string }[]> {
+  const hubs = await getGameHubs();
+  return hubs.map((h) => ({ slug: h.slug }));
+}
+
+/**
+ * Busca todas as matérias associadas a um Hub de Jogo permanente.
+ * Ordenadas cronologicamente da mais recente para a mais antiga (Linha do Tempo).
+ * Inclui fallback para matching por nome/slug caso o post ainda não tenha game_hub_id populado.
+ */
+export async function getPostsByGameHub(
+  hubId: string,
+  limit: number = 30
+): Promise<Post[]> {
+  if (!isSupabaseConfigured) {
+    const hub = MOCK_GAME_HUBS.find((h) => h.id === hubId);
+    const filtered = MOCK_POSTS.filter((p) => {
+      if (p.game_hub_id === hubId) return true;
+      if (!hub) return false;
+      const gameName = p.game_metadata?.game_name?.toLowerCase() || "";
+      const title = p.title?.toLowerCase() || "";
+      return (
+        gameName.includes(hub.name.toLowerCase()) ||
+        title.includes(hub.name.toLowerCase()) ||
+        (hub.aliases && hub.aliases.some((a) => title.includes(a.toLowerCase())))
+      );
+    });
+
+    return [...filtered]
+      .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+      .slice(0, limit);
+  }
+
+  try {
+    const supabase = createServerClient();
+    if (!supabase) {
+      const hub = MOCK_GAME_HUBS.find((h) => h.id === hubId);
+      const filtered = MOCK_POSTS.filter((p) => p.game_hub_id === hubId || p.title?.includes(hub?.name || ""));
+      return filtered.slice(0, limit);
+    }
+
+    // 1. Busca direta por FK game_hub_id
+    const { data, error } = await supabase
+      .from("posts")
+      .select(`
+        *,
+        categories (*),
+        sources (*),
+        game_hubs (*)
+      `)
+      .eq("game_hub_id", hubId)
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+      .limit(limit);
+
+    if (!error && data && data.length > 0) {
+      return data as Post[];
+    }
+
+    // 2. Fallback: se nenhum post tiver game_hub_id ainda, busca pelo nome do jogo nos metadados
+    const { data: hubData } = await supabase
+      .from("game_hubs")
+      .select("name, aliases")
+      .eq("id", hubId)
+      .maybeSingle();
+
+    const hubRow = hubData as { name?: string; aliases?: string[] } | null;
+
+    if (hubRow?.name) {
+      const { data: fallbackPosts } = await supabase
+        .from("posts")
+        .select(`
+          *,
+          categories (*),
+          sources (*),
+          game_hubs (*)
+        `)
+        .eq("status", "published")
+        .ilike("title", `%${hubRow.name}%`)
+        .order("published_at", { ascending: false })
+        .limit(limit);
+
+      if (fallbackPosts && fallbackPosts.length > 0) {
+        return fallbackPosts as Post[];
+      }
+    }
+
+    // Fallback final para mock em caso de base de dados recém-criada
+    const hub = MOCK_GAME_HUBS.find((h) => h.id === hubId);
+    const filtered = MOCK_POSTS.filter((p) => p.game_hub_id === hubId || (hub && p.title?.includes(hub.name)));
+    return filtered.slice(0, limit);
+  } catch {
+    const hub = MOCK_GAME_HUBS.find((h) => h.id === hubId);
+    const filtered = MOCK_POSTS.filter((p) => p.game_hub_id === hubId || (hub && p.title?.includes(hub.name)));
+    return filtered.slice(0, limit);
   }
 }

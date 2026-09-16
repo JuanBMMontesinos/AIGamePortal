@@ -23,6 +23,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Category, GameMetadata, Post, Source } from "../types/database";
 import { publishToSocialNetworks } from "../lib/services/social-publisher";
+import { matchOrSuggestGameHub } from "../lib/services/hub-matcher";
 
 // ============================================================================
 // CONFIGURAÇÕES & FONTES OFICIAIS
@@ -708,6 +709,31 @@ async function triggerISRRevalidation(siteUrl: string, secret: string, slug: str
   }
 }
 
+async function revalidateCustomPath(siteUrl: string, secret: string, customPath: string): Promise<boolean> {
+  const cleanBaseUrl = siteUrl.replace(/\/+$/, "");
+  const targetUrl = `${cleanBaseUrl}/api/revalidate?secret=${encodeURIComponent(secret)}&path=${encodeURIComponent(customPath)}`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      headers: { "User-Agent": "AIGamePortal-Ingestion/1.0" },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      console.log(`  🚀 [ISR Revalidate] Sucesso para rota ${customPath}`);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 // ============================================================================
 // PIPELINE PRINCIPAL DE EXECUÇÃO
 // ============================================================================
@@ -915,6 +941,35 @@ export async function runNewsSync() {
           console.log(`        Aviso Editorial: "${rumorWarning}"`);
         }
 
+        // --------------------------------------------------------------------
+        // Auto-Clustering de Tópicos & Hubs de Jogos Permanentes (Fase 4)
+        // --------------------------------------------------------------------
+        console.log("     🎮 Avaliando associação a Hubs de Jogos Permanentes...");
+        let gameHubId: string | null = null;
+        let associatedHubSlug: string | null = null;
+
+        try {
+          const hubMatch = await matchOrSuggestGameHub({
+            supabase,
+            title: generated.title,
+            content: generated.content,
+            gameMetadata: generated.game_metadata,
+            aiClient: ai,
+            autoCreate: true,
+            defaultCoverUrl: scraped.imageUrl,
+          });
+
+          if (hubMatch.matched && hubMatch.hubId) {
+            gameHubId = hubMatch.hubId;
+            associatedHubSlug = hubMatch.hub?.slug || null;
+            console.log(`     🎯 [Game Hub] Matéria vinculada ao Hub: "${hubMatch.hub?.name}" (/jogos/${associatedHubSlug}) ${hubMatch.isNew ? "(✨ Hub Criado pela IA)" : ""}`);
+          } else {
+            console.log("     ℹ️ [Game Hub] Nenhum Hub associado para esta matéria geral.");
+          }
+        } catch (hubErr: any) {
+          console.warn(`     ⚠️ Erro ao processar Hub de Jogo: ${hubErr?.message || hubErr}`);
+        }
+
         const newPost = {
           title: generated.title,
           slug: finalSlug,
@@ -925,6 +980,7 @@ export async function runNewsSync() {
           cover_image_alt: generated.title,
           category_id: categoryId,
           source_id: sourceId,
+          game_hub_id: gameHubId,
           source_original_url: itemUrl,
           source_original_title: itemTitle,
           game_metadata: generated.game_metadata || {},
@@ -958,6 +1014,10 @@ export async function runNewsSync() {
         // PASSO F: Revalidação On-Demand do Cache Next.js (ISR)
         // --------------------------------------------------------------------
         await triggerISRRevalidation(siteUrl, revalidateSecret, saved.slug);
+        if (associatedHubSlug) {
+          await revalidateCustomPath(siteUrl, revalidateSecret, `/jogos/${associatedHubSlug}`);
+          await revalidateCustomPath(siteUrl, revalidateSecret, "/jogos");
+        }
 
         // --------------------------------------------------------------------
         // PASSO G: Distribuição Multi-canal Automática (Telegram & Twitter/X)

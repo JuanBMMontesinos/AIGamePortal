@@ -1,4 +1,52 @@
-import { Category, Post, Source } from "@/types/database";
+import { Category, GameHub, Post, Source } from "@/types/database";
+
+export const MOCK_GAME_HUBS: GameHub[] = [
+  {
+    id: "a1b2c3d4-e5f6-4a5b-8c9d-000000000001",
+    name: "Grand Theft Auto VI",
+    slug: "gta-6",
+    aliases: ["gta vi", "gta 6", "grand theft auto 6", "grand theft auto vi", "vice city 2", "leonida", "lucia e jason"],
+    developer: "Rockstar Studios",
+    publisher: "Rockstar Games",
+    release_date: "2025-11-20",
+    platforms: ["PlayStation 5", "Xbox Series X|S", "PC"],
+    metacritic_score: null,
+    cover_image_url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=800&auto=format&fit=crop",
+    banner_image_url: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1920&auto=format&fit=crop",
+    synopsis: "Grand Theft Auto VI ruma ao estado de Leonida, lar das ruas iluminadas por neon de Vice City e muito além, na maior e mais imersiva evolução da série Grand Theft Auto até hoje. Acompanhe a história de Lucia e Jason em um mundo vivo de crime, ambição e perseguições implacáveis em uma Flórida satírica de última geração.",
+    created_at: "2026-01-01T00:00:00Z",
+  },
+  {
+    id: "a1b2c3d4-e5f6-4a5b-8c9d-000000000002",
+    name: "Monster Hunter Wilds",
+    slug: "monster-hunter-wilds",
+    aliases: ["monster hunter wilds", "mh wilds", "mhw 2", "monster hunter 6", "capcom wilds"],
+    developer: "Capcom Development Division 1",
+    publisher: "Capcom",
+    release_date: "2025-02-28",
+    platforms: ["PlayStation 5", "Xbox Series X|S", "PC (Steam)"],
+    metacritic_score: 91,
+    cover_image_url: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=800&auto=format&fit=crop",
+    banner_image_url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop",
+    synopsis: "Em Monster Hunter Wilds, adentre as inexploradas Terras Proibidas, um ecossistema hostil e dinâmico onde manadas colossais migram e disputam território em tempo real. Com a nova montaria Seikret, transições sem telas de carregamento e crossplay integral entre todas as plataformas, vivencie a caçada cooperativa mais ambiciosa da história da Capcom.",
+    created_at: "2026-01-01T00:00:00Z",
+  },
+  {
+    id: "a1b2c3d4-e5f6-4a5b-8c9d-000000000003",
+    name: "Elden Ring",
+    slug: "elden-ring",
+    aliases: ["elden ring", "shadow of the erdtree", "erdtree", "fromsoftware elden ring", "as terras intermediarias", "hidetaka miyazaki"],
+    developer: "FromSoftware",
+    publisher: "Bandai Namco Entertainment",
+    release_date: "2022-02-25",
+    platforms: ["PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "PC"],
+    metacritic_score: 96,
+    cover_image_url: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop",
+    banner_image_url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1920&auto=format&fit=crop",
+    synopsis: "Vencedor de centenas de prêmios de Jogo do Ano, Elden Ring é o épico RPG de ação e fantasia sombria concebido por Hidetaka Miyazaki e George R. R. Martin. Erga-se, Maculado, e seja guiado pela graça para brandir o poder do Anel Prístino e se tornar um Lorde Prístino nas misteriosas Terras Intermediárias e no Reino das Sombras.",
+    created_at: "2026-01-01T00:00:00Z",
+  },
+];
 
 export const MOCK_CATEGORIES: Category[] = [
   { id: "cat-1", name: "PlayStation", slug: "playstation", created_at: "2026-01-01T00:00:00Z" },
@@ -128,6 +176,8 @@ O jogo contará com áudio 3D Tempest totalmente remapeado para fones e suporte 
     updated_at: "2026-09-12T11:30:00Z",
     categories: MOCK_CATEGORIES[0],
     sources: MOCK_SOURCES["playstation-blog"],
+    game_hub_id: "a1b2c3d4-e5f6-4a5b-8c9d-000000000004",
+    game_hubs: MOCK_GAME_HUBS[3],
   },
   {
     id: "post-2",
@@ -180,6 +230,8 @@ O título continua sendo o mais esperado da década, com analistas de Wall Stree
     updated_at: "2026-09-12T09:15:00Z",
     categories: MOCK_CATEGORIES[6],
     sources: MOCK_SOURCES["eurogamer"],
+    game_hub_id: "a1b2c3d4-e5f6-4a5b-8c9d-000000000001",
+    game_hubs: MOCK_GAME_HUBS[0],
   },
   {
     id: "post-3",
@@ -316,6 +368,8 @@ O diretor Yuya Tokuda ressaltou que as transições entre o acampamento base e o
     updated_at: "2026-09-11T16:20:00Z",
     categories: MOCK_CATEGORIES[3],
     sources: MOCK_SOURCES["pc-gamer"],
+    game_hub_id: "a1b2c3d4-e5f6-4a5b-8c9d-000000000002",
+    game_hubs: MOCK_GAME_HUBS[1],
   },
   {
     id: "post-6",
@@ -426,5 +480,58 @@ O estudo também destaca uma mudança estratégica nas rodadas de investimento d
     updated_at: "2026-09-13T18:00:00Z",
     categories: MOCK_CATEGORIES[5],
     sources: MOCK_SOURCES["gamesindustry-biz"],
+  },
+  {
+    id: "post-8",
+    title: "Elden Ring ultrapassa 30 milhões de cópias vendidas mundialmente com o sucesso de Shadow of the Erdtree",
+    slug: "elden-ring-30-milhoes-copias-sucesso-shadow-erdtree",
+    tldr: [
+      "A Bandai Namco e FromSoftware oficializaram a marca histórica de 30 milhões de unidades vendidas em todas as plataformas.",
+      "A expansão Shadow of the Erdtree impulsionou um novo recorde de jogadores simultâneos no Steam mais de dois anos após o lançamento.",
+      "Hidetaka Miyazaki agradeceu aos fãs e reiterou o compromisso do estúdio em criar mundos misteriosos e desafiadores.",
+      "Novo patch de balanceamento ajusta afinidades de cinzas de guerra e performance gráfica no PC.",
+    ],
+    content: `
+A **Bandai Namco Entertainment** e a **FromSoftware** anunciaram que o aclamado **Elden Ring** ultrapassou a marca extraordinária de **30 milhões de cópias vendidas** em todo o mundo.
+
+O marco consolida a obra-prima dirigida por **Hidetaka Miyazaki** como um dos RPGs de ação mais influentes e comercialmente bem-sucedidos de todos os tempos.
+
+### O Impulso de Shadow of the Erdtree
+
+O lançamento da expansão *Shadow of the Erdtree* não apenas conquistou aclamação crítica quase unânime (média 95 no Metacritic), como gerou uma onda massiva de novos jogadores explorando as Terras Intermediárias pela primeira vez.
+
+- **Recordes no Steam**: O pico de usuários simultâneos voltou a superar a marca de 700 mil jogadores no lançamento do DLC.
+- **Engajamento Comunitário**: Desafios de chefes lendários continuam gerando bilhões de visualizações no YouTube e TikTok.
+- **Futuro da Franquia**: A FromSoftware confirmou que continuará nutrindo o universo do jogo com atualizações de estabilidade e balanceamento competitivo.
+    `.trim(),
+    excerpt: "Elden Ring atinge marca colossal de 30 milhões de cópias vendidas impulsionado pelo DLC Shadow of the Erdtree. Veja os números da FromSoftware.",
+    cover_image_url: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    cover_image_alt: "Guerreiro medieval contemplando uma árvore dourada gigante",
+    category_id: "cat-7",
+    source_id: "src-5",
+    source_original_url: "https://www.eurogamer.net/elden-ring-surpasses-30m-sales-milestone",
+    source_original_title: "Elden Ring Surpasses 30 Million Copies Sold Worldwide",
+    game_metadata: {
+      game_name: "Elden Ring",
+      platforms: ["PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "PC"],
+      metacritic_score: 96,
+      release_date: "2022-02-25",
+      developer: "FromSoftware",
+      publisher: "Bandai Namco Entertainment",
+      genre: "RPG de Ação / Soulslike",
+    },
+    community_sentiment: "Celebração total dos fãs nas redes sociais, que consideram o resultado uma vitória merecida do design sem concessões de Miyazaki.",
+    is_rumor: false,
+    reliability_score: 5,
+    rumor_warning: null,
+    status: "published",
+    views_count: 22150,
+    published_at: "2026-09-14T10:00:00Z",
+    created_at: "2026-09-14T10:00:00Z",
+    updated_at: "2026-09-14T10:00:00Z",
+    categories: MOCK_CATEGORIES[6],
+    sources: MOCK_SOURCES["eurogamer"],
+    game_hub_id: "a1b2c3d4-e5f6-4a5b-8c9d-000000000003",
+    game_hubs: MOCK_GAME_HUBS[2],
   },
 ];

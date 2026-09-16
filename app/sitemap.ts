@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getAllPostsForSitemap, getCategories } from "@/lib/data/api";
+import { getAllPostsForSitemap, getCategories, getGameHubs } from "@/lib/data/api";
 
 export const revalidate = 3600; // Revalida o sitemap geral a cada 1 hora (3600s)
 
@@ -13,6 +13,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "always",
       priority: 1.0,
+    },
+    {
+      url: `${siteUrl}/jogos`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
     },
     {
       url: `${siteUrl}/transparencia-editorial`,
@@ -31,7 +37,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // 3. Todas as matérias publicadas no portal
+  // 3. Rotas de Hubs de Jogos Permanentes (SEO de Cauda Longa - Fase 4)
+  const gameHubs = await getGameHubs();
+  const gameHubRoutes: MetadataRoute.Sitemap = gameHubs.map((hub) => ({
+    url: `${siteUrl}/jogos/${hub.slug}`,
+    lastModified: new Date(hub.updated_at || hub.created_at || new Date()),
+    changeFrequency: "daily",
+    priority: 0.85,
+  }));
+
+  // 4. Todas as matérias publicadas no portal
   const posts = await getAllPostsForSitemap();
   const postRoutes: MetadataRoute.Sitemap = posts.map((post) => {
     let lastModified: Date;
@@ -52,5 +67,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...staticRoutes, ...categoryRoutes, ...postRoutes];
+  return [...staticRoutes, ...categoryRoutes, ...gameHubRoutes, ...postRoutes];
 }

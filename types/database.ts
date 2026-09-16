@@ -59,9 +59,30 @@ export interface Post {
   reliability_score: number;
   rumor_warning: string | null;
 
+  // Hubs de Jogos Permanentes (Fase 4)
+  game_hub_id?: string | null;
+
   // Joined relations
   categories?: Category | null;
   sources?: Source | null;
+  game_hubs?: GameHub | null;
+}
+
+export interface GameHub {
+  id: string;
+  name: string;
+  slug: string;
+  aliases: string[];
+  developer: string;
+  publisher: string;
+  release_date: string;
+  platforms: string[];
+  metacritic_score: number | null;
+  cover_image_url: string;
+  banner_image_url: string;
+  synopsis: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export type AffiliateCategory = "Hardware" | "Console" | "PC" | "Jogo" | "Acessórios";
@@ -130,6 +151,16 @@ export interface Database {
         Update: Partial<Source>;
         Relationships: [];
       };
+      game_hubs: {
+        Row: GameHub;
+        Insert: Omit<GameHub, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<GameHub>;
+        Relationships: [];
+      };
       posts: {
         Row: Post;
         Insert: Omit<Post, "id" | "created_at" | "updated_at"> & {
@@ -138,7 +169,15 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Post>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "posts_game_hub_id_fkey";
+            columns: ["game_hub_id"];
+            isOneToOne: false;
+            referencedRelation: "game_hubs";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       affiliate_products: {
         Row: AffiliateProduct;

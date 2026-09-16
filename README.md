@@ -65,10 +65,23 @@ npm run start
 ## 🏛️ Estrutura de Rotas e Páginas
 
 - `/` (`app/page.tsx`): **Homepage** com seção Hero em destaque, Grid de Últimas Notícias com badges de categoria e TL;DR rápido, além de Sidebar com ranking de Mais Lidas e radar de sentimento da comunidade.
+- `/jogos` (`app/jogos/page.tsx`): **Diretório de Hubs de Jogos**, vitrine com filtros, notas Metacritic e total de matérias publicadas por franquia.
+- `/jogos/[slug]` (`app/jogos/[slug]/page.tsx`): **Central do Jogo Permanente (SEO Long-Tail)** com Hero widescreen, Ficha Técnica oficial, Linha do Tempo de matérias, box de Afiliados Onde Comprar e Schema.org `VideoGame`.
 - `/noticias/[slug]` (`app/noticias/[slug]/page.tsx`): **Página da Matéria** com cabeçalho editorial, Box TL;DR (30s), Ficha Técnica do jogo com nota Metacritic colorida, conteúdo em prosa rica, box de sentimento Reddit/X, Atribuição E-E-A-T com link canônico e metatags JSON-LD `NewsArticle`.
 - `/categoria/[slug]` (`app/categoria/[slug]/page.tsx`): **Feed por Categoria** (PlayStation, Xbox, Nintendo, PC Gaming, Hardware, Indústria, Geral).
 - `/transparencia-editorial` (`app/transparencia-editorial/page.tsx`): **Transparência e Governança de IA**, detalhando o pipeline, política anti-alucinação, deduplicação vetorial e contato de retificação.
 - `/api/revalidate` (`app/api/revalidate/route.ts`): **Endpoint de Revalidação Incremental sob Demanda (ISR)** acionado pelo pipeline autônomo para atualizar o cache instantaneamente após a gravação no Supabase.
+
+---
+
+## 🎮 Hubs de Jogos Permanentes & SEO de Cauda Longa (Fase 4)
+
+Para capturar tráfego orgânico perene de jogadores buscando pelas suas franquias favoritas (ex: *GTA VI*, *Monster Hunter Wilds*, *Elden Ring*):
+
+- **Auto-Clustering de Tópicos (`lib/services/hub-matcher.ts`)**: Analisa títulos e conteúdo contra listas de aliases de jogos cadastrados com suporte a word boundaries e normalização fonética.
+- **Sugestão Inteligente com Gemini**: Se uma notícia abordar um lançamento de grande porte ainda sem Hub, o agente Gemini Flash sugere a ficha técnica estruturada e pode auto-criar a central no Supabase.
+- **Schema.org VideoGame & BreadcrumbList**: Emissão de metadados ricos para indexação no Google com nota Metacritic, desenvolvedor, plataformas e janela de lançamento.
+- **Monetização Onde Comprar**: Vitrine contextual de produtos afiliados (jogos base, DLCs, consoles) com tags oficiais de parceiros.
 
 ---
 
@@ -102,7 +115,7 @@ POST /api/revalidate?secret=aigameportal_super_secret_token_2026&slug=diablo-5-a
 Parâmetros suportados:
 - `secret`: Chave de autenticação (`REVALIDATE_SECRET` ou `REVALIDATION_SECRET`)
 - `slug`: Slug da notícia a ser atualizada (revalida a página da notícia e a homepage automaticamente)
-- `path`: Caminho arbitrário a ser revalidado (ex: `/categoria/playstation`)
+- `path`: Caminho arbitrário a ser revalidado (ex: `/categoria/playstation` ou `/jogos/gta-6`)
 
 ---
 
@@ -134,11 +147,13 @@ Consulte a pasta [supabase/](file:///d:/IAProjects/AIGamePortal/supabase):
 - [20260912000001_initial_schema.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260912000001_initial_schema.sql): Migração mestre idempotente com pgvector HNSW, RLS e RPC `match_recent_articles`.
 - [20260914000002_affiliate_system.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260914000002_affiliate_system.sql): Sistema de produtos afiliados, cliques e monetização.
 - [20260916000001_newsletter_subscribers.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000001_newsletter_subscribers.sql): Tabela `newsletter_subscribers` com RLS e índices.
+- [20260916000002_game_hubs.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000002_game_hubs.sql): Tabela `game_hubs`, relacionamento com `posts.game_hub_id`, índices e seeds de GTA VI, Elden Ring e Monster Hunter Wilds.
 - [seed.sql](file:///d:/IAProjects/AIGamePortal/supabase/seed.sql): Categorias e feeds RSS iniciais.
 
 ## 📚 Documentação Técnica Completa
 Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
 - [docs/index.md](file:///d:/IAProjects/AIGamePortal/docs/index.md): Sumário executivo e guia geral do projeto.
+- [docs/game-hubs.md](file:///d:/IAProjects/AIGamePortal/docs/game-hubs.md): Arquitetura dos Hubs de Jogos Permanentes, SEO de Cauda Longa e Schema.org VideoGame.
 - [docs/NEWSLETTER_AUTOMATION.md](file:///d:/IAProjects/AIGamePortal/docs/NEWSLETTER_AUTOMATION.md): Guia completo da Newsletter Semanal Gamer, Resend e GitHub Actions.
 - [docs/architecture.md](file:///d:/IAProjects/AIGamePortal/docs/architecture.md): Arquitetura, pipeline de imagens resiliente (7 etapas) e SSG + ISR.
 - [docs/api-reference.md](file:///d:/IAProjects/AIGamePortal/docs/api-reference.md): Referência completa de APIs, funções utilitárias e pipeline autônomo.
