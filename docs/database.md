@@ -96,6 +96,19 @@ erDiagram
         timestamptz created_at
         timestamptz updated_at
     }
+
+    FREE_GAMES_HISTORY {
+        uuid id PK
+        text deal_id UK
+        text title
+        text platform
+        text worth
+        text giveaway_url
+        text image_url
+        timestamptz expires_at
+        timestamptz posted_at
+        timestamptz created_at
+    }
 ```
 
 ---
@@ -232,6 +245,25 @@ Centrais e hubs permanentes de jogos para atração de tráfego orgânico perene
 
 ---
 
+### 2.7 Tabela `public.free_games_history` (Fase 4 - Bot de Alertas Discord)
+
+Histórico de ofertas de jogos 100% gratuitos disparadas no Discord para prevenção estrita de alertas duplicados.
+
+| Coluna | Tipo | Modificadores | Descrição |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Identificador único interno |
+| `deal_id` | `TEXT` | `NOT NULL UNIQUE` | ID da promoção fornecido pela API externa (GamerPower) |
+| `title` | `TEXT` | `NOT NULL` | Título higienizado do jogo gratuito |
+| `platform` | `TEXT` | `NULL` | Plataformas elegíveis (ex: *PC, Steam*, *Epic Games Store*) |
+| `worth` | `TEXT` | `NULL` | Valor comercial original antes da gratuidade (ex: *$24.99*) |
+| `giveaway_url` | `TEXT` | `NULL` | Link direto para resgate da oferta na loja |
+| `image_url` | `TEXT` | `NULL` | Imagem ou banner promocional do jogo em alta definição |
+| `expires_at` | `TIMESTAMPTZ` | `NULL` | Data/hora estimada de encerramento da gratuidade |
+| `posted_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Data/hora de disparo bem-sucedido no Discord |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Registro de auditoria |
+
+---
+
 ## 3. Estratégia de Indexação e Performance
 
 | Nome do Índice | Tipo | Tabela / Colunas | Justificativa |
@@ -254,6 +286,8 @@ Centrais e hubs permanentes de jogos para atração de tráfego orgânico perene
 | `idx_posts_game_hub_published` | B-Tree Composto | `posts(game_hub_id, published_at DESC)` | Consulta instantânea da linha do tempo do hub |
 | `idx_game_hubs_slug` | B-Tree | `game_hubs(slug)` | Resolução de rotas dinâmicas `/jogos/[slug]` |
 | `idx_game_hubs_aliases` | GIN | `game_hubs(aliases)` | Matching ultrarrápido por array de termos |
+| `idx_free_games_history_deal_id` | B-Tree Único | `free_games_history(deal_id)` | Checagem de duplicação de ofertas em tempo constante $O(1)$ |
+| `idx_free_games_history_posted_at` | B-Tree | `free_games_history(posted_at DESC)` | Ordenação e relatórios temporais de ofertas |
 
 ### Por que HNSW em vez de IVFFlat?
 1. **Sem necessidade de retreino:** O IVFFlat necessita que a tabela já contenha centenas de registros para construir listas de Voronoi eficazes e perde precisão conforme novos dados entram sem `REINDEX`.
@@ -337,3 +371,6 @@ Todas as tabelas possuem `ENABLE ROW LEVEL SECURITY`.
 5. **`public.affiliate_clicks`** (Fase 3):
    - `INSERT`: Liberado para `anon`, `authenticated` e `service_role` (para rastreamento transparente em redirecionamentos).
    - `SELECT`: Restrito a `service_role` (para resguardar dados sensíveis de conversão e parceiros).
+6. **`public.free_games_history`** (Fase 4):
+   - `SELECT`: Liberado para `anon` e `authenticated` (permite leitura pública para feeds ou widgets comunitários).
+   - `ALL`: Restrito a `service_role` (apenas bots autorizados inserem ou alteram o histórico).

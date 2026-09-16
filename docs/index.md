@@ -22,6 +22,7 @@ Esta documentação foi estruturada para servir tanto a engenheiros humanos de s
 | **[gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md)** | Especificação do Agente Redator & Otimizador SEO: System Prompt definitivo, Few-Shot, JSON Schema e parâmetros Gemini 1.5. | Engenheiros de IA & Redação |
 | **[social-automation.md](file:///d:/IAProjects/AIGamePortal/docs/social-automation.md)** | Módulo de Distribuição Multi-canal: Telegram Bot API, X/Twitter API v2, copywriter gamer e resiliência non-blocking. | Social Media & Engenheiros |
 | **[affiliate-system.md](file:///d:/IAProjects/AIGamePortal/docs/affiliate-system.md)** | Módulo de Afiliados Inteligentes (Fase 3): Modelagem, conformidade E-E-A-T (rel="sponsored nofollow"), tracking /api/out/[id] e AffiliateDealCard. | Monetização, Engenheiros & E-commerce |
+| **[discord-bot.md](file:///d:/IAProjects/AIGamePortal/docs/discord-bot.md)** | Bot de Alertas de Jogos Grátis & Breaking News no Discord (Fase 4): Webhook serverless, GamerPower API, Rich Embeds e cron. | Comunidade, DevOps & IA |
 
 ---
 
@@ -39,6 +40,9 @@ O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre j
    - **Blocos de Anúncios Responsivos (`AdBanner`)**: Suporte a Google AdSense e mídia programática nos formatos `in-article-top` (728x90/300x250), `in-article-mid` (300x250 após o 3º parágrafo via `content-parser.tsx`) e `sidebar-sticky` (300x600 skyscraper) com altura reservada e isolamento contra **Cumulative Layout Shift (CLS = 0)**.
    - **Fallback Inteligente**: Ativação automática de banners promocionais internos ("Destaques Gamer" da Amazon e convite ao canal VIP do Telegram) em caso de AdBlock ou ausência do AdSense.
    - **Afiliados Inteligentes & E-E-A-T**: Injeção contextual com `rel="sponsored nofollow"`, card de recomendação (`AffiliateDealCard`) e redirecionador com telemetria (`/api/out/[id]`).
+9. **Engajamento Proprietário & Discord Automation (Fase 4)**:
+   - **Rastreador de Jogos Grátis**: Bot serverless agendado a cada 2 horas via GitHub Actions que consome a GamerPower API e notifica promoções 100% gratuitas da Epic Games Store, Steam, GOG e Prime com Rich Embeds e botões de resgate direto.
+   - **Plantão Breaking News (Impacto 5/5)**: Alertas imediatos no Discord para acontecimentos de repercussão global (novos consoles, trailers mundiais e terremotos da indústria) sem sobrecarga de sockets 24/7.
 
 ---
 

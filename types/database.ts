@@ -132,6 +132,19 @@ export interface NewsletterSettings {
   updated_at: string;
 }
 
+export interface FreeGameHistory {
+  id: string;
+  deal_id: string;
+  title: string;
+  platform: string | null;
+  worth: string | null;
+  giveaway_url: string | null;
+  image_url: string | null;
+  expires_at: string | null;
+  posted_at: string;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -270,6 +283,34 @@ export interface Database {
           referrer?: string | null;
           user_agent?: string | null;
           clicked_at?: string;
+        };
+        Relationships: [];
+      };
+      free_games_history: {
+        Row: FreeGameHistory;
+        Insert: {
+          id?: string;
+          deal_id: string;
+          title: string;
+          platform?: string | null;
+          worth?: string | null;
+          giveaway_url?: string | null;
+          image_url?: string | null;
+          expires_at?: string | null;
+          posted_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          deal_id?: string;
+          title?: string;
+          platform?: string | null;
+          worth?: string | null;
+          giveaway_url?: string | null;
+          image_url?: string | null;
+          expires_at?: string | null;
+          posted_at?: string;
+          created_at?: string;
         };
         Relationships: [];
       };

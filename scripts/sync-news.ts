@@ -24,6 +24,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Category, GameMetadata, Post, Source } from "../types/database";
 import { publishToSocialNetworks } from "../lib/services/social-publisher";
 import { matchOrSuggestGameHub } from "../lib/services/hub-matcher";
+import { sendDiscordNewsAlert } from "../lib/services/discord-notifier";
 
 // ============================================================================
 // CONFIGURAÇÕES & FONTES OFICIAIS
@@ -734,6 +735,41 @@ async function revalidateCustomPath(siteUrl: string, secret: string, customPath:
   }
 }
 
+/**
+ * Avalia se a notícia tem impacto crítico (Nível 5/5) para disparar alerta urgente no Discord
+ * Exemplos: Anúncios de novos consoles, trailers mundiais, aquisições de peso ou encerramentos de estúdios.
+ */
+function isHighImpactBreakingNews(
+  title: string,
+  content: string,
+  reliabilityScore: number,
+  category?: string
+): boolean {
+  // Apenas fontes de altíssima confiabilidade (nota 4 ou 5) podem acionar breaking news
+  if (reliabilityScore < 4) return false;
+
+  const textToScan = `${title} ${content.slice(0, 1000)}`.toLowerCase();
+
+  // Padrões de alto impacto na indústria gamer
+  const impactPatterns = [
+    // Hardware e Novos Consoles
+    /\b(switch\s*2|playstation\s*6|ps6|xbox\s*next|novo\s*console|sucessor\s*do|novo\s*hardware)\b/i,
+    // Revelações Globais e Grandes Franquias
+    /\b(anunciado\s*oficialmente|revelado\s*oficialmente|data\s*de\s*lan[çc]amento\s*confirmada|world\s*premiere|gta\s*6|gta\s*vi|novo\s*trailer\s*mundial)\b/i,
+    // Terremotos na Indústria (Cancelamentos, Fechamentos, Aquisições)
+    /\b(est[uú]dio\s*fechado|encerra\s*atividades|fechamento\s*de\s*est[uú]dio|cancelamento\s*definitivo|cancelado\s*pela|aquisi[çc][ãa]o\s*bilion[áa]ria|comprada\s*pela)\b/i,
+  ];
+
+  const hasHighImpactMatch = impactPatterns.some((pattern) => pattern.test(textToScan));
+
+  // Categoria Hardware de fontes oficiais tem peso adicional
+  const isOfficialHardware =
+    (category?.toLowerCase() === "hardware" || category?.toLowerCase() === "indústria") &&
+    reliabilityScore === 5;
+
+  return hasHighImpactMatch || (isOfficialHardware && /\b(novo|an[úu]ncio|revela[çc][ãa]o)\b/i.test(textToScan));
+}
+
 // ============================================================================
 // PIPELINE PRINCIPAL DE EXECUÇÃO
 // ============================================================================
@@ -1034,6 +1070,26 @@ export async function runNewsSync() {
           reliabilityScore: reliabilityScore,
           platforms: generated.game_metadata?.platforms,
         });
+
+        // --------------------------------------------------------------------
+        // PASSO G.1: Alerta de Breaking News no Discord (Impacto 5/5)
+        // --------------------------------------------------------------------
+        if (isHighImpactBreakingNews(saved.title, generated.content, reliabilityScore, generated.suggested_category)) {
+          console.log(`        🔥 [DiscordBreakingNews] Notícia de alto impacto detectada (5/5). Disparando alerta prioritário no Discord...`);
+          await sendDiscordNewsAlert({
+            title: saved.title,
+            slug: saved.slug,
+            url: canonicalArticleUrl,
+            tldr: generated.tldr || [],
+            excerpt: generated.excerpt,
+            category: feedConfig.defaultCategorySlug || generated.suggested_category || "geral",
+            coverImageUrl: scraped.imageUrl,
+            isRumor: isRumor,
+            reliabilityScore: reliabilityScore,
+            platforms: generated.game_metadata?.platforms,
+            sourceName: feedConfig.name,
+          });
+        }
 
         // --------------------------------------------------------------------
         // PASSO H: Auto-Cadastro de Produto Afiliado na Amazon (Forma 1 de Automação)

@@ -291,5 +291,26 @@ O sistema foi arquitetado para **nunca deixar espaços pretos/brancos vazios** n
 - A biblioteca `pagead2.googlesyndication.com/pagead/js/adsbygoogle.js` é carregada via `<Script strategy="afterInteractive" />` do Next.js.
 - Isso assegura que o download da biblioteca externa não bloqueie o parser HTML nem penalize as métricas **First Contentful Paint (FCP)** e **Largest Contentful Paint (LCP)**.
 
+---
+
+## 9. Automação e Bots para o Discord (Fase 4)
+
+O AIGamePortal integra uma arquitetura de bots baseada em **Discord Webhooks Serverless** para construir um canal comunitário proprietário de alto engajamento, sem necessidade de servidores WebSocket contínuos:
+
+### 9.1 Rastreador de Jogos Grátis ([scripts/discord-bot.ts](file:///d:/IAProjects/AIGamePortal/scripts/discord-bot.ts))
+- **Execução por Cron**: Agendado no GitHub Actions a cada 2 horas (`.github/workflows/cron-discord-deals.yml`).
+- **Fonte Externa**: GamerPower API (`https://www.gamerpower.com/api/giveaways?type=game`) monitorando Epic Games Store, Steam, GOG e Prime.
+- **Deduplicação Determinística**: Persistência na tabela Supabase `public.free_games_history` por `deal_id` com fallback local (`scratch/free_games_history.json`).
+- **Rich Embeds Interativos**:
+  - Cor esmeralda `#10B981` com emoji `🚨 JOGO GRÁTIS: [Título]`.
+  - Capa HD, preço original cortado (`De ~~$XX~~ por GRÁTIS!`) e data limite formatada em PT-BR.
+  - ActionRow com Link Buttons para resgate direto e links Markdown inline.
+
+### 9.2 Disparo de Breaking News Nível 5/5 ([lib/services/discord-notifier.ts](file:///d:/IAProjects/AIGamePortal/lib/services/discord-notifier.ts))
+- Integrado ao Passo G do pipeline jornalístico (`scripts/sync-news.ts`).
+- Avalia gatilhos de impacto crítico (consoles de nova geração, revelações mundiais e abalos de mercado).
+- Dispara Rich Embed vermelho `#DC2626` imediatamente para o canal `#plantao-noticias` via webhook assíncrono e tolerante a falhas.
+
+
 
 

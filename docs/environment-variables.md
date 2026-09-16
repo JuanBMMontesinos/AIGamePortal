@@ -131,10 +131,19 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 
 ---
 
-### 2.12 `NEXT_PUBLIC_TELEGRAM_URL` (Fase 3)
-- **Utilizada em**: [components/AdBanner.tsx](file:///d:/IAProjects/AIGamePortal/components/AdBanner.tsx).
-- **Finalidade**: Define o link direto para a comunidade oficial do Telegram no fallback dos banners de anúncio.
-- **Valor padrão**: `https://t.me/aigameportal_noticias`.
+### 2.13 `DISCORD_WEBHOOK_FREE_GAMES` (Fase 4)
+- **Utilizada em**: [scripts/discord-bot.ts](file:///d:/IAProjects/AIGamePortal/scripts/discord-bot.ts), [lib/services/discord-notifier.ts](file:///d:/IAProjects/AIGamePortal/lib/services/discord-notifier.ts).
+- **Finalidade**: Webhook URL do Discord para canal público de gratuidades (Steam, Epic Games, Prime, GOG).
+- **Exemplo**: `https://discord.com/api/webhooks/123456789/abcdefgh...`.
+- **Sensibilidade**: Alta (permite envio de mensagens no canal vinculado).
+
+---
+
+### 2.14 `DISCORD_WEBHOOK_NEWS` (Fase 4)
+- **Utilizada em**: [scripts/sync-news.ts](file:///d:/IAProjects/AIGamePortal/scripts/sync-news.ts), [lib/services/discord-notifier.ts](file:///d:/IAProjects/AIGamePortal/lib/services/discord-notifier.ts).
+- **Finalidade**: Webhook URL do Discord para notícias urgentes nível 5/5 (anúncios de hardware, trailers mundiais, aquisições).
+- **Exemplo**: `https://discord.com/api/webhooks/123456789/abcdefgh...`.
+- **Sensibilidade**: Alta.
 
 ---
 
@@ -150,6 +159,8 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
    - `NEXT_PUBLIC_SITE_URL`
    - `NEXT_PUBLIC_AMAZON_AFFILIATE_TAG`
    - `ADMIN_SECRET_KEY`
+   - `DISCORD_WEBHOOK_FREE_GAMES` (Fase 4)
+   - `DISCORD_WEBHOOK_NEWS` (Fase 4)
    - `NEXT_PUBLIC_ADSENSE_CLIENT_ID`
    - `NEXT_PUBLIC_ADSENSE_SLOT_TOP` (Opcional)
    - `NEXT_PUBLIC_ADSENSE_SLOT_MID` (Opcional)
@@ -161,4 +172,6 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
    - *(Opcional - Fase 2)* `TWITTER_API_SECRET`
    - *(Opcional - Fase 2)* `TWITTER_ACCESS_TOKEN`
    - *(Opcional - Fase 2)* `TWITTER_ACCESS_SECRET`
+   - *(Opcional - Fase 3)* `RESEND_API_KEY`
+   - *(Opcional - Fase 3)* `RESEND_FROM_EMAIL`
 

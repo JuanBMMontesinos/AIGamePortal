@@ -529,3 +529,49 @@ Conjunto de rotas protegidas por autenticação segura via cookie `admin_session
 - **Finalidade**: Exclui um produto do banco de dados.
 - **Corpo da Requisição**: `{ "id": "uuid" }`.
 
+---
+
+## 12. Módulo `lib/services/discord-notifier.ts` (Fase 4)
+
+Serviço universal de notificações e alertas gamer para Discord via Webhook API com resiliência a rate-limits (HTTP 429), embeds ricos e botões de link interativos.
+
+### `executeDiscordWebhook(webhookUrl, payload, options?)`
+Executa o envio de um payload formatado para a URL de webhook do Discord.
+- **Assinatura**:
+  ```typescript
+  export async function executeDiscordWebhook(
+    webhookUrl: string | undefined,
+    payload: DiscordWebhookPayload,
+    options?: { maxRetries?: number; timeoutMs?: number; allowComponents?: boolean }
+  ): Promise<DiscordSendResult>
+  ```
+- **Parâmetros**:
+  - `webhookUrl` (`string`): URL oficial do webhook (`https://discord.com/api/webhooks/...`).
+  - `payload` (`DiscordWebhookPayload`): Objeto contendo `embeds`, `components`, `username` e `avatar_url`.
+  - `options` (`object`, opcional): Configurações de timeout (padrão: 10s) e retries (padrão: 2).
+- **Tratamento de Falhas**:
+  - HTTP 429: Lê `retry_after` e aguarda com backoff automático.
+  - HTTP 400 em componentes: Remove `components` e reenvia apenas embeds como fallback.
+- **Retorno**: `Promise<DiscordSendResult>` com `{ success, messageId, skipped, error, rateLimited }`.
+
+### `sendDiscordFreeGameAlert(deal, customWebhookUrl?)`
+Monta o Rich Embed esmeralda (`#10B981`) para anúncio de jogos gratuitos com capa HD, plataformas, preço original riscado, data limite e botões interativos de resgate.
+- **Assinatura**:
+  ```typescript
+  export async function sendDiscordFreeGameAlert(
+    deal: FreeGameDeal,
+    customWebhookUrl?: string
+  ): Promise<DiscordSendResult>
+  ```
+
+### `sendDiscordNewsAlert(post, customWebhookUrl?)`
+Monta o Rich Embed vermelho (`#DC2626`) para notícias urgentes nível 5/5 (anúncios de consoles, trailers mundiais, aquisições) com TL;DR em bullets e link direto de leitura.
+- **Assinatura**:
+  ```typescript
+  export async function sendDiscordNewsAlert(
+    post: DiscordNewsPayload,
+    customWebhookUrl?: string
+  ): Promise<DiscordSendResult>
+  ```
+
+

@@ -9,7 +9,8 @@
     "lint": "next lint",
     "sync:news": "tsx scripts/sync-news.ts",
     "sync:affiliates": "tsx scripts/sync-affiliates.ts",
-    "newsletter:send": "tsx scripts/send-weekly-newsletter.ts"
+    "newsletter:send": "tsx scripts/send-weekly-newsletter.ts",
+    "deals:discord": "tsx scripts/discord-bot.ts"
   },
   "dependencies": {
     "@extractus/article-extractor": "^9.0.1",

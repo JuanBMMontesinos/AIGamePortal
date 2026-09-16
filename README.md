@@ -144,6 +144,24 @@ npm run newsletter:send
 
 ---
 
+## 🤖 Bot de Alertas de Jogos Grátis & Breaking News no Discord (Fase 4)
+
+Automação comunitária proprietária baseada em **Discord Webhooks Serverless**:
+
+- **Rastreador de Jogos Grátis (`scripts/discord-bot.ts`)**: Consome a GamerPower API a cada 2 horas via GitHub Actions (`.github/workflows/cron-discord-deals.yml`) e posta Rich Embeds com capa HD, plataformas, preço original riscado (`De ~~$XX~~ por GRÁTIS!`), data limite e botões interativos de resgate na Epic Games Store, Steam, GOG e Prime.
+- **Deduplicação Inteligente**: Armazena as promoções já postadas em `public.free_games_history` (com fallback local em `scratch/free_games_history.json`).
+- **Plantão Breaking News (Impacto 5/5)**: Disparo instantâneo integrado ao pipeline jornalístico para revelações globais, trailers mundiais ou anúncios de novos consoles.
+
+```bash
+# Simulação local do bot de ofertas (sem disparar mensagens reais)
+npx tsx scripts/discord-bot.ts --dry-run
+
+# Disparo real das novas ofertas via CLI
+npm run deals:discord
+```
+
+---
+
 ## 🗄️ Banco de Dados e Migrações
 
 Consulte a pasta [supabase/](file:///d:/IAProjects/AIGamePortal/supabase):
@@ -152,11 +170,13 @@ Consulte a pasta [supabase/](file:///d:/IAProjects/AIGamePortal/supabase):
 - [20260916000001_newsletter_subscribers.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000001_newsletter_subscribers.sql): Tabela `newsletter_subscribers` com RLS e índices.
 - [20260916000002_game_hubs.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000002_game_hubs.sql): Tabela `game_hubs`, relacionamento com `posts.game_hub_id`, índices e seeds de GTA VI, Elden Ring e Monster Hunter Wilds.
 - [20260916000003_newsletter_settings.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000003_newsletter_settings.sql): Tabela de controle e habilitação de envio da newsletter.
+- [20260916000004_free_games_history.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000004_free_games_history.sql): Tabela `free_games_history` para prevenção de alertas duplicados no Discord.
 - [seed.sql](file:///d:/IAProjects/AIGamePortal/supabase/seed.sql): Categorias e feeds RSS iniciais.
 
 ## 📚 Documentação Técnica Completa
 Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
 - [docs/index.md](file:///d:/IAProjects/AIGamePortal/docs/index.md): Sumário executivo e guia geral do projeto.
+- [docs/discord-bot.md](file:///d:/IAProjects/AIGamePortal/docs/discord-bot.md): Guia completo do Bot de Alertas de Jogos Grátis e Breaking News para o Discord.
 - [docs/admin-newsletter.md](file:///d:/IAProjects/AIGamePortal/docs/admin-newsletter.md): Guia operacional do Painel Administrativo da Newsletter.
 - [docs/game-hubs.md](file:///d:/IAProjects/AIGamePortal/docs/game-hubs.md): Arquitetura dos Hubs de Jogos Permanentes, SEO de Cauda Longa e Schema.org VideoGame.
 - [docs/NEWSLETTER_AUTOMATION.md](file:///d:/IAProjects/AIGamePortal/docs/NEWSLETTER_AUTOMATION.md): Guia completo da Newsletter Semanal Gamer, Resend e GitHub Actions.

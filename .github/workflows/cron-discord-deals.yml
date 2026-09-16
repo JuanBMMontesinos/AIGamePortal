@@ -1,0 +1,46 @@
+name: Alertas de Jogos Grátis para Discord (Cron)
+
+on:
+  schedule:
+    # Executa a cada 2 horas (no minuto 00)
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # Permite disparo manual imediato pelo painel do GitHub Actions
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/cron-discord-deals.yml'
+      - 'scripts/discord-bot.ts'
+      - 'lib/services/discord-notifier.ts'
+
+# Evita execuções simultâneas concorrentes gravando no mesmo histórico
+concurrency:
+  group: sync-discord-deals
+  cancel-in-progress: false
+
+jobs:
+  discord-deals:
+    name: Rastrear Jogos Grátis & Notificar Discord
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js v22 com Cache NPM
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependências de Produção
+        run: npm ci
+
+      - name: Executar Rastreador de Deals Gamer
+        run: npm run deals:discord
+        env:
+          DISCORD_WEBHOOK_FREE_GAMES: ${{ secrets.DISCORD_WEBHOOK_FREE_GAMES }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
