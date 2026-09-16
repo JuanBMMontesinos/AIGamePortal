@@ -70,6 +70,8 @@ npm run start
 - `/noticias/[slug]` (`app/noticias/[slug]/page.tsx`): **Página da Matéria** com cabeçalho editorial, Box TL;DR (30s), Ficha Técnica do jogo com nota Metacritic colorida, conteúdo em prosa rica, box de sentimento Reddit/X, Atribuição E-E-A-T com link canônico e metatags JSON-LD `NewsArticle`.
 - `/categoria/[slug]` (`app/categoria/[slug]/page.tsx`): **Feed por Categoria** (PlayStation, Xbox, Nintendo, PC Gaming, Hardware, Indústria, Geral).
 - `/transparencia-editorial` (`app/transparencia-editorial/page.tsx`): **Transparência e Governança de IA**, detalhando o pipeline, política anti-alucinação, deduplicação vetorial e contato de retificação.
+- `/admin/afiliados` (`app/admin/afiliados/page.tsx`): **Painel de Afiliados**, gestão de produtos parceiros e métricas de cliques.
+- `/admin/newsletter` (`app/admin/newsletter/page.tsx`): **Painel da Newsletter**, controle de ativação/pausa de envios, diagnóstico Resend e gestão de inscritos.
 - `/api/revalidate` (`app/api/revalidate/route.ts`): **Endpoint de Revalidação Incremental sob Demanda (ISR)** acionado pelo pipeline autônomo para atualizar o cache instantaneamente após a gravação no Supabase.
 
 ---
@@ -125,6 +127,7 @@ O portal compila automaticamente todo domingo às 10:00 BRT os **5 artigos mais 
 
 - **Captura Gamer**: Componente `NewsletterBox.tsx` integrado na Home e nas barras laterais de leitura com validação em tempo real.
 - **Workflow GitHub Actions**: `.github/workflows/cron-weekly-newsletter.yml` agendado para `cron: '0 13 * * 0'` (domingos às 13h UTC = 10h BRT).
+- **Painel Administrativo (`/admin/newsletter`)**: Chave mestre de envio para habilitar ou desabilitar disparos (inicia desabilitado por segurança até liberação do Resend).
 - **Conformidade CAN-SPAM & LGPD**: Link de descadastro (unsubscribe) exclusivo no rodapé com reativação fácil em 1 clique em `/newsletter/unsubscribe`.
 
 ### Como rodar o disparo manualmente ou em teste:
@@ -148,11 +151,13 @@ Consulte a pasta [supabase/](file:///d:/IAProjects/AIGamePortal/supabase):
 - [20260914000002_affiliate_system.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260914000002_affiliate_system.sql): Sistema de produtos afiliados, cliques e monetização.
 - [20260916000001_newsletter_subscribers.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000001_newsletter_subscribers.sql): Tabela `newsletter_subscribers` com RLS e índices.
 - [20260916000002_game_hubs.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000002_game_hubs.sql): Tabela `game_hubs`, relacionamento com `posts.game_hub_id`, índices e seeds de GTA VI, Elden Ring e Monster Hunter Wilds.
+- [20260916000003_newsletter_settings.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000003_newsletter_settings.sql): Tabela de controle e habilitação de envio da newsletter.
 - [seed.sql](file:///d:/IAProjects/AIGamePortal/supabase/seed.sql): Categorias e feeds RSS iniciais.
 
 ## 📚 Documentação Técnica Completa
 Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
 - [docs/index.md](file:///d:/IAProjects/AIGamePortal/docs/index.md): Sumário executivo e guia geral do projeto.
+- [docs/admin-newsletter.md](file:///d:/IAProjects/AIGamePortal/docs/admin-newsletter.md): Guia operacional do Painel Administrativo da Newsletter.
 - [docs/game-hubs.md](file:///d:/IAProjects/AIGamePortal/docs/game-hubs.md): Arquitetura dos Hubs de Jogos Permanentes, SEO de Cauda Longa e Schema.org VideoGame.
 - [docs/NEWSLETTER_AUTOMATION.md](file:///d:/IAProjects/AIGamePortal/docs/NEWSLETTER_AUTOMATION.md): Guia completo da Newsletter Semanal Gamer, Resend e GitHub Actions.
 - [docs/architecture.md](file:///d:/IAProjects/AIGamePortal/docs/architecture.md): Arquitetura, pipeline de imagens resiliente (7 etapas) e SSG + ISR.

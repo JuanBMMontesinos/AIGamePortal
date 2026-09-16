@@ -81,6 +81,15 @@ CREATE POLICY "Permitir gerenciamento total apenas para service_role"
     WITH CHECK (true);
 ```
 
+### 2.2 Tabela de Parâmetros e Salvaguarda (`newsletter_settings`)
+
+Disponível na migração [`supabase/migrations/20260916000003_newsletter_settings.sql`](../supabase/migrations/20260916000003_newsletter_settings.sql):
+
+- Por padrão de segurança, o envio semanal **inicia desabilitado** (`is_enabled: false`) até ser expressamente ativado no painel administrativo.
+- O pipeline semanal (`scripts/send-weekly-newsletter.ts`) consulta este status e aborta de forma segura (`skipped`) caso o envio esteja pausado.
+
+Consulte o guia completo da área administrativa em [docs/admin-newsletter.md](./admin-newsletter.md).
+
 ---
 
 ## 3. Componente Frontend (`NewsletterBox.tsx`)

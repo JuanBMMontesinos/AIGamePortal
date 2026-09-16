@@ -25,6 +25,7 @@ const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com")
 // Parse de argumentos CLI
 const args = process.argv.slice(2);
 const isDryRun = args.includes("--dry-run") || process.env.DRY_RUN === "true";
+const isForce = args.includes("--force");
 const testEmailArg = args.find((arg) => arg.startsWith("--test-email="))?.split("=")[1]?.trim();
 
 console.log("====================================================================");
@@ -501,13 +502,91 @@ AIGamePortal © 2026.
 }
 
 // ==============================================================================
-// 3. EXECUÇÃO PRINCIPAL
+// 3. VERIFICAÇÃO DE HABILITAÇÃO ADMINISTRATIVA (SAFEGUARD)
+// ==============================================================================
+
+async function checkNewsletterEnabled(): Promise<{ isEnabled: boolean; reason: string | null }> {
+  if (!supabase) {
+    return {
+      isEnabled: false,
+      reason: "Supabase não configurado ou offline.",
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("newsletter_settings")
+      .select("is_enabled, disabled_reason")
+      .eq("id", "default")
+      .maybeSingle();
+
+    if (error || !data) {
+      // Padrão obrigatório de segurança: desabilitado
+      return {
+        isEnabled: false,
+        reason: "Registro newsletter_settings não encontrado (padrão de segurança: desabilitado).",
+      };
+    }
+
+    const row = data as any;
+    return {
+      isEnabled: row.is_enabled === true,
+      reason: row.disabled_reason || null,
+    };
+  } catch (err: any) {
+    return {
+      isEnabled: false,
+      reason: err?.message || "Erro ao consultar configurações da newsletter.",
+    };
+  }
+}
+
+// ==============================================================================
+// 4. EXECUÇÃO PRINCIPAL
 // ==============================================================================
 
 async function runWeeklyNewsletter() {
   const startTime = Date.now();
 
   try {
+    // 0. Verifica se o envio está autorizado no painel administrativo
+    console.log("🔒 [0/4] Verificando autorização de envio no painel administrativo...");
+    const { isEnabled, reason } = await checkNewsletterEnabled();
+
+    if (!isEnabled) {
+      if (isDryRun || testEmailArg || isForce) {
+        console.log("⚠️ [AVISO] O envio de newsletters está DESABILITADO no painel administrativo.");
+        console.log(`📌 Motivo registrado: "${reason}"`);
+        console.log(
+          `⚡ Prosseguindo exclusivamente devido à flag (${
+            isDryRun ? "--dry-run" : testEmailArg ? "--test-email" : "--force"
+          }).\n`
+        );
+      } else {
+        console.log("🛑 [BLOQUEIO DE SEGURANÇA] O envio semanal está DESABILITADO no painel.");
+        console.log(`📌 Motivo registrado: "${reason}"`);
+        console.log("ℹ️ Acesse /admin/newsletter para habilitar os disparos quando o serviço estiver pronto.");
+        console.log("✅ Execução encerrada com status seguro (SKIPPED). Nenhum e-mail foi disparado.\n");
+
+        if (supabase) {
+          try {
+            await (supabase.from("newsletter_settings") as any)
+              .update({
+                last_dispatched_at: new Date().toISOString(),
+                last_dispatch_status: "skipped",
+                last_dispatch_log: `Disparo ignorado (desabilitado no painel): ${reason}`,
+              })
+              .eq("id", "default");
+          } catch (err) {
+            // Ignora se tabela ainda não tiver sido criada
+          }
+        }
+        return;
+      }
+    } else {
+      console.log("✅ Envio semanal HABILITADO no painel administrativo. Prosseguindo...\n");
+    }
+
     // 1. Busca os dados
     console.log("🔍 [1/4] Buscando matérias mais relevantes dos últimos 7 dias...");
     const articles = await fetchTopArticles();
@@ -598,6 +677,20 @@ async function runWeeklyNewsletter() {
       } catch (err: any) {
         console.error(`  ❌ [${i + 1}/${subscribers.length}] Exceção para ${email}:`, err.message);
         failedCount++;
+      }
+    }
+
+    if (supabase) {
+      try {
+        await (supabase.from("newsletter_settings") as any)
+          .update({
+            last_dispatched_at: new Date().toISOString(),
+            last_dispatch_status: failedCount > 0 && sentCount === 0 ? "failed" : "success",
+            last_dispatch_log: `Concluído: ${sentCount} enviados com sucesso, ${failedCount} falhas.`,
+          })
+          .eq("id", "default");
+      } catch (err) {
+        // Ignora se tabela ainda não tiver sido criada
       }
     }
 

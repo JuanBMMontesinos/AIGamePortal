@@ -118,9 +118,53 @@ export interface NewsletterSubscriber {
   unsubscribed_at: string | null;
 }
 
+export interface NewsletterSettings {
+  id: string;
+  is_enabled: boolean;
+  disabled_reason: string | null;
+  sender_name: string;
+  sender_email: string;
+  test_recipient_email?: string | null;
+  last_dispatched_at: string | null;
+  last_dispatch_status: "idle" | "success" | "failed" | "skipped" | string;
+  last_dispatch_log: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
+      newsletter_settings: {
+        Row: NewsletterSettings;
+        Insert: {
+          id?: string;
+          is_enabled?: boolean;
+          disabled_reason?: string | null;
+          sender_name?: string;
+          sender_email?: string;
+          test_recipient_email?: string | null;
+          last_dispatched_at?: string | null;
+          last_dispatch_status?: string;
+          last_dispatch_log?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          is_enabled?: boolean;
+          disabled_reason?: string | null;
+          sender_name?: string;
+          sender_email?: string;
+          test_recipient_email?: string | null;
+          last_dispatched_at?: string | null;
+          last_dispatch_status?: string;
+          last_dispatch_log?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       newsletter_subscribers: {
         Row: NewsletterSubscriber;
         Insert: {
