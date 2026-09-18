@@ -205,7 +205,7 @@ export function AdBanner({
           <span className="text-[9px] text-zinc-600 dark:text-zinc-300">
             {adState === "loaded"
               ? "Anúncios selecionados por mídia programática"
-              : "Recomendação do AIGamePortal • Links comissionados oficiais"}
+              : "Recomendação do Made By AI Games • Links comissionados oficiais"}
           </span>
         </div>
       </div>

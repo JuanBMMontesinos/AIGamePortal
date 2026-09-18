@@ -20,8 +20,8 @@ export const DEFAULT_NEWSLETTER_SETTINGS: NewsletterSettings = {
   id: "default",
   is_enabled: false,
   disabled_reason: "Aguardando configuração e homologação do serviço Resend",
-  sender_name: "AIGamePortal",
-  sender_email: process.env.RESEND_FROM_EMAIL || "newsletter@aigameportal.com",
+  sender_name: "Made By AI Games",
+  sender_email: process.env.RESEND_FROM_EMAIL || "newsletter@madebyaigames.com",
   test_recipient_email: null,
   last_dispatched_at: null,
   last_dispatch_status: "idle",
@@ -122,7 +122,7 @@ export async function getNewsletterKPIsAdmin(): Promise<NewsletterAdminKPIs> {
     : null;
 
   const resendFromEmail =
-    process.env.RESEND_FROM_EMAIL || settings.sender_email || "AIGamePortal <newsletter@aigameportal.com>";
+    process.env.RESEND_FROM_EMAIL || settings.sender_email || "Made By AI Games <newsletter@madebyaigames.com>";
 
   if (!isSupabaseConfigured) {
     return {

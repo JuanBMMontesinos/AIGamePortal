@@ -11,7 +11,7 @@ import { AdminDiscordLoginForm } from "./login-form";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Painel do Discord | Administração AIGamePortal",
+  title: "Painel do Discord | Administração Made By AI Games",
   robots: {
     index: false,
     follow: false,

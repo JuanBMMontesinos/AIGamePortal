@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
       const testDeal: FreeGameDeal = {
         id: "test-deal-admin",
-        title: "AIGamePortal Test Edition (Steam / Epic Games)",
+        title: "Made By AI Games Test Edition (Steam / Epic Games)",
         worth: "$29.99",
         platforms: "PC, Steam, Epic Games Store",
         open_giveaway_url: (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com") + "/jogos",
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
 
       const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com").replace(/\/+$/, "");
       const testNews: DiscordNewsPayload = {
-        title: "AIGamePortal • Teste de Notificação Urgente (Plantão Gamer)",
+        title: "Made By AI Games • Teste de Notificação Urgente (Plantão Gamer)",
         slug: "teste-integracao-discord",
         url: siteUrl,
         tldr: [

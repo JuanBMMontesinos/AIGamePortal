@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
- * PROJETO: AIGamePortal (Fase 4 - Bot de Alertas & Notificações Discord)
- * MÓDULO: Discord Notifier via Webhooks de Alta Resiliência
+ * PROJETO: Made By AI Games (Fase 4 - Bot de Alertas & Notificações Discord)
+ * MÓDULO: lib/services/discord-notifier.ts via Webhooks de Alta Resiliência
  * ==============================================================================
  *
  * Suporta despacho serverless/cron sem necessidade de WebSocket contínuo 24/7.
@@ -369,7 +369,7 @@ export async function sendDiscordFreeGameAlert(
     deal.description ? `> *${deal.description.slice(0, 250).trim()}...*` : "",
     "",
     `🎁 **[Clique aqui para resgatar na loja oficial](${deal.open_giveaway_url})**`,
-    `🌐 **[Confira mais ofertas no AIGamePortal](${portalDealsUrl})**`,
+    `🌐 **[Confira mais ofertas no Made By AI Games](${portalDealsUrl})**`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -382,7 +382,7 @@ export async function sendDiscordFreeGameAlert(
     color: DISCORD_COLORS.FREE_GAME_EMERALD,
     fields: fields,
     footer: {
-      text: "AIGamePortal • Alertas Automáticos de Jogos Grátis",
+      text: "Made By AI Games • Alertas Automáticos de Jogos Grátis",
       icon_url: DEFAULT_AVATARS.DEALS,
     },
     timestamp: new Date().toISOString(),
@@ -406,7 +406,7 @@ export async function sendDiscordFreeGameAlert(
         {
           type: 2,
           style: 5,
-          label: "Ver no AIGamePortal 🌐",
+          label: "Ver no Made By AI Games 🌐",
           url: portalDealsUrl,
         },
       ],
@@ -414,7 +414,7 @@ export async function sendDiscordFreeGameAlert(
   ];
 
   const payload: DiscordWebhookPayload = {
-    username: "AIGamePortal Deals Bot",
+    username: "Made By AI Games Deals Bot",
     avatar_url: DEFAULT_AVATARS.DEALS,
     embeds: [embed],
     components: components,
@@ -492,7 +492,7 @@ export async function sendDiscordNewsAlert(
     "",
     bulletsText,
     "",
-    `🔗 **[Clique aqui para ler a matéria completa com exclusividade no AIGamePortal](${fullPostUrl})**`,
+    `🔗 **[Clique aqui para ler a matéria completa com exclusividade no Made By AI Games](${fullPostUrl})**`,
   ].join("\n");
 
   const embed: DiscordEmbed = {
@@ -502,7 +502,7 @@ export async function sendDiscordNewsAlert(
     color: embedColor,
     fields: fields.length > 0 ? fields : undefined,
     footer: {
-      text: "AIGamePortal • Jornalismo Gamer em Tempo Real",
+      text: "Made By AI Games • Jornalismo Gamer em Tempo Real",
       icon_url: DEFAULT_AVATARS.NEWS,
     },
     timestamp: new Date().toISOString(),
@@ -527,7 +527,7 @@ export async function sendDiscordNewsAlert(
   ];
 
   const payload: DiscordWebhookPayload = {
-    username: "AIGamePortal Plantão Gamer",
+    username: "Made By AI Games Plantão Gamer",
     avatar_url: DEFAULT_AVATARS.NEWS,
     embeds: [embed],
     components: components,

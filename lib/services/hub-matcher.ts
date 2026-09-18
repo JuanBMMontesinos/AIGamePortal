@@ -168,7 +168,7 @@ export async function suggestGameHubWithGemini(
   const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
 
   const prompt = `
-Você é o Arquiteto de Informação e Especialista em SEO de Games do AIGamePortal.
+Você é o Arquiteto de Informação e Especialista em SEO de Games do Made By AI Games.
 Analise a matéria jornalística abaixo e os metadados preliminares para determinar se ela trata centralmente de um JOGO DE VIDEOGAME DE GRANDE REPERCUSSÃO ou FRANQUIA RELEVANTE que merece ter uma "Central de Jogo Permanente" (Hub) para atração de tráfego orgânico perene de cauda longa (Long-Tail SEO).
 
 Critérios para criar Hub (shouldCreateHub: true):
@@ -336,7 +336,7 @@ export async function matchOrSuggestGameHub(params: {
               "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1920&auto=format&fit=crop",
             synopsis:
               suggestion.synopsis?.trim() ||
-              `Central de notícias, atualizações oficiais e cobertura completa de ${suggestion.name} no AIGamePortal.`,
+              `Central de notícias, atualizações oficiais e cobertura completa de ${suggestion.name} no Made By AI Games.`,
           };
 
           const { data: insertedHub, error: insertError } = await supabase

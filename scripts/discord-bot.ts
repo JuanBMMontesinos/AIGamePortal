@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * PROJETO: AIGamePortal (Fase 4 - Bot de Alertas de Jogos Grátis para o Discord)
+ * PROJETO: Made By AI Games (Fase 4 - Bot de Alertas de Jogos Grátis para o Discord)
  * SCRIPT: scripts/discord-bot.ts
  * ==============================================================================
  *
@@ -242,7 +242,7 @@ async function fetchGiveaways(): Promise<FreeGameDeal[]> {
 
   const res = await fetch(GAMERPOWER_API_URL, {
     headers: {
-      "User-Agent": "AIGamePortal-DiscordBot/1.0 (+https://aigameportal.com)",
+      "User-Agent": "MadeByAIGames-DiscordBot/1.0",
       Accept: "application/json",
     },
     signal: AbortSignal.timeout(15000),
@@ -268,7 +268,7 @@ async function runDiscordDealsBot() {
   const startTime = Date.now();
 
   console.log("====================================================================");
-  console.log("🤖 [AIGamePortal] Bot de Alertas de Jogos Grátis para Discord");
+  console.log("🤖 [Made By AI Games] Bot de Alertas de Jogos Grátis para Discord");
   console.log("====================================================================");
   console.log(`⏱️ Início da execução: ${new Date().toISOString()}`);
   console.log(`🧪 Modo Dry-Run: ${isDryRun ? "ATIVADO (Sem envios reais)" : "DESATIVADO"}`);
@@ -378,7 +378,7 @@ async function runDiscordDealsBot() {
   // ==============================================================================
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
   console.log("\n====================================================================");
-  console.log("📊 [AIGamePortal] Relatório de Execução do Discord Bot");
+  console.log("📊 [Made By AI Games] Relatório de Execução do Discord Bot");
   console.log("====================================================================");
   console.log(`⏱️ Tempo total de execução: ${durationSec}s`);
   console.log(`📢 Novos alertas enviados: ${totalPosted}`);

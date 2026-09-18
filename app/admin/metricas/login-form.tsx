@@ -101,7 +101,7 @@ export function AdminMetricsLoginForm() {
 
         <div className="text-center pt-2">
           <span className="text-[11px] text-zinc-500">
-            AIGamePortal • Módulo de Telemetria e Patrocínio B2B
+            Made By AI Games • Módulo de Telemetria e Patrocínio B2B
           </span>
         </div>
       </div>

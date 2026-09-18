@@ -52,7 +52,7 @@ export async function GET() {
     <loc>${escapeXml(loc)}</loc>
     <news:news>
       <news:publication>
-        <news:name>AIGamePortal</news:name>
+        <news:name>Made By AI Games</news:name>
         <news:language>pt-br</news:language>
       </news:publication>
       <news:publication_date>${pubDate}</news:publication_date>

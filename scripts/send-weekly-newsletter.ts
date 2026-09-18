@@ -19,7 +19,7 @@ const supabaseServiceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const resendApiKey = process.env.RESEND_API_KEY || "";
 const resendFromEmail =
-  process.env.RESEND_FROM_EMAIL || "AIGamePortal <newsletter@aigameportal.com>";
+  process.env.RESEND_FROM_EMAIL || "Made By AI Games <newsletter@madebyaigames.com>";
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com").replace(/\/+$/, "");
 
 // Parse de argumentos CLI
@@ -29,7 +29,7 @@ const isForce = args.includes("--force");
 const testEmailArg = args.find((arg) => arg.startsWith("--test-email="))?.split("=")[1]?.trim();
 
 console.log("====================================================================");
-console.log("🎮 [AIGamePortal] Disparo Semanal de Newsletter Gamer Automática");
+console.log("🎮 [Made By AI Games] Disparo Semanal de Newsletter Gamer Automática");
 console.log("====================================================================");
 console.log(`🌐 Site URL: ${siteUrl}`);
 console.log(`✉️ Remetente (From): ${resendFromEmail}`);
@@ -127,7 +127,7 @@ async function fetchActiveSubscribers(): Promise<string[]> {
 
   if (!supabase) {
     console.log("⚠️ Supabase não configurado. Modo de demonstração com e-mail simulado.");
-    return ["demo-gamer@aigameportal.com"];
+    return ["demo-gamer@madebyaigames.com"];
   }
 
   const { data, error } = await supabase
@@ -142,7 +142,7 @@ async function fetchActiveSubscribers(): Promise<string[]> {
     );
     if (isDryRun) {
       console.log("ℹ️ Utilizando assinante de teste simulado para compilar a prévia no modo Dry-Run.");
-      return ["preview-subscriber@aigameportal.com"];
+      return ["preview-subscriber@madebyaigames.com"];
     }
     return [];
   }
@@ -282,7 +282,7 @@ function buildHtmlTemplate(
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="x-apple-disable-message-reformatting" />
-  <title>Resumo Gamer da Semana • AIGamePortal</title>
+  <title>Resumo Gamer da Semana • Made By AI Games</title>
   <!--[if mso]>
   <noscript>
     <xml>
@@ -317,7 +317,7 @@ function buildHtmlTemplate(
         <!-- Container Centralizado Máximo 600px -->
         <table role="presentation" class="container-table" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #111827; border: 1px solid #1f293d; border-radius: 16px; overflow: hidden;">
           
-          <!-- 1. HEADER DO AIGAMEPORTAL -->
+          <!-- 1. HEADER DO MADE BY AI GAMES -->
           <tr>
             <td style="padding: 28px 24px 20px 24px; background: linear-gradient(135deg, #1e1b4b 0%, #111827 100%); border-bottom: 1px solid #1f293d; text-align: center;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -327,7 +327,7 @@ function buildHtmlTemplate(
                       ⚡ Resumo Semanal da Comunidade
                     </span>
                     <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px; color: #ffffff;">
-                      AI<span style="color: #8b5cf6;">GAME</span>PORTAL
+                      MADE BY <span style="color: #8b5cf6;">AI GAMES</span>
                     </h1>
                     <p style="margin: 6px 0 0 0; font-size: 12px; color: #94a3b8;">
                       Edição de ${currentDate} • Curadoria Autônoma com IA
@@ -416,7 +416,7 @@ function buildHtmlTemplate(
                     ${dealsHtml}
 
                     <p style="margin: 10px 0 0 0; font-size: 11px; color: #64748b; text-align: center;">
-                      *Comprando pelos nossos links, o AIGamePortal pode receber uma comissão sem custo adicional para você.
+                      *Comprando pelos nossos links, o Made By AI Games pode receber uma comissão sem custo adicional para você.
                     </p>
                   </td>
                 </tr>
@@ -431,7 +431,7 @@ function buildHtmlTemplate(
                 <tr>
                   <td align="center" style="font-size: 12px; color: #64748b; line-height: 1.6;">
                     <p style="margin: 0 0 8px 0;">
-                      Você está recebendo este e-mail porque se cadastrou na newsletter de <strong style="color: #94a3b8;">${subscriberEmail}</strong> no AIGamePortal.
+                      Você está recebendo este e-mail porque se cadastrou na newsletter de <strong style="color: #94a3b8;">${subscriberEmail}</strong> no Made By AI Games.
                     </p>
                     <p style="margin: 0 0 14px 0;">
                       Jornalismo Gamer com Curadoria por IA • Feito com Next.js, Supabase e Resend.
@@ -461,7 +461,7 @@ function buildHtmlTemplate(
 
   // Versão Texto Puro
   const text = `
-AIGAMEPORTAL • RESUMO GAMER DA SEMANA
+MADE BY AI GAMES • RESUMO GAMER DA SEMANA
 Edição de: ${currentDate}
 
 ==================================================
@@ -495,7 +495,7 @@ ${deals
 ==================================================
 Você recebeu este e-mail porque está cadastrado em ${subscriberEmail}.
 Para cancelar sua inscrição, acesse: ${unsubscribeUrl}
-AIGamePortal © 2026.
+Made By AI Games © 2026.
   `.trim();
 
   return { html, text };
@@ -616,7 +616,7 @@ async function runWeeklyNewsletter() {
     // 2. Modo Dry-Run: salva prévia do HTML em arquivo e sai sem gastar quotas
     if (isDryRun) {
       console.log("\n🧪 [DRY-RUN] Gerando arquivo de prévia HTML para inspeção...");
-      const previewEmail = subscribers[0] || "preview@aigameportal.com";
+      const previewEmail = subscribers[0] || "preview@madebyaigames.com";
       const { html, text } = buildHtmlTemplate(featuredPost, secondaryPosts, deals, previewEmail);
 
       const previewDir = path.join(process.cwd(), "scratch");

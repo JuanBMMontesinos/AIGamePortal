@@ -10,7 +10,7 @@ import { AdminLoginForm } from "./login-form";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Painel de Afiliados | Administração AIGamePortal",
+  title: "Painel de Afiliados | Administração Made By AI Games",
   robots: {
     index: false,
     follow: false,

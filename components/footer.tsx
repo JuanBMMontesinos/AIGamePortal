@@ -20,7 +20,7 @@ export function Footer() {
                   </span>
                 </h3>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 max-w-2xl">
-                  Todas as matérias do AIGamePortal são geradas a partir de feeds oficiais (PlayStation Blog, Xbox Wire, Nintendo, etc.), com deduplicação semântica vetorial e atribuição canônica obrigatória.
+                  Todas as matérias do Made By AI Games são geradas a partir de feeds oficiais (PlayStation Blog, Xbox Wire, Nintendo, etc.), com deduplicação semântica vetorial e atribuição canônica obrigatória.
                 </p>
               </div>
             </div>
@@ -47,7 +47,7 @@ export function Footer() {
                 </div>
               </div>
               <span className="font-extrabold text-lg tracking-tight text-zinc-900 dark:text-white">
-                AI<span className="text-brand-purple">GAME</span>PORTAL
+                MADE BY <span className="text-brand-purple">AI GAMES</span>
               </span>
             </Link>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -161,7 +161,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-10 pt-6 border-t border-zinc-200 dark:border-gamer-850 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-          <p>© 2026 AIGamePortal — Todos os direitos reservados. Feito com Next.js & Supabase.</p>
+          <p>© 2026 Made By AI Games — Todos os direitos reservados. Feito com Next.js & Supabase.</p>
           <div className="flex items-center gap-4">
             <Link href="/transparencia-editorial" className="hover:underline">
               Termos de Uso & IA

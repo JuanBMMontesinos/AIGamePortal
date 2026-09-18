@@ -11,7 +11,7 @@ import { AdminNewsletterLoginForm } from "./login-form";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Painel da Newsletter | Administração AIGamePortal",
+  title: "Painel da Newsletter | Administração Made By AI Games",
   robots: {
     index: false,
     follow: false,

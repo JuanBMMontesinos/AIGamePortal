@@ -16,7 +16,7 @@ import {
 export const metadata: Metadata = {
   title: "Transparência Editorial & Governança de IA",
   description:
-    "Conheça as diretrizes éticas, a política anti-alucinação e o funcionamento do pipeline autônomo de inteligência artificial do AIGamePortal.",
+    "Conheça as diretrizes éticas, a política anti-alucinação e o funcionamento do pipeline autônomo de inteligência artificial do Made By AI Games.",
 };
 
 export default function EditorialTransparencyPage() {
@@ -32,7 +32,7 @@ export default function EditorialTransparencyPage() {
           Transparência Editorial & Diretrizes de Inteligência Artificial
         </h1>
         <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-300 leading-relaxed">
-          No <strong>AIGamePortal</strong>, acreditamos que a automação jornalística por IA só tem valor se acompanhada de máxima clareza, respeito aos direitos autorais, combate rigoroso a alucinações e conformidade E-E-A-T.
+          No <strong>Made By AI Games</strong>, acreditamos que a automação jornalística por IA só tem valor se acompanhada de máxima clareza, respeito aos direitos autorais, combate rigoroso a alucinações e conformidade E-E-A-T.
         </p>
       </header>
 
@@ -58,7 +58,7 @@ export default function EditorialTransparencyPage() {
             2. Atribuição E-E-A-T e Links Canônicos
           </h3>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-            Reconhecemos o trabalho árduo dos jornalistas e redações originais. Cada post publicado no AIGamePortal inclui um card proeminente com o nome do veículo original, título de origem e link direto (nofollow/canonical).
+            Reconhecemos o trabalho árduo dos jornalistas e redações originais. Cada post publicado no Made By AI Games inclui um card proeminente com o nome do veículo original, título de origem e link direto (nofollow/canonical).
           </p>
         </div>
 
@@ -184,7 +184,7 @@ export default function EditorialTransparencyPage() {
         </div>
 
         <a
-          href="mailto:editorial@aigameportal.com?subject=Reportar%20Inconsistencia%20em%20Materia"
+          href="mailto:editorial@madebyaigames.com?subject=Reportar%20Inconsistencia%20em%20Materia"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-purple hover:bg-brand-purple/90 text-white font-bold text-xs shadow-neon-purple transition-all shrink-0"
         >
           <span>Reportar à Moderação</span>

@@ -15,7 +15,13 @@ async function verify() {
   console.log("\n=== 2. TESTANDO SITEMAP.TS (PADRÃO) ===");
   const sitemapEntries = await sitemap();
   console.log(`Total de URLs no sitemap: ${sitemapEntries.length}`);
-  const homeEntry = sitemapEntries.find((e) => e.url.endsWith(":3000") || e.url.endsWith("aigameportal.com"));
+  const homeEntry = sitemapEntries.find(
+    (e) =>
+      e.url.endsWith(":3000") ||
+      e.url.includes("aigameportal") ||
+      e.url.includes("madebyaigames") ||
+      e.url.includes("vercel.app")
+  );
   const newsEntries = sitemapEntries.filter((e) => e.url.includes("/noticias/"));
   const catEntries = sitemapEntries.filter((e) => e.url.includes("/categoria/"));
   console.log(`- Notícias indexadas: ${newsEntries.length}`);

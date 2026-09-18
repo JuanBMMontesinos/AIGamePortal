@@ -117,7 +117,7 @@ function UnsubscribeContent() {
           className="inline-flex items-center gap-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-brand-purple dark:hover:text-brand-purple transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Voltar para a Página Inicial do AIGamePortal
+          Voltar para a Página Inicial do Made By AI Games
         </Link>
       </div>
     </div>

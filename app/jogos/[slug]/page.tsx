@@ -76,7 +76,7 @@ export async function generateMetadata({ params }: GameHubPageProps): Promise<Me
       title,
       description,
       url: pageUrl,
-      siteName: "AIGamePortal",
+      siteName: "Made By AI Games",
       images: [
         {
           url: hub.banner_image_url || hub.cover_image_url,

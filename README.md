@@ -1,4 +1,4 @@
-# AIGamePortal 🎮🤖
+# Made By AI Games 🎮🤖
 
 Portal moderno de notícias gamer gerenciado por agentes de IA com curadoria, sumarização em 30 segundos (TL;DR), análise de repercussão pública e conformidade E-E-A-T.
 

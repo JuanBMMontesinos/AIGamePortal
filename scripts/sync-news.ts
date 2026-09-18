@@ -117,7 +117,7 @@ const FALLBACK_COVERS_BY_CATEGORY: Record<string, string[]> = {
 // SYSTEM PROMPT & DIRETRIZES EDITORIAIS (GEMINI 1.5 FLASH)
 // ============================================================================
 
-const SYSTEM_INSTRUCTION = `Você é o Agente Redator Sênior & Especialista em SEO do portal "AIGamePortal" (aigameportal.com.br).
+const SYSTEM_INSTRUCTION = `Você é o Agente Redator Sênior & Especialista em SEO do portal "Made By AI Games".
 Sua missão é atuar como um jornalista gamer profissional de elite, transformando textos raspados de notícias de videogames (em inglês ou português) em artigos jornalísticos completos, 100% originais, aprofundados, atraentes para a comunidade gamer e otimizados para mecanismos de busca (Google Discover e Google Search).
 
 ======================================================================
@@ -126,7 +126,7 @@ Sua missão é atuar como um jornalista gamer profissional de elite, transforman
 - PROIBIÇÃO DE TRADUÇÃO LITERAL OU RESUMO SUPERFICIAL:
   Nunca traduza parágrafo por parágrafo nem gere resumos telegráficos. Você deve reescrever o fato utilizando a técnica jornalística da "Pirâmide Invertida Moderna": comece com a revelação principal mais impactante, contextualize o histórico da franquia/estúdio, detalhe as novidades de gameplay/tecnologia, apresente a ficha técnica estruturada e feche com o pulso da comunidade.
 
-- VOZ EDITORIAL AIGAMEPORTAL:
+- VOZ EDITORIAL MADE BY AI GAMES:
   - Tom: Entusiasta, dinâmico, perspicaz, bem informado e gamer-nativo.
   - Idioma: Português do Brasil (pt-BR), com pontuação impecável e vocabulário fluido.
   - Banimento de Clichês de IA: NUNCA use frases batidas como "No vibrante mundo dos games", "Em um anúncio que abalou as estruturas", "Mergulhe de cabeça nesta jornada", "É crucial notar", "Em suma" ou "Vale ressaltar". Escreva como um redator humano experiente de veículos como IGN, Eurogamer, Voxel ou The Verge.
@@ -691,7 +691,7 @@ async function triggerISRRevalidation(siteUrl: string, secret: string, slug: str
 
     const res = await fetch(targetUrl, {
       method: "POST",
-      headers: { "User-Agent": "AIGamePortal-Ingestion/1.0" },
+      headers: { "User-Agent": "MadeByAIGames-Ingestion/1.0" },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -720,7 +720,7 @@ async function revalidateCustomPath(siteUrl: string, secret: string, customPath:
 
     const res = await fetch(targetUrl, {
       method: "POST",
-      headers: { "User-Agent": "AIGamePortal-Ingestion/1.0" },
+      headers: { "User-Agent": "MadeByAIGames-Ingestion/1.0" },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -794,7 +794,7 @@ async function checkDiscordNewsEnabled(supabase: SupabaseClient): Promise<boolea
 export async function runNewsSync() {
   const startTime = Date.now();
   console.log("====================================================================");
-  console.log("🎮 [AIGamePortal] Iniciando Pipeline de Ingestão de Notícias Gamer");
+  console.log("🎮 [Made By AI Games] Iniciando Pipeline de Ingestão de Notícias Gamer");
   console.log(`🕒 Data/Hora: ${new Date().toISOString()}`);
   console.log("====================================================================");
 
@@ -1129,7 +1129,7 @@ export async function runNewsSync() {
   // ==========================================================================
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log("\n====================================================================");
-  console.log("📊 [AIGamePortal] Relatório de Execução do Pipeline");
+  console.log("📊 [Made By AI Games] Relatório de Execução do Pipeline");
   console.log("====================================================================");
   console.log(`⏱️ Tempo total decorrido: ${durationSec}s`);
   console.log(`📡 Feeds processados com sucesso: ${totalFeedsRead}/${OFFICIAL_FEEDS.length}`);

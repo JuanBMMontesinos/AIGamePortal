@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * PROJETO: AIGamePortal (Fase 4 - Painel Administrativo do Discord)
+ * PROJETO: Made By AI Games (Fase 4 - Painel Administrativo do Discord)
  * MÓDULO: lib/data/discord-admin.ts
  * ==============================================================================
  *

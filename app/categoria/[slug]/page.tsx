@@ -38,7 +38,7 @@ export async function generateMetadata({
 
   return {
     title: `${category.name} • Notícias e Lançamentos`,
-    description: `Acompanhe as últimas notícias, análises e novidades de ${category.name} com curadoria e resumos em tempo real no AIGamePortal.`,
+    description: `Acompanhe as últimas notícias, análises e novidades de ${category.name} com curadoria e resumos em tempo real no Made By AI Games.`,
   };
 }
 

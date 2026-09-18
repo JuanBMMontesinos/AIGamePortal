@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
   const description =
     post.excerpt?.trim() ||
-    (post.tldr && post.tldr.length > 0 ? post.tldr.join(" ") : `Leia a cobertura completa de ${post.title} no AIGamePortal.`);
+    (post.tldr && post.tldr.length > 0 ? post.tldr.join(" ") : `Leia a cobertura completa de ${post.title} no Made By AI Games.`);
 
   return {
     title: post.title,
@@ -95,7 +95,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       title: post.title,
       description,
       url: postUrl,
-      siteName: "AIGamePortal",
+      siteName: "Made By AI Games",
       publishedTime: new Date(post.published_at).toISOString(),
       modifiedTime: new Date(post.updated_at || post.published_at).toISOString(),
       section: post.categories?.name || "Games",
@@ -184,12 +184,12 @@ export default async function PostPage({ params }: PostPageProps) {
     },
     "author": {
       "@type": "Organization",
-      "name": "Redação AIGamePortal",
+      "name": "Redação Made By AI Games",
       "url": `${siteUrl}/transparencia-editorial`,
     },
     "publisher": {
       "@type": "Organization",
-      "name": "AIGamePortal",
+      "name": "Made By AI Games",
       "url": siteUrl,
       "logo": {
         "@type": "ImageObject",

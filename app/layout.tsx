@@ -21,8 +21,8 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: "AIGamePortal • Notícias Gamer com Curadoria de IA em Tempo Real",
-    template: "%s | AIGamePortal",
+    default: "Made By AI Games • Notícias Gamer com Curadoria de IA em Tempo Real",
+    template: "%s | Made By AI Games",
   },
   description:
     "Portal de notícias de videogame de última geração gerenciado por agentes de IA. Cobertura em tempo real de PlayStation, Xbox, Nintendo, PC Gaming e Hardware com resumos TL;DR e verificação E-E-A-T.",
@@ -36,11 +36,11 @@ export const metadata: Metadata = {
     "Hardware",
     "IA",
     "Gemini",
-    "AIGamePortal",
+    "Made By AI Games",
   ],
-  authors: [{ name: "AIGamePortal AI Editorial Team" }],
-  creator: "AIGamePortal",
-  publisher: "AIGamePortal",
+  authors: [{ name: "Made By AI Games AI Editorial Team" }],
+  creator: "Made By AI Games",
+  publisher: "Made By AI Games",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   robots: {
     index: true,
@@ -50,14 +50,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     url: "/",
-    siteName: "AIGamePortal",
-    title: "AIGamePortal • Notícias Gamer com Curadoria de IA em Tempo Real",
+    siteName: "Made By AI Games",
+    title: "Made By AI Games • Notícias Gamer com Curadoria de IA em Tempo Real",
     description:
       "Portal gamer autônomo com resumos TL;DR, metadados de jogos e verificação semântica de fatos.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AIGamePortal • Notícias Gamer com Curadoria de IA",
+    title: "Made By AI Games • Notícias Gamer com Curadoria de IA",
     description: "Cobertura gamer veloz, inteligente e estruturada por IA.",
   },
 };

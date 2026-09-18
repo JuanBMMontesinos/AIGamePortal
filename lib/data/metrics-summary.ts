@@ -318,7 +318,7 @@ export async function getB2BMetricsSummary(forceRefresh = false): Promise<B2BMet
       deliverables: [
         "Banner Hero 970x250 na Homepage e no topo de matérias",
         "Cards 'Setup Recomendado' com link direto do fabricante",
-        "Badge oficial 'Equipamento Oficial AIGamePortal'",
+        "Badge oficial 'Equipamento Oficial Made By AI Games'",
         "Relatório semanal de cliques e conversões",
       ],
       estimatedMonthlyImpressions: "85.000 - 120.000 views",

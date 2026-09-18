@@ -77,7 +77,7 @@ export function AdminMetricsView({ initialSummary }: AdminMetricsViewProps) {
 
   const handleCopyPitch = () => {
     const pitchText = `================================================================
-MEDIA KIT B2B & PITCH DECK COMERCIAL — AIGAMEPORTAL
+MEDIA KIT B2B & PITCH DECK COMERCIAL — MADE BY AI GAMES
 Portal de Notícias Gamer Impulsionado por IA de Nova Geração
 Relatório Gerado em: ${new Date(summary.generatedAt).toLocaleDateString("pt-BR")}
 ================================================================
@@ -125,7 +125,7 @@ C) SERVIDORES DE JOGOS & HOSPEDAGEM
    - Entrega: 40.000 a 70.000 visualizações de jogadores de PC
    - Valor Sugerido: R$ 2.200 / mês
 
-Contato Comercial: comercial@aigameportal.com
+Contato Comercial: comercial@madebyaigames.com
 Painel de Telemetria: https://aigameportal.com/admin/metricas
 ================================================================`;
 
@@ -138,7 +138,7 @@ Painel de Telemetria: https://aigameportal.com/admin/metricas
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(summary, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `aigameportal-b2b-metrics-${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute("download", `made-by-ai-games-b2b-metrics-${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -499,14 +499,14 @@ Painel de Telemetria: https://aigameportal.com/admin/metricas
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Bloco 1: Pipeline AIGamePortal (Gemini Flash) */}
+            {/* Bloco 1: Pipeline Made By AI Games (Gemini Flash) */}
             <div className="p-5 rounded-2xl bg-gradient-to-b from-brand-purple/10 to-transparent border border-brand-purple/30 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-lg bg-brand-purple text-white">
                     <Zap className="w-4 h-4" />
                   </div>
-                  <span className="font-black text-white text-sm">Pipeline AIGamePortal (Gemini 2.0 Flash)</span>
+                  <span className="font-black text-white text-sm">Pipeline Made By AI Games (Gemini 2.0 Flash)</span>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-brand-purple/20 text-brand-purple border border-brand-purple/30">
                   Operação Atual
@@ -775,7 +775,7 @@ Painel de Telemetria: https://aigameportal.com/admin/metricas
 
         {/* Rodapé Administrativo */}
         <footer className="pt-6 border-t border-zinc-800 text-center text-xs text-zinc-500 space-y-1 print:hidden">
-          <p>AIGamePortal • Módulo Executivo B2B & Infraestrutura Edge Caching</p>
+          <p>Made By AI Games • Módulo Executivo B2B & Infraestrutura Edge Caching</p>
           <p className="text-[11px]">
             Telemetria consolidada às {new Date(summary.generatedAt).toLocaleTimeString("pt-BR")} • Próxima atualização
             em {new Date(summary.cachedUntil).toLocaleTimeString("pt-BR")}
@@ -813,7 +813,7 @@ Painel de Telemetria: https://aigameportal.com/admin/metricas
 
             {/* Conteúdo Formatado do Pitch */}
             <div className="p-4 sm:p-6 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-300 space-y-4 max-h-[50vh] overflow-y-auto select-all print:max-h-none print:bg-white print:text-zinc-900 print:border-zinc-300">
-              <div className="text-brand-cyan font-bold"># RELATÓRIO EXECUTIVO DE MÍDIA — AIGAMEPORTAL (FASE 4)</div>
+              <div className="text-brand-cyan font-bold"># RELATÓRIO EXECUTIVO DE MÍDIA — MADE BY AI GAMES (FASE 4)</div>
               <div>
                 <strong>Audiência Mensal:</strong> {summary.audience.monthlyProjectedPageviews.toLocaleString("pt-BR")}{" "}
                 visualizações projetadas com sustentação Cloudflare Edge

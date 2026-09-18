@@ -9,7 +9,7 @@ import { Sparkles, Newspaper, Zap } from "lucide-react";
 export const revalidate = 120; // ISR fallback a cada 2 minutos (também revalidável sob demanda via /api/revalidate)
 
 export const metadata: Metadata = {
-  title: "AIGamePortal • Notícias Gamer com IA em Tempo Real",
+  title: "Made By AI Games • Notícias Gamer com IA em Tempo Real",
   description:
     "Descubra as últimas notícias, análises de sentimento e resumos em 30 segundos dos maiores lançamentos do mundo dos games.",
 };

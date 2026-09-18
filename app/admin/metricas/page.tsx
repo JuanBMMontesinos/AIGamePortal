@@ -7,7 +7,7 @@ import { AdminMetricsLoginForm } from "./login-form";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Métricas B2B & Patrocínio | AIGamePortal Admin",
+  title: "Métricas B2B & Patrocínio | Made By AI Games Admin",
   description: "Painel de telemetria interna, KPIs de conversão e relatórios para patrocinadores e marcas.",
   robots: {
     index: false,

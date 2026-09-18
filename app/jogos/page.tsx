@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     canonical: `${(process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com").replace(/\/+$/, "")}/jogos`,
   },
   openGraph: {
-    title: "Centrais de Jogos & Franquias • Hubs Permanentes | AIGamePortal",
+    title: "Centrais de Jogos & Franquias • Hubs Permanentes | Made By AI Games",
     description:
       "Tudo sobre GTA VI, Monster Hunter Wilds, Elden Ring, Ghost of Yōtei e muito mais. Cobertura jornalística unificada por franquia.",
     type: "website",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Centrais de Jogos & Franquias • AIGamePortal",
+    title: "Centrais de Jogos & Franquias • Made By AI Games",
     description: "Cobertura completa e centralizada das maiores franquias gamer em tempo real.",
   },
 };

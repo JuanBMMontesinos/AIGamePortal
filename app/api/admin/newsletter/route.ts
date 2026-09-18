@@ -149,19 +149,19 @@ export async function POST(request: NextRequest) {
     }
 
     const resend = new Resend(resendApiKey);
-    const from = process.env.RESEND_FROM_EMAIL || "AIGamePortal <newsletter@aigameportal.com>";
+    const from = process.env.RESEND_FROM_EMAIL || "Made By AI Games <newsletter@madebyaigames.com>";
 
     const { data, error } = await resend.emails.send({
       from,
       to: testEmail,
-      subject: "🎮 [Teste de Administração] AIGamePortal Weekly Newsletter",
+      subject: "🎮 [Teste de Administração] Made By AI Games Weekly Newsletter",
       html: `
         <div style="font-family: sans-serif; background: #090d16; color: #fff; padding: 24px; border-radius: 12px;">
-          <h2 style="color: #8b5cf6;">AIGAMEPORTAL • Disparo de Teste Homologado</h2>
+          <h2 style="color: #8b5cf6;">MADE BY AI GAMES • Disparo de Teste Homologado</h2>
           <p>Este é um disparo de teste enviado diretamente a partir do <strong>Painel Administrativo da Newsletter</strong>.</p>
           <p style="color: #06b6d4;">Seu serviço Resend está configurado e apto a disparar e-mails semanais!</p>
           <hr style="border: 1px solid #1f293d; margin: 20px 0;" />
-          <p style="font-size: 11px; color: #64748b;">AIGamePortal Admin • ${new Date().toISOString()}</p>
+          <p style="font-size: 11px; color: #64748b;">Made By AI Games Admin • ${new Date().toISOString()}</p>
         </div>
       `,
     });

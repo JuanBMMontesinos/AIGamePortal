@@ -19,7 +19,7 @@ const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
 async function runAffiliateSync() {
   console.log("====================================================================");
-  console.log("🛒 [AIGamePortal] Sincronização & Auditoria de Afiliados (Forma 3)");
+  console.log("🛒 [Made By AI Games] Sincronização & Auditoria de Afiliados (Forma 3)");
   console.log("====================================================================");
   console.log(`🏷️ Tag Ativa da Amazon Brasil: ${amazonTag}`);
   console.log(`🔒 Parceiros Bloqueados: KaBuM! e Nuuvem (Aguardando Aprovação)`);

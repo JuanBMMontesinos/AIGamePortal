@@ -69,10 +69,7 @@ export function Header({ categories }: HeaderProps) {
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-xl tracking-tight text-zinc-900 dark:text-white group-hover:text-brand-purple transition-colors">
-                  AI<span className="text-brand-purple">GAME</span>PORTAL
-                </span>
-                <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-brand-purple/10 text-brand-purple border border-brand-purple/30">
-                  MVP
+                  MADE BY <span className="text-brand-purple">AI GAMES</span>
                 </span>
               </div>
               <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">

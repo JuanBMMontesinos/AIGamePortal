@@ -100,7 +100,7 @@ export function AdminLoginForm() {
         </form>
 
         <footer className="text-center pt-2 border-t border-zinc-800/80 text-[11px] text-zinc-500">
-          AIGamePortal © 2026 • Painel de Controle Seguro
+          Made By AI Games © 2026 • Painel de Controle Seguro
         </footer>
       </div>
     </div>
