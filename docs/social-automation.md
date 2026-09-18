@@ -1,6 +1,22 @@
 # Automação e Distribuição em Redes Sociais — AIGamePortal
 
-Este documento detalha o funcionamento, arquitetura, templates de copywriting e procedimentos de configuração do módulo de **Distribuição Multi-canal Automática** ([lib/services/social-publisher.ts](file:///d:/IAProjects/AIGamePortal/lib/services/social-publisher.ts)).
+Este documento detalha o ecossistema de redes sociais, comunidades oficiais e o funcionamento do módulo de **Distribuição Multi-canal Automática** ([lib/services/social-publisher.ts](file:///d:/IAProjects/AIGamePortal/lib/services/social-publisher.ts)).
+
+---
+
+## 0. Canais e Comunidades Oficiais do Portal
+
+O **Made By AI Games** mantém presença ativa nas seguintes plataformas oficiais, integradas de forma nativa e discreta em toda a interface do usuário:
+
+| Canal | Handle / Nome | Link de Acesso | Finalidade no Ecossistema |
+| :--- | :--- | :--- | :--- |
+| **X (Twitter)** | `@MadeByAiGames` | [x.com/MadeByAiGames](https://x.com/MadeByAiGames) | Breaking news, enquetes e atualizações velozes. |
+| **Discord** | Comunidade VIP | [discord.gg/C6tYRUBPd](https://discord.gg/C6tYRUBPd) | Alertas de jogos 100% grátis e fórum da comunidade. |
+| **YouTube** | `@madebyaigames` | [youtube.com/@madebyaigames](https://www.youtube.com/@madebyaigames) | Trailers oficiais, resumos e análises em vídeo. |
+| **Telegram Bot** | `@MadeByAiGamesBot` | [t.me/MadeByAiGamesBot](https://t.me/MadeByAiGamesBot) | Alertas instantâneos de notícias urgentes no celular. |
+| **Instagram** | `@madebyaigames` | [instagram.com/madebyaigames](https://www.instagram.com/madebyaigames/) | Reels, infográficos gerados por IA e bastidores. |
+
+Todas as constantes estão centralizadas no módulo tipado [lib/constants/socials.ts](file:///d:/IAProjects/AIGamePortal/lib/constants/socials.ts) e renderizadas pelo componente [components/social-links.tsx](file:///d:/IAProjects/AIGamePortal/components/social-links.tsx).
 
 ---
 

@@ -17,10 +17,10 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
   ```
 - **Funcionalidades**:
   - Logo gamer minimalista com gradiente dinâmico (`from-brand-purple to-brand-cyan`).
-  - Barra de status de micro-ticker no topo indicando se o pipeline de IA está ativo e quantidade de fontes monitoradas.
+  - Barra de status de micro-ticker no topo indicando se o pipeline de IA está ativo, quantidade de fontes monitoradas e atalhos discretos para as redes sociais oficiais (`<SocialLinks variant="header" />`).
   - Navegação responsiva de categorias com destaque para a rota ativa via `usePathname()`.
   - Botão alternador de tema claro/escuro (`<ThemeToggle />`).
-  - Gaveta móvel (drawer) com animação suave de transição para telas menores que `1024px`.
+  - Gaveta móvel (drawer) com navegação completa e grade de canais sociais (`<SocialLinks variant="mobile" />`) para telas menores que `1024px`.
 - **Acessibilidade**: Atributos `aria-label` em botões e navegação semântica com `<header>` e `<nav>`.
 
 ---
@@ -31,8 +31,8 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
 - **Props**: Nenhuma.
 - **Funcionalidades**:
   - Banner superior de garantia editorial E-E-A-T e política anti-alucinação.
-  - Quatro colunas estruturadas: Identidade da Marca, Plataformas, Governança/Transparência e Feeds Homologados.
-  - Links institucionais com rotas diretas para manifesto de IA e formulário de retificação de conteúdo.
+  - Quatro colunas estruturadas: Identidade da Marca (com botões de comunidades oficiais via `<SocialLinks variant="footer" />`), Plataformas, Governança/Transparência e Feeds Homologados.
+  - Barra inferior (Bottom Bar) com copyright, termos de uso, link de reporte e ícones minimalistas de redes sociais (`<SocialLinks variant="footer-bottom" />`).
 
 ---
 
@@ -299,4 +299,38 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
   * `splitContentForMidArticleAd`: Analisa o conteúdo Markdown ou HTML, contabiliza apenas blocos que são parágrafos de texto autênticos (desconsiderando títulos `#`, blockquotes `>`, listas `-` e blocos de código ````) e divide o artigo exatamente após o 3º parágrafo.
   * Injeção Não-Destrutiva: Renderiza a primeira metade via `<MarkdownContent />`, insere o slot `<AdBanner format="in-article-mid" />`, e renderiza a segunda metade preservando todos os links de afiliados contextuais e estilos tipográficos.
   * Tratamento Defensivo: Em notícias curtas com menos de 3 parágrafos, insere o bloco após o último parágrafo disponível sem truncar o texto.
+
+---
+
+## 6. Componentes de Comunidade & Redes Sociais
+
+### `<SocialLinks variant={variant} className={className} />`
+- **Arquivo**: [components/social-links.tsx](file:///d:/IAProjects/AIGamePortal/components/social-links.tsx)
+- **Constantes & URLs**: [lib/constants/socials.ts](file:///d:/IAProjects/AIGamePortal/lib/constants/socials.ts)
+- **Tipo**: Server / Client Component compatível
+- **Props**:
+  ```typescript
+  export interface SocialLinksProps {
+    variant?: "header" | "footer" | "footer-bottom" | "sidebar" | "mobile" | "article";
+    className?: string;
+  }
+  ```
+- **Redes Suportadas**:
+  * **X (Twitter)** (`@MadeByAiGames` / `https://x.com/MadeByAiGames`): Breaking news e posts de impacto.
+  * **Discord** (Comunidade VIP / `https://discord.gg/C6tYRUBPd`): Alertas de jogos grátis e chat gamer.
+  * **YouTube** (`@madebyaigames` / `https://www.youtube.com/@madebyaigames`): Trailers, resumos e gameplays em vídeo.
+  * **Telegram Bot** (`@MadeByAiGamesBot` / `https://t.me/MadeByAiGamesBot`): Alertas instantâneos no smartphone.
+  * **Instagram** (`@madebyaigames` / `https://www.instagram.com/madebyaigames/`): Reels, bastidores e infográficos.
+- **Variantes de UI**:
+  * `header`: Ícones ultra-compactos (`14x14px` / `w-3.5 h-3.5`) sem bordas, alinhados perfeitamente no micro-ticker superior ao lado do link de transparência E-E-A-T.
+  * `footer`: Botões com cantos arredondados (`p-2 rounded-xl bg-zinc-200/60 dark:bg-gamer-900 border`) na Coluna 1 da Marca.
+  * `footer-bottom`: Ícones monocromáticos discretos alinhados na barra inferior ao lado dos termos de uso e links institucionais.
+  * `sidebar`: Card gamer de alto engajamento com ícones, nomes dos canais, badges dinâmicos (*"Jogos Grátis"*, *"Bot Oficial"*) e micro-interações.
+  * `mobile`: Grade de 2 colunas com alvos de toque generosos para dispositivos móveis dentro do menu hambúrguer.
+  * `article`: Barra horizontal sutil de incentivo pós-leitura posicionada antes dos botões de compartilhamento.
+- **Segurança & Boas Práticas**:
+  * 100% dos links externos utilizam `target="_blank"` e `rel="noopener noreferrer"`.
+  * Atributos de acessibilidade completos: `aria-label` e `title` descritivos em todos os elementos clicáveis.
+  * SVGs vetoriais puros para fidelidade máxima às marcas oficiais (novo logotipo do X, Discord Clyde, Telegram, YouTube e Instagram).
+
 

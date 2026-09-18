@@ -4,6 +4,7 @@ import { Post, Category } from "@/types/database";
 import { formatRelativeTime } from "@/lib/utils";
 import { AdBanner } from "@/components/AdBanner";
 import { NewsletterBox } from "@/components/NewsletterBox";
+import { SocialLinks } from "@/components/social-links";
 
 interface PulseItem {
   name: string;
@@ -240,10 +241,13 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* 4. Caixa de Inscrição da Newsletter Gamer */}
+      {/* 4. Canais e Comunidades Oficiais */}
+      <SocialLinks variant="sidebar" />
+
+      {/* 5. Caixa de Inscrição da Newsletter Gamer */}
       <NewsletterBox variant="sidebar" />
 
-      {/* 5. Banner Publicitário Fixo na Barra Lateral */}
+      {/* 6. Banner Publicitário Fixo na Barra Lateral */}
       {showAdBanner && (
         <div className="pt-2">
           <AdBanner format="sidebar-sticky" />

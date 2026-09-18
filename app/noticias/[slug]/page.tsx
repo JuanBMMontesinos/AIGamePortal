@@ -17,6 +17,7 @@ import { GameMetadataCard } from "@/components/game-metadata-card";
 import { CommunitySentimentBox } from "@/components/community-sentiment-box";
 import { EeatAttributionBox } from "@/components/eeat-attribution-box";
 import { ShareButtons } from "@/components/share-buttons";
+import { SocialLinks } from "@/components/social-links";
 import { MarkdownContent } from "@/components/markdown-content";
 import { NewsCard } from "@/components/news-card";
 import { RumorBanner } from "@/components/RumorBanner";
@@ -395,8 +396,13 @@ export default async function PostPage({ params }: PostPageProps) {
             />
           </div>
 
+          {/* Siga os Canais Oficiais */}
+          <div className="mt-10">
+            <SocialLinks variant="article" />
+          </div>
+
           {/* Bottom Share & Feedback Bar */}
-          <div className="mt-12 pt-6 border-t border-zinc-200 dark:border-gamer-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-gamer-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <span className="text-xs text-zinc-500">
               Gostou deste resumo inteligente? Compartilhe com outros gamers:
             </span>

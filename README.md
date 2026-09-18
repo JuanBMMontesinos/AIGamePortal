@@ -4,6 +4,16 @@ Portal moderno de notícias gamer gerenciado por agentes de IA com curadoria, su
 
 ---
 
+## 🌐 Comunidade & Redes Sociais Oficiais
+
+- **X (Twitter)**: [@MadeByAiGames](https://x.com/MadeByAiGames) — Breaking news e cobertura em tempo real.
+- **Discord**: [Comunidade VIP & Jogos Grátis](https://discord.gg/C6tYRUBPd) — Alertas de ofertas 100% free e bate-papo.
+- **YouTube**: [@madebyaigames](https://www.youtube.com/@madebyaigames) — Vídeos, trailers e análises sintetizadas.
+- **Telegram Bot**: [@MadeByAiGamesBot](https://t.me/MadeByAiGamesBot) — Notificações urgentes no smartphone.
+- **Instagram**: [@madebyaigames](https://www.instagram.com/madebyaigames/) — Reels e destaques visuais.
+
+---
+
 ## ⚡ Stack Tecnológica
 
 - **Framework**: [Next.js 15+](https://nextjs.org/) (App Router, React 19, TypeScript estrito)

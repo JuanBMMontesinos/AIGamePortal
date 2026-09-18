@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Sparkles, ShoppingBag, Send, ExternalLink, ShieldCheck } from "lucide-react";
 import { AffiliateProduct } from "@/types/database";
+import { SOCIAL_LINKS } from "@/lib/constants/socials";
 
 declare global {
   interface Window {
@@ -382,7 +383,7 @@ function AffiliatePromoFallback({
           Receba bugs de preço e jogos grátis no seu celular.
         </p>
         <Link
-          href={process.env.NEXT_PUBLIC_TELEGRAM_URL || "https://t.me/aigameportal_noticias"}
+          href={process.env.NEXT_PUBLIC_TELEGRAM_URL || SOCIAL_LINKS.telegram.url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-400 hover:underline"
@@ -399,7 +400,7 @@ function AffiliatePromoFallback({
  */
 function TelegramPromoFallback({ format }: { format: AdFormat }) {
   const telegramUrl =
-    process.env.NEXT_PUBLIC_TELEGRAM_URL || "https://t.me/aigameportal_noticias";
+    process.env.NEXT_PUBLIC_TELEGRAM_URL || SOCIAL_LINKS.telegram.url;
 
   if (format === "in-article-top") {
     return (

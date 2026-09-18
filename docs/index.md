@@ -44,6 +44,10 @@ O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre j
 9. **Engajamento Proprietário & Discord Automation (Fase 4)**:
    - **Rastreador de Jogos Grátis**: Bot serverless agendado a cada 2 horas via GitHub Actions que consome a GamerPower API e notifica promoções 100% gratuitas da Epic Games Store, Steam, GOG e Prime com Rich Embeds e botões de resgate direto.
    - **Plantão Breaking News (Impacto 5/5)**: Alertas imediatos no Discord para acontecimentos de repercussão global (novos consoles, trailers mundiais e terremotos da indústria) sem sobrecarga de sockets 24/7.
+10. **Presença Multi-canal & Comunidade Gamer Oficial**:
+    - **Canais Conectados**: X (`@MadeByAiGames`), Discord (`Comunidade VIP`), YouTube (`@madebyaigames`), Telegram Bot (`@MadeByAiGamesBot`) e Instagram (`@madebyaigames`).
+    - **Integração Discreta e Profissional (`<SocialLinks />`)**: Posicionada estrategicamente na micro-barra superior do Header, na gaveta mobile, na barra lateral (Sidebar), no pós-artigo de notícias e no Rodapé.
+    - **Conformidade e Segurança**: Links externos com `target="_blank"` e `rel="noopener noreferrer"`, suporte a tema Dark/Light e ícones vetoriais SVG de alta fidelidade.
 
 ---
 

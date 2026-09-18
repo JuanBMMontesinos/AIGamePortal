@@ -27,7 +27,11 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 | `NEXT_PUBLIC_ADSENSE_SLOT_TOP` | Público (Browser & Server) | Opcional (Fase 3) | ID do slot de anúncio AdSense para o banner superior horizontal (`in-article-top`). | `1234567890` |
 | `NEXT_PUBLIC_ADSENSE_SLOT_MID` | Público (Browser & Server) | Opcional (Fase 3) | ID do slot de anúncio AdSense para o bloco no meio do texto (`in-article-mid`). | `1234567891` |
 | `NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR` | Público (Browser & Server) | Opcional (Fase 3) | ID do slot de anúncio AdSense para o banner lateral sticky (`sidebar-sticky`). | `1234567892` |
-| `NEXT_PUBLIC_TELEGRAM_URL` | Público (Browser & Server) | Opcional (Fase 3) | Link público para o canal do Telegram utilizado no Fallback Promocional. | `https://t.me/aigameportal_noticias` |
+| `NEXT_PUBLIC_TELEGRAM_URL` | Público (Browser & Server) | Opcional | Link público do Bot/Canal do Telegram oficial. | `https://t.me/MadeByAiGamesBot` |
+| `NEXT_PUBLIC_DISCORD_URL` | Público (Browser & Server) | Opcional | Link de convite oficial para o servidor Discord do portal. | `https://discord.gg/C6tYRUBPd` |
+| `NEXT_PUBLIC_X_URL` | Público (Browser & Server) | Opcional | Link do perfil oficial no X (Twitter). | `https://x.com/MadeByAiGames` |
+| `NEXT_PUBLIC_YOUTUBE_URL` | Público (Browser & Server) | Opcional | Link do canal oficial do YouTube. | `https://www.youtube.com/@madebyaigames` |
+| `NEXT_PUBLIC_INSTAGRAM_URL` | Público (Browser & Server) | Opcional | Link do perfil oficial no Instagram. | `https://www.instagram.com/madebyaigames/` |
 
 ---
 

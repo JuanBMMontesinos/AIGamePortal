@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Gamepad2, ShieldCheck, Sparkles, Cpu, ExternalLink, Rss } from "lucide-react";
+import { SocialLinks } from "@/components/social-links";
 
 export function Footer() {
   return (
@@ -56,6 +57,9 @@ export function Footer() {
             <div className="flex items-center gap-2 text-xs text-zinc-400">
               <Cpu className="w-4 h-4 text-brand-cyan" />
               <span>Stack: Next.js 15 • Supabase • Gemini</span>
+            </div>
+            <div className="pt-2">
+              <SocialLinks variant="footer" />
             </div>
           </div>
 
@@ -160,9 +164,11 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-10 pt-6 border-t border-zinc-200 dark:border-gamer-850 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+        <div className="mt-10 pt-6 border-t border-zinc-200 dark:border-gamer-850 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <p>© 2026 Made By AI Games — Todos os direitos reservados. Feito com Next.js & Supabase.</p>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center flex-wrap gap-4">
+            <SocialLinks variant="footer-bottom" />
+            <span className="hidden sm:inline">•</span>
             <Link href="/transparencia-editorial" className="hover:underline">
               Termos de Uso & IA
             </Link>

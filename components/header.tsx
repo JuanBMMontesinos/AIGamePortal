@@ -14,6 +14,7 @@ import {
   Radio,
 } from "lucide-react";
 import { Category } from "@/types/database";
+import { SocialLinks } from "./social-links";
 
 interface HeaderProps {
   categories: Category[];
@@ -45,7 +46,7 @@ export function Header({ categories }: HeaderProps) {
             <Radio className="w-3 h-3 text-brand-cyan" /> 6 Feeds Oficiais Monitorados em Tempo Real
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link
             href="/transparencia-editorial"
             className="flex items-center gap-1 text-zinc-600 dark:text-zinc-300 hover:text-brand-purple dark:hover:text-brand-purple transition-colors font-medium"
@@ -53,6 +54,8 @@ export function Header({ categories }: HeaderProps) {
             <ShieldCheck className="w-3.5 h-3.5 text-brand-purple" />
             Transparência & Diretrizes E-E-A-T
           </Link>
+          <span className="text-zinc-300 dark:text-zinc-700">•</span>
+          <SocialLinks variant="header" />
         </div>
       </div>
 
@@ -186,7 +189,7 @@ export function Header({ categories }: HeaderProps) {
             ))}
           </div>
 
-          <div className="pt-3 border-t border-zinc-200 dark:border-gamer-800 space-y-2">
+          <div className="pt-3 border-t border-zinc-200 dark:border-gamer-800 space-y-3">
             <Link
               href="/transparencia-editorial"
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-brand-purple bg-brand-purple/10 border border-brand-purple/20"
@@ -194,6 +197,8 @@ export function Header({ categories }: HeaderProps) {
               <ShieldCheck className="w-4 h-4" />
               Diretrizes de IA e Transparência
             </Link>
+
+            <SocialLinks variant="mobile" />
           </div>
         </div>
       )}
