@@ -53,12 +53,13 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
   - **Guarda de Imagem Segura**: Validação defensiva via `isValidImageUrl` que impede renderização de formatos inválidos ou áudios `.mp3`.
   - Camadas de gradiente escuro (`from-zinc-950 via-zinc-950/70 to-transparent`) que preservam o contraste do texto mesmo em imagens claras.
   - Badges informativas: Categoria, Plataformas suportadas, tempo de leitura e data relativa.
+  - **Compartilhamento Rápido Duplo**: Integração do `<ShareButtons variant="thumb" />` no overlay superior da imagem e `<ShareButtons variant="compact" />` na barra de ações inferior ao lado do CTA de leitura completa.
 
 ---
 
 ### `<NewsCard post={post} priority={priority} />`
 - **Arquivo**: [components/news-card.tsx](file:///d:/IAProjects/AIGamePortal/components/news-card.tsx)
-- **Tipo**: Server Component
+- **Tipo**: Client Component (`"use client"`)
 - **Props**:
   ```typescript
   interface NewsCardProps {
@@ -70,6 +71,7 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
   - Card responsivo para exibição no grid de notícias.
   - **Guarda Defensiva de Capa**: Renderiza a imagem via `next/image` apenas se validada por `isValidImageUrl()`. Em caso de URL inválida, exibe o placeholder gradiente gamer com ícone de raio neon sem quebrar o layout.
   - Efeito suave de zoom na capa no estado `:hover` (`group-hover:scale-105 duration-500`).
+  - **Quick Share na Thumbnail (`variant="thumb"`)**: Botão flutuante no canto superior direito da miniatura com efeito vidro fosco (`backdrop-blur-md bg-black/60`). Ao clicar, abre um popover elegante com acesso rápido às redes (WhatsApp, X, Telegram, Facebook, Reddit e Copiar Link) com isolamento rigoroso de eventos (`stopPropagation` e `preventDefault`) para não disparar navegação para o artigo.
   - **Bullet point rápido de TL;DR**: Exibe o primeiro fato resumido da matéria diretamente no card, economizando tempo de navegação do leitor.
   - Badges de plataforma flutuantes com efeito de vidro fosco (`backdrop-blur-md`).
 
@@ -183,7 +185,7 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
 
 ---
 
-### `<ShareButtons title={title} url={url} />`
+### `<ShareButtons ... />`
 - **Arquivo**: [components/share-buttons.tsx](file:///d:/IAProjects/AIGamePortal/components/share-buttons.tsx)
 - **Tipo**: Client Component (`"use client"`)
 - **Props**:
@@ -191,11 +193,28 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
   interface ShareButtonsProps {
     title: string;
     url?: string;
+    excerpt?: string | null;
+    tldr?: string[] | null;
+    categoryName?: string | null;
+    isRumor?: boolean;
+    variant?: "article-top" | "article-bottom" | "thumb" | "compact";
+    align?: "left" | "right" | "center";
+    className?: string;
   }
   ```
-- **Funcionalidades**:
-  - Botão de **Copiar Link** com retorno visual imediato (*"Copiado!"* com ícone de check verde por 2.5 segundos).
-  - Links diretos com intent URL para compartilhamento no **X (Twitter)**, **WhatsApp** e **Reddit**.
+- **Variantes de Exibição**:
+  - `variant="article-top"`: Barra horizontal compacta e refinada posicionada no cabeçalho editorial de leitura, ideal para o topo da matéria.
+  - `variant="article-bottom"`: Barra expandida no rodapé do artigo com botões pílula estilizados por cor de marca de cada rede, perfeita para conversão pós-leitura.
+  - `variant="thumb"`: Gatilho flutuante (`Share2`) para miniaturas/cards com popover suspenso de vidro fosco (`backdrop-blur-xl`), isolamento de propagação (`stopPropagation`) e suporte a fechar com clique fora ou tecla `ESC`.
+  - `variant="compact"`: Linha enxuta de ícones para barras de ação (utilizada no `HeroFeatured` e centrais de jogos).
+- **Redes Sociais e Conteúdo Enriquecido**:
+  - **WhatsApp**: Gera mensagem formatada em Markdown com emojis (`🎮` ou `👀 [RUMOR]`), título em negrito (`*título*`), resumo/gancho editorial extraído do `excerpt` ou `tldr` e chamada de ação antes do link canônico.
+  - **X (Twitter)**: Monta post com cálculo matemático estrito que garante respeito absoluto ao limite de **280 caracteres** de contas gratuitas (Free Tier), descontando a conversão t.co da URL (23 caracteres), hashtags e margem de segurança. Garante a renderização da imagem de destaque (thumbnail) gerando cartões no formato `summary_large_image` via metatags OpenGraph/Twitter Cards (`twitter:card`, `twitter:image` em HTTPS e dimensões 1200x630).
+  - **Telegram**: Mensagem rica com formatação, bullet de resumo, hashtags da comunidade e link canônico.
+  - **Facebook**: Utiliza o parâmetro `quote` enriquecido com resumo editorial para potencializar os metadados OpenGraph.
+  - **Reddit**: Título pré-formatado com tag de identificação gamer (`[Notícia Gamer]`) e URL canônica.
+  - **Copiar Link**: Cópia para a área de transferência com retorno visual imediato (*"Link Copiado!"* com ícone de check por 2.5 segundos).
+  - **Web Share API Nativa**: Dispara a folha nativa do sistema operacional (Android / iOS) quando suportado (`navigator.share`), permitindo compartilhar em qualquer aplicativo instalado (Instagram Stories, Discord, WhatsApp etc.).
 
 ---
 

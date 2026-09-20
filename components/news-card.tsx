@@ -7,6 +7,8 @@ import { Clock, Calendar, Zap, Sparkles } from "lucide-react";
 import { Post } from "@/types/database";
 import { calculateReadingTime, formatRelativeTime, isValidImageUrl } from "@/lib/utils";
 
+import { ShareButtons } from "@/components/share-buttons";
+
 interface NewsCardProps {
   post: Post;
   priority?: boolean;
@@ -24,28 +26,35 @@ export function NewsCard({ post, priority = false }: NewsCardProps) {
   const showImage = hasValidImage && !imgError;
 
   return (
-    <article className="group relative flex flex-col rounded-2xl overflow-hidden border border-zinc-200 dark:border-gamer-800/80 bg-white dark:bg-gamer-900 hover:border-brand-purple/50 dark:hover:border-brand-purple/50 hover:shadow-neon-purple/15 transition-all duration-300">
+    <article className="group relative flex flex-col rounded-2xl border border-zinc-200 dark:border-gamer-800/80 bg-white dark:bg-gamer-900 hover:border-brand-purple/50 dark:hover:border-brand-purple/50 hover:shadow-neon-purple/15 transition-all duration-300">
       {/* Cover Image Container */}
-      <Link href={`/noticias/${post.slug}`} className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-900 block">
-        {showImage ? (
-          <Image
-            src={post.cover_image_url!}
-            alt={post.cover_image_alt || post.title}
-            fill
-            priority={priority}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-gamer-850 text-zinc-500">
-            <Zap className="w-8 h-8 opacity-40 text-brand-purple" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+      <div className="relative aspect-[16/9] w-full bg-zinc-900 rounded-t-2xl">
+        <Link
+          href={`/noticias/${post.slug}`}
+          className="absolute inset-0 rounded-t-2xl overflow-hidden block"
+          tabIndex={0}
+          aria-label={`Ler notícia: ${post.title}`}
+        >
+          {showImage ? (
+            <Image
+              src={post.cover_image_url!}
+              alt={post.cover_image_alt || post.title}
+              fill
+              priority={priority}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-gamer-850 text-zinc-500">
+              <Zap className="w-8 h-8 opacity-40 text-brand-purple" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+        </Link>
 
         {/* Category Badge overlay on image */}
-        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 pointer-events-none">
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase bg-black/60 backdrop-blur-md text-white border border-white/10 group-hover:border-brand-purple/40 transition-colors">
             {categoryName}
           </span>
@@ -57,9 +66,22 @@ export function NewsCard({ post, priority = false }: NewsCardProps) {
           )}
         </div>
 
+        {/* Botão de Compartilhamento Rápido na Thumbnail (Thumb Variant) */}
+        <div className="absolute top-3 right-3 z-20">
+          <ShareButtons
+            variant="thumb"
+            title={post.title}
+            url={`/noticias/${post.slug}`}
+            excerpt={post.excerpt}
+            tldr={post.tldr}
+            categoryName={categoryName}
+            isRumor={post.is_rumor}
+          />
+        </div>
+
         {/* Platforms Badges overlay */}
         {platforms.length > 0 && (
-          <div className="absolute bottom-2.5 right-2.5 z-10 flex gap-1">
+          <div className="absolute bottom-2.5 right-2.5 z-10 flex gap-1 pointer-events-none">
             {platforms.slice(0, 2).map((p) => (
               <span
                 key={p}
@@ -70,7 +92,7 @@ export function NewsCard({ post, priority = false }: NewsCardProps) {
             ))}
           </div>
         )}
-      </Link>
+      </div>
 
       {/* Card Body */}
       <div className="flex flex-col flex-1 p-5">

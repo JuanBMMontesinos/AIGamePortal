@@ -23,6 +23,7 @@ import { getGameHubBySlug, getAllGameHubSlugs, getPostsByGameHub } from "@/lib/d
 import { getActiveAffiliateProducts } from "@/lib/data/affiliates";
 import { formatDate, formatRelativeTime, isValidImageUrl, calculateReadingTime } from "@/lib/utils";
 import { AffiliateProduct } from "@/types/database";
+import { ShareButtons } from "@/components/share-buttons";
 
 export const revalidate = 1800; // 30 minutos (1800s) para Edge Caching Cloudflare/Vercel
 
@@ -448,8 +449,8 @@ export default async function GameHubPage({ params }: GameHubPageProps) {
                           </div>
                         )}
 
-                        {/* Botão Ler Matéria */}
-                        <div className="mt-3">
+                        {/* Botão Ler Matéria & Compartilhar */}
+                        <div className="mt-3 flex items-center justify-between gap-2">
                           <Link
                             href={`/noticias/${post.slug}`}
                             className="inline-flex items-center gap-1 text-xs font-bold text-brand-purple hover:text-purple-400 transition-colors"
@@ -457,6 +458,15 @@ export default async function GameHubPage({ params }: GameHubPageProps) {
                             <span>Ler cobertura completa</span>
                             <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                           </Link>
+                          <ShareButtons
+                            variant="compact"
+                            title={post.title}
+                            url={`/noticias/${post.slug}`}
+                            excerpt={post.excerpt}
+                            tldr={post.tldr}
+                            categoryName={post.categories?.name || hub.name}
+                            isRumor={post.is_rumor}
+                          />
                         </div>
                       </article>
                     );

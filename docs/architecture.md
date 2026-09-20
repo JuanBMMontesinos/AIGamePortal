@@ -225,6 +225,21 @@ Para maximizar a tração orgânica e o engajamento imediato com a comunidade ga
   - Algoritmo de compressão dinâmico com garantia matemática de cumprimento do limite estrito de **280 caracteres** (compensando os 23 caracteres fixos da URL via `t.co`).
   - Hashtags estratégicas geradas dinamicamente com base na categoria e plataformas do jogo.
 
+### 6.3 Viralidade Orgânica & Compartilhamento por Visitantes ([components/share-buttons.tsx](file:///d:/IAProjects/AIGamePortal/components/share-buttons.tsx))
+Enquanto o `social-publisher.ts` cuida do broadcast autônomo da redação por bots, o portal conta com uma arquitetura de distribuição orgânica pelos próprios leitores em dois contextos essenciais:
+1. **Nas Miniaturas e Feeds (`NewsCard` e `HeroFeatured`)**:
+   - Botão flutuante na thumbnail com efeito vidro fosco (`backdrop-blur-md bg-black/60`) que revela um menu popover suspenso sem redirecionar o usuário para a matéria, graças ao isolamento rigoroso de eventos de clique (`stopPropagation` e `preventDefault`).
+   - Permite que o leitor compartilhe uma notícia impactante instantaneamente sem a fricção de carregar a página inteira.
+2. **Na Leitura da Matéria (`app/noticias/[slug]/page.tsx`)**:
+   - Barra compacta no topo editorial e barra expandida no rodapé pós-artigo com foco em conversão e engajamento comunitário.
+3. **Mecanismo de Conteúdo Enriquecido (Payload Builder)**:
+   - **WhatsApp**: Mensagem pré-formatada em Markdown do WhatsApp com emojis temáticos, título em negrito (`*título*`), resumo/gancho editorial (`post.excerpt` ou `post.tldr[0]`) e chamada de ação clara antes da URL canônica absoluta.
+   - **X (Twitter)**: Hook com emojis, título, resumo sintetizado com cálculo matemático estrito que garante respeito absoluto ao limite de **280 caracteres** de contas gratuitas (Free Tier), descontando a conversão t.co da URL (23 caracteres), hashtags e margem de segurança. Garante a renderização da thumbnail em destaque gerando cartões no formato `summary_large_image` via metatags OpenGraph/Twitter Cards (`twitter:card`, `twitter:image` em HTTPS e dimensões 1200x630).
+   - **Telegram**: Post estruturado com formatação, bullets de resumo e hashtags.
+   - **Facebook**: Parâmetro `quote` otimizado para enriquecer os cartões OpenGraph (`og:image`, `og:title`, `og:description`).
+   - **Reddit**: Título com tag `[Notícia Gamer]` e link post nativo.
+   - **Web Share API Nativa**: Acionamento da gaveta nativa do sistema operacional em dispositivos móveis (`navigator.share`), permitindo compartilhar em qualquer app instalado (Instagram Stories, Discord, Signal, etc.).
+
 ---
 
 ## 7. Módulo de Afiliados Inteligentes & Monetização (Fase 3)

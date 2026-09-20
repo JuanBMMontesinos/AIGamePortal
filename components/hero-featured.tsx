@@ -7,6 +7,8 @@ import { Clock, Calendar, ArrowRight, Zap, Sparkles } from "lucide-react";
 import { Post } from "@/types/database";
 import { calculateReadingTime, formatRelativeTime, isValidImageUrl } from "@/lib/utils";
 
+import { ShareButtons } from "@/components/share-buttons";
+
 interface HeroFeaturedProps {
   post: Post;
 }
@@ -43,29 +45,44 @@ export function HeroFeatured({ post }: HeroFeaturedProps) {
 
       {/* Content Container */}
       <div className="relative z-10 p-6 sm:p-8 md:p-12 lg:p-14 flex flex-col justify-end min-h-[480px] md:min-h-[540px]">
-        {/* Top Badges */}
-        <div className="flex flex-wrap items-center gap-2.5 mb-4">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-purple text-white shadow-neon-purple">
-            <Zap className="w-3 h-3 fill-current" />
-            Destaque Principal
-          </span>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-md text-white border border-white/20">
-            {categoryName}
-          </span>
-          {post.is_rumor && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500 text-zinc-950 shadow-md border border-amber-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-950 animate-pulse" />
-              Rumor
+        {/* Top Badges & Quick Share */}
+        <div className="flex items-center justify-between gap-2.5 mb-4">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-purple text-white shadow-neon-purple">
+              <Zap className="w-3 h-3 fill-current" />
+              Destaque Principal
             </span>
-          )}
-          {platforms.slice(0, 2).map((p) => (
-            <span
-              key={p}
-              className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/40 text-zinc-300 border border-zinc-700/60"
-            >
-              {p}
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-md text-white border border-white/20">
+              {categoryName}
             </span>
-          ))}
+            {post.is_rumor && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500 text-zinc-950 shadow-md border border-amber-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-950 animate-pulse" />
+                Rumor
+              </span>
+            )}
+            {platforms.slice(0, 2).map((p) => (
+              <span
+                key={p}
+                className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/40 text-zinc-300 border border-zinc-700/60"
+              >
+                {p}
+              </span>
+            ))}
+          </div>
+
+          {/* Quick Share Trigger on Hero Thumbnail */}
+          <div className="z-20">
+            <ShareButtons
+              variant="thumb"
+              title={post.title}
+              url={`/noticias/${post.slug}`}
+              excerpt={post.excerpt}
+              tldr={post.tldr}
+              categoryName={categoryName}
+              isRumor={post.is_rumor}
+            />
+          </div>
         </div>
 
         {/* Title */}
@@ -101,15 +118,28 @@ export function HeroFeatured({ post }: HeroFeaturedProps) {
             </span>
           </div>
 
-          <Link
-            href={`/noticias/${post.slug}`}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-100 dark:bg-white dark:text-zinc-950 font-bold text-sm transition-transform active:scale-95 shadow-md group/btn"
-          >
-            <span>Ler Notícia Completa</span>
-            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <ShareButtons
+              variant="compact"
+              title={post.title}
+              url={`/noticias/${post.slug}`}
+              excerpt={post.excerpt}
+              tldr={post.tldr}
+              categoryName={categoryName}
+              isRumor={post.is_rumor}
+              className="hidden md:flex"
+            />
+            <Link
+              href={`/noticias/${post.slug}`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-100 dark:bg-white dark:text-zinc-950 font-bold text-sm transition-transform active:scale-95 shadow-md group/btn"
+            >
+              <span>Ler Notícia Completa</span>
+              <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </div>
       </div>
     </section>
   );
 }
+

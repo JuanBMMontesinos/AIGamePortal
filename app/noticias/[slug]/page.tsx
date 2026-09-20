@@ -58,13 +58,15 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
     };
   }
 
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com").replace(/\/+$/, "");
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.vercel.app").replace(/\/+$/, "");
   const postUrl = `${siteUrl}/noticias/${post.slug}`;
 
   const hasValidCover = isValidImageUrl(post.cover_image_url);
-  const coverUrl = hasValidCover
+  const rawCoverUrl = hasValidCover
     ? (post.cover_image_url!.startsWith("http") ? post.cover_image_url! : `${siteUrl}${post.cover_image_url}`)
     : `${siteUrl}/og-image.png`;
+  // Garantir protocolo HTTPS absoluto para que o crawler do Twitter/X não descarte a imagem
+  const coverUrl = rawCoverUrl.startsWith("http://") ? rawCoverUrl.replace("http://", "https://") : rawCoverUrl;
 
   const description =
     post.excerpt?.trim() ||
@@ -113,7 +115,16 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       card: "summary_large_image",
       title: post.title,
       description,
-      images: [coverUrl],
+      site: "@MadeByAiGames",
+      creator: "@MadeByAiGames",
+      images: [
+        {
+          url: coverUrl,
+          width: 1200,
+          height: 630,
+          alt: post.cover_image_alt || post.title,
+        },
+      ],
     },
   };
 }
@@ -288,7 +299,15 @@ export default async function PostPage({ params }: PostPageProps) {
               </div>
 
               {/* Share Buttons top */}
-              <ShareButtons title={post.title} />
+              <ShareButtons
+                variant="article-top"
+                title={post.title}
+                url={postUrl}
+                excerpt={post.excerpt}
+                tldr={post.tldr}
+                categoryName={categoryName}
+                isRumor={post.is_rumor}
+              />
             </div>
 
             {/* Title */}
@@ -403,10 +422,18 @@ export default async function PostPage({ params }: PostPageProps) {
 
           {/* Bottom Share & Feedback Bar */}
           <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-gamer-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-zinc-500 font-medium">
               Gostou deste resumo inteligente? Compartilhe com outros gamers:
             </span>
-            <ShareButtons title={post.title} />
+            <ShareButtons
+              variant="article-bottom"
+              title={post.title}
+              url={postUrl}
+              excerpt={post.excerpt}
+              tldr={post.tldr}
+              categoryName={categoryName}
+              isRumor={post.is_rumor}
+            />
           </div>
         </article>
 

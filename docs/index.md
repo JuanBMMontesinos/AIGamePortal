@@ -48,6 +48,10 @@ O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre j
     - **Canais Conectados**: X (`@MadeByAiGames`), Discord (`Comunidade VIP`), YouTube (`@madebyaigames`), Telegram Bot (`@MadeByAiGamesBot`) e Instagram (`@madebyaigames`).
     - **Integração Discreta e Profissional (`<SocialLinks />`)**: Posicionada estrategicamente na micro-barra superior do Header, na gaveta mobile, na barra lateral (Sidebar), no pós-artigo de notícias e no Rodapé.
     - **Conformidade e Segurança**: Links externos com `target="_blank"` e `rel="noopener noreferrer"`, suporte a tema Dark/Light e ícones vetoriais SVG de alta fidelidade.
+11. **Compartilhamento Social Enriquecido para Visitantes (`<ShareButtons />`)**:
+    - **Compartilhamento Direto nas Miniaturas (Thumbs)**: Botão flutuante em overlay sobre as imagens do `NewsCard` e `HeroFeatured` com menu popover vidro fosco (`backdrop-blur-xl`) e isolamento rigoroso de eventos de clique (`stopPropagation` e `preventDefault`), permitindo compartilhar direto dos feeds sem navegar indesejadamente para a matéria.
+    - **Compartilhamento na Leitura**: Barra compacta no cabeçalho editorial e bloco de alto destaque no rodapé pós-leitura com chamada de engajamento comunitário.
+    - **Conteúdo Enriquecido por Plataforma**: Montagem dinâmica de mensagens personalizadas com emojis temáticos, título em destaque, resumo/gancho editorial (`excerpt` ou `tldr`), hashtags da categoria e URL canônica para **WhatsApp**, **X (Twitter)**, **Telegram**, **Facebook** e **Reddit**, além de botão de cópia com feedback instantâneo e suporte nativo à **Web Share API** no mobile.
 
 ---
 

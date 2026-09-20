@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Made By AI Games AI Editorial Team" }],
   creator: "Made By AI Games",
   publisher: "Made By AI Games",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL((process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.vercel.app").replace(/\/+$/, "")),
   robots: {
     index: true,
     follow: true,
@@ -54,11 +54,22 @@ export const metadata: Metadata = {
     title: "Made By AI Games • Notícias Gamer com Curadoria de IA em Tempo Real",
     description:
       "Portal gamer autônomo com resumos TL;DR, metadados de jogos e verificação semântica de fatos.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Made By AI Games",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Made By AI Games • Notícias Gamer com Curadoria de IA",
     description: "Cobertura gamer veloz, inteligente e estruturada por IA.",
+    site: "@MadeByAiGames",
+    creator: "@MadeByAiGames",
+    images: ["/og-image.png"],
   },
 };
 
