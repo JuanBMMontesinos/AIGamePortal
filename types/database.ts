@@ -163,6 +163,22 @@ export interface DiscordSettings {
   updated_at: string;
 }
 
+export interface SocialSettings {
+  id: string;
+  is_twitter_enabled: boolean;
+  is_telegram_enabled: boolean;
+  twitter_disabled_reason: string | null;
+  telegram_disabled_reason: string | null;
+  last_twitter_dispatched_at: string | null;
+  last_twitter_dispatch_status: "idle" | "success" | "failed" | "skipped" | string;
+  last_twitter_dispatch_log: string | null;
+  last_telegram_dispatched_at: string | null;
+  last_telegram_dispatch_status: "idle" | "success" | "failed" | "skipped" | string;
+  last_telegram_dispatch_log: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -365,6 +381,40 @@ export interface Database {
           last_news_dispatched_at?: string | null;
           last_news_dispatch_status?: string;
           last_news_dispatch_log?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      social_settings: {
+        Row: SocialSettings;
+        Insert: {
+          id?: string;
+          is_twitter_enabled?: boolean;
+          is_telegram_enabled?: boolean;
+          twitter_disabled_reason?: string | null;
+          telegram_disabled_reason?: string | null;
+          last_twitter_dispatched_at?: string | null;
+          last_twitter_dispatch_status?: string;
+          last_twitter_dispatch_log?: string | null;
+          last_telegram_dispatched_at?: string | null;
+          last_telegram_dispatch_status?: string;
+          last_telegram_dispatch_log?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          is_twitter_enabled?: boolean;
+          is_telegram_enabled?: boolean;
+          twitter_disabled_reason?: string | null;
+          telegram_disabled_reason?: string | null;
+          last_twitter_dispatched_at?: string | null;
+          last_twitter_dispatch_status?: string;
+          last_twitter_dispatch_log?: string | null;
+          last_telegram_dispatched_at?: string | null;
+          last_telegram_dispatch_status?: string;
+          last_telegram_dispatch_log?: string | null;
           created_at?: string;
           updated_at?: string;
         };

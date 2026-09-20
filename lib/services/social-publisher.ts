@@ -1,5 +1,6 @@
 import { TwitterApi } from "twitter-api-v2";
 import { isValidImageUrl } from "../utils";
+import { getSocialSettingsAdmin, recordSocialDispatchTelemetry } from "../data/social-admin";
 
 // ============================================================================
 // TIPAGEM & INTERFACES
@@ -254,11 +255,20 @@ export async function sendToTelegram(
   payload: SocialArticlePayload,
   copy: string
 ): Promise<ChannelPublishResult> {
+  const settings = await getSocialSettingsAdmin();
+  if (!settings.is_telegram_enabled) {
+    const reason = settings.telegram_disabled_reason || "Envio para o Telegram pausado pelo administrador no painel /admin/redes";
+    console.log(`  ℹ️ [SocialPublisher:Telegram] ${reason}. Disparo pulado.`);
+    await recordSocialDispatchTelemetry("telegram", "skipped", reason);
+    return { success: false, skipped: true, error: reason };
+  }
+
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
 
   if (!token || !chatId) {
     console.warn("  ℹ️ [SocialPublisher:Telegram] Credenciais não configuradas (TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID ausentes). Disparo pulado.");
+    await recordSocialDispatchTelemetry("telegram", "skipped", "Credenciais do Telegram ausentes");
     return { success: false, skipped: true, error: "Credenciais do Telegram ausentes" };
   }
 
@@ -297,6 +307,7 @@ export async function sendToTelegram(
       if (res.ok && data.ok) {
         const msgId = data.result?.message_id;
         console.log(`  ✈️ [SocialPublisher:Telegram] Foto publicada com sucesso! (Message ID: ${msgId})`);
+        await recordSocialDispatchTelemetry("telegram", "success", `Foto postada com sucesso (Message ID: ${msgId})`);
         return { success: true, messageId: msgId };
       } else {
         console.warn(
@@ -331,15 +342,18 @@ export async function sendToTelegram(
     if (res.ok && data.ok) {
       const msgId = data.result?.message_id;
       console.log(`  ✈️ [SocialPublisher:Telegram] Mensagem publicada com sucesso! (Message ID: ${msgId})`);
+      await recordSocialDispatchTelemetry("telegram", "success", `Mensagem postada com sucesso (Message ID: ${msgId})`);
       return { success: true, messageId: msgId };
     } else {
       const errMsg = data.description || `HTTP ${res.status}`;
       console.error(`  ❌ [SocialPublisher:Telegram] Erro ao enviar mensagem: ${errMsg}`);
+      await recordSocialDispatchTelemetry("telegram", "failed", errMsg);
       return { success: false, error: errMsg };
     }
   } catch (err: any) {
     const errMsg = err?.message || String(err);
     console.error(`  ❌ [SocialPublisher:Telegram] Exceção na requisição: ${errMsg}`);
+    await recordSocialDispatchTelemetry("telegram", "failed", errMsg);
     return { success: false, error: errMsg };
   }
 }
@@ -355,6 +369,14 @@ export async function sendToTwitter(
   _payload: SocialArticlePayload,
   copy: string
 ): Promise<ChannelPublishResult> {
+  const settings = await getSocialSettingsAdmin();
+  if (!settings.is_twitter_enabled) {
+    const reason = settings.twitter_disabled_reason || "Envio para o X/Twitter pausado pelo administrador no painel /admin/redes";
+    console.log(`  ℹ️ [SocialPublisher:Twitter] ${reason}. Disparo pulado.`);
+    await recordSocialDispatchTelemetry("twitter", "skipped", reason);
+    return { success: false, skipped: true, error: reason };
+  }
+
   const appKey = process.env.TWITTER_API_KEY?.trim();
   const appSecret = process.env.TWITTER_API_SECRET?.trim();
   const accessToken = process.env.TWITTER_ACCESS_TOKEN?.trim();
@@ -362,6 +384,7 @@ export async function sendToTwitter(
 
   if (!appKey || !appSecret || !accessToken || !accessSecret) {
     console.warn("  ℹ️ [SocialPublisher:Twitter] Credenciais não configuradas (TWITTER_API_KEY/SECRET ou ACCESS_TOKEN/SECRET ausentes). Disparo pulado.");
+    await recordSocialDispatchTelemetry("twitter", "skipped", "Credenciais do X/Twitter ausentes");
     return { success: false, skipped: true, error: "Credenciais do X/Twitter ausentes" };
   }
 
@@ -378,9 +401,11 @@ export async function sendToTwitter(
 
     if (tweet.data && tweet.data.id) {
       console.log(`  🐦 [SocialPublisher:Twitter] Tweet postado com sucesso! (Tweet ID: ${tweet.data.id})`);
+      await recordSocialDispatchTelemetry("twitter", "success", `Tweet postado com sucesso (Tweet ID: ${tweet.data.id})`);
       return { success: true, tweetId: tweet.data.id };
     } else {
       console.warn("  ⚠️ [SocialPublisher:Twitter] Tweet enviado sem retorno de ID:", tweet);
+      await recordSocialDispatchTelemetry("twitter", "success", "Tweet postado sem retorno de ID");
       return { success: true };
     }
   } catch (err: any) {
@@ -388,10 +413,25 @@ export async function sendToTwitter(
     if (err?.data?.detail) {
       errorDetail = `${errorDetail} - ${err.data.detail}`;
     }
-    if (err?.code === 429) {
+    if (err?.code === 429 || err?.status === 429) {
       errorDetail = `Rate limit atingido (HTTP 429): ${errorDetail}`;
+    } else if (
+      err?.code === 402 ||
+      err?.status === 402 ||
+      err?.data?.detail?.includes("credits depleted") ||
+      String(err).includes("credits depleted")
+    ) {
+      errorDetail = `Saldo de créditos esgotado no X Developer Portal (HTTP 402 - credits depleted). O X/Twitter opera no modelo pré-pago (pay-per-use) e requer a adição de saldo/créditos em https://developer.x.com (seção Billing/Credits) para liberar a criação de posts.`;
+    } else if (
+      err?.code === 403 ||
+      err?.status === 403 ||
+      err?.data?.type?.includes("oauth1-permissions") ||
+      err?.data?.detail?.includes("oauth1 app permissions")
+    ) {
+      errorDetail = `Permissão insuficiente no X Developer Portal (HTTP 403 Forbidden). O App precisa de permissão "Read and Write" em "User authentication settings" e os tokens (TWITTER_ACCESS_TOKEN e TWITTER_ACCESS_SECRET) devem ser REGENERADOS após alterar a permissão. Detalhe: ${err?.data?.detail || errorDetail}`;
     }
     console.error(`  ❌ [SocialPublisher:Twitter] Erro ao postar tweet: ${errorDetail}`);
+    await recordSocialDispatchTelemetry("twitter", "failed", errorDetail);
     return { success: false, error: errorDetail };
   }
 }

@@ -84,6 +84,7 @@ npm run start
 - `/admin/afiliados` (`app/admin/afiliados/page.tsx`): **Painel de Afiliados**, gestão de produtos parceiros e métricas de cliques.
 - `/admin/newsletter` (`app/admin/newsletter/page.tsx`): **Painel da Newsletter**, controle de ativação/pausa de envios, diagnóstico Resend e gestão de inscritos.
 - `/admin/discord` (`app/admin/discord/page.tsx`): **Painel do Discord**, controle de ativação/pausa de envios (jogos grátis e breaking news), diagnóstico de webhooks e histórico de alertas.
+- `/admin/redes` (`app/admin/redes/page.tsx`): **Painel de Redes Sociais**, controle de ativação/pausa de envios para o X (Twitter) e Telegram com padrão desabilitado de segurança e testes imediatos.
 - `/api/metrics/summary` (`app/api/metrics/summary/route.ts`): **Rota de Telemetria Interna**, agregação de dados do Supabase com cache no Edge/Memória.
 - `/api/revalidate` (`app/api/revalidate/route.ts`): **Endpoint de Revalidação Incremental sob Demanda (ISR)** acionado pelo pipeline autônomo para atualizar o cache instantaneamente após a gravação no Supabase.
 
@@ -185,6 +186,7 @@ Consulte a pasta [supabase/](file:///d:/IAProjects/AIGamePortal/supabase):
 - [20260916000003_newsletter_settings.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000003_newsletter_settings.sql): Tabela de controle e habilitação de envio da newsletter.
 - [20260916000004_free_games_history.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000004_free_games_history.sql): Tabela `free_games_history` para prevenção de alertas duplicados no Discord.
 - [20260916000005_discord_settings.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260916000005_discord_settings.sql): Tabela `discord_settings` com chaves mestras e padrão desabilitado de segurança.
+- [20260920000001_social_settings.sql](file:///d:/IAProjects/AIGamePortal/supabase/migrations/20260920000001_social_settings.sql): Tabela `social_settings` com controle de disparo para o X (Twitter) e Telegram com padrão desabilitado de segurança.
 - [seed.sql](file:///d:/IAProjects/AIGamePortal/supabase/seed.sql): Categorias e feeds RSS iniciais.
 
 ## 📊 Métricas B2B, Edge Caching & MediaTech (Fase 4)
@@ -207,6 +209,8 @@ Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
 - [docs/index.md](file:///d:/IAProjects/AIGamePortal/docs/index.md): Sumário executivo e guia geral do projeto.
 - [docs/b2b-metrics-and-sponsorship.md](file:///d:/IAProjects/AIGamePortal/docs/b2b-metrics-and-sponsorship.md): Guia de Métricas B2B, Metodologia de CAC e Pacotes de Patrocínio.
 - [docs/cloudflare-edge-caching.md](file:///d:/IAProjects/AIGamePortal/docs/cloudflare-edge-caching.md): Guia passo a passo de Edge Caching na Cloudflare (Cache Rules, Tiered Cache e Zero Trust).
+- [docs/admin-redes.md](file:///d:/IAProjects/AIGamePortal/docs/admin-redes.md): Guia operacional do Painel Administrativo de Redes Sociais (/admin/redes) para controle do X e Telegram.
+- [docs/social-automation.md](file:///d:/IAProjects/AIGamePortal/docs/social-automation.md): Guia completo da automação multi-canal de redes sociais.
 - [docs/admin-discord.md](file:///d:/IAProjects/AIGamePortal/docs/admin-discord.md): Guia operacional do Painel Administrativo do Discord (/admin/discord).
 - [docs/discord-bot.md](file:///d:/IAProjects/AIGamePortal/docs/discord-bot.md): Guia completo do Bot de Alertas de Jogos Grátis e Breaking News para o Discord.
 - [docs/admin-newsletter.md](file:///d:/IAProjects/AIGamePortal/docs/admin-newsletter.md): Guia operacional do Painel Administrativo da Newsletter.

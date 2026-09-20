@@ -24,6 +24,7 @@ import {
   BarChart3,
   Mail,
   MessageSquare,
+  Share2,
 } from "lucide-react";
 import { AffiliateAdminItem, AffiliateKPIs } from "@/lib/data/affiliates";
 
@@ -228,6 +229,14 @@ export function AdminAffiliatesView({
             >
               <MessageSquare className="w-4 h-4" />
               Discord & Alertas
+            </Link>
+
+            <Link
+              href="/admin/redes"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            >
+              <Share2 className="w-4 h-4 text-sky-400" />
+              Redes Sociais
             </Link>
           </div>
 

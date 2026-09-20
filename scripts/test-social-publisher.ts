@@ -202,6 +202,10 @@ async function run() {
         const me = await client.v2.me();
         console.log(`   ✅ Autenticação no X realizada com sucesso!`);
         console.log(`      Usuário: @${me.data.username} (Nome: ${me.data.name}, ID: ${me.data.id})`);
+        console.log(`   💡 Dica: O teste acima valida a autenticação e permissão de LEITURA (Read).`);
+        console.log(`      Para que os posts sejam publicados sem erro 403, o App no X Developer Portal deve estar`);
+        console.log(`      configurado como "Read and Write" em User Authentication Settings e os tokens de acesso`);
+        console.log(`      (TWITTER_ACCESS_TOKEN e TWITTER_ACCESS_SECRET) devem ter sido REGENERADOS após essa alteração.`);
       } catch (err: any) {
         console.error(`   ❌ Falha na autenticação do X:`, err?.message || err);
         if (err?.data) {

@@ -137,20 +137,27 @@ A função `generateSocialCopy(payload)` transforma os metadados brutos do artig
 ### 4.2 X (Twitter)
 
 1. Acesse o [Developer Portal do X](https://developer.x.com/en/portal/dashboard).
-2. Crie um novo **Project & App**.
-3. Em **User Authentication Settings**, configure:
-   - App permissions: **Read and Write**.
-   - Type of App: **Web App, Automated App or Bot**.
-4. Em **Keys and Tokens**, gere e guarde:
-   - **Consumer Keys**: API Key e API Secret Key (`TWITTER_API_KEY`, `TWITTER_API_SECRET`).
-   - **Authentication Tokens**: Access Token e Access Token Secret (`TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_SECRET`).
-5. Defina no seu `.env.local`:
+2. Crie um novo **Project & App** (ou acesse o seu App existente).
+3. Na seção **User Authentication Settings**, clique em **Set up** (ou **Edit**):
+   - **App permissions**: Selecione obrigatoriamente **Read and Write** (o padrão inicial do X é "Read-only").
+   - **Type of App**: **Web App, Automated App or Bot**.
+   - **App info**: Preencha Callback URI / Redirect URL (ex: `https://aigameportal.vercel.app`) e Website URL (`https://aigameportal.vercel.app`).
+   - Clique em **Save**.
+4. ⚠️ **PASSO CRÍTICO — REGENERAÇÃO DE TOKENS**:
+   - Alterar a permissão para "Read and Write" **NÃO atualiza tokens já gerados**.
+   - Vá para a aba **Keys and Tokens** e clique em **Regenerate** na seção **Access Token and Secret**.
+   - *Se você não regenerar os tokens, o X rejeitará os posts com erro `HTTP 403 Forbidden (oauth1-permissions)`.*
+5. Copie os novos valores e atualize no seu `.env.local`, no GitHub Actions Secrets e na Vercel:
    ```env
    TWITTER_API_KEY=sua_api_key
    TWITTER_API_SECRET=seu_api_secret
-   TWITTER_ACCESS_TOKEN=seu_access_token
-   TWITTER_ACCESS_SECRET=seu_access_secret
+   TWITTER_ACCESS_TOKEN=seu_novo_access_token_gerado_com_read_and_write
+   TWITTER_ACCESS_SECRET=seu_novo_access_secret_gerado_com_read_and_write
    ```
+6. 💳 **Saldo de Créditos Pré-pagos (Billing / Credits)**:
+   - A API do X opera no modelo pré-pago por uso (*pay-as-you-go*).
+   - Contas de desenvolvedor novas começam com saldo zerado ($0.00). Ao tentar criar tweets sem saldo, o X retorna `HTTP 402 Payment Required: credits depleted`.
+   - Para publicar no X, acesse a aba **Billing** / **Credits** no [X Developer Portal](https://developer.x.com/) e faça uma recarga de créditos (normalmente a partir de $5 USD).
 
 ---
 
@@ -172,4 +179,16 @@ npx tsx scripts/test-social-publisher.ts --live
 
 - **100% Não-Bloqueante**: Toda a lógica social é executada com `Promise.allSettled`. Qualquer falha de rede, timeout ou rate limit da API é capturada e documentada no log do pipeline sem lançar exceção não tratada.
 - **Zero Vazamento de Chaves**: As credenciais nunca são expostas com o prefixo `NEXT_PUBLIC_` e residem exclusivamente no servidor e nos Secrets do GitHub Actions.
-- **Degradação Elegante**: Se os tokens não forem configurados no ambiente, o serviço emite um log amigável com status `skipped: true`, permitindo executar o pipeline normalmente em ambientes locais ou de desenvolvimento.
+- **Degradação Elegante**: Se os tokens não forem configurados no ambiente ou a chave mestre estiver pausada, o serviço emite um log amigável com status `skipped: true`, permitindo executar o pipeline normalmente sem erros.
+
+---
+
+## 7. Painel de Controle Administrativo (`/admin/redes`)
+
+O portal disponibiliza uma área administrativa dedicada em [/admin/redes](file:///d:/IAProjects/AIGamePortal/app/admin/redes/page.tsx) ([docs/admin-redes.md](file:///d:/IAProjects/AIGamePortal/docs/admin-redes.md)) para gerenciar a publicação nas redes sociais com proteção de credenciais e chave mestre:
+
+- **Chave Mestre do X (Twitter)**: Permite ativar ou pausar a publicação de tweets com padrão inicial desabilitado (segurança de créditos).
+- **Chave Mestre do Telegram**: Controle de publicações no canal oficial.
+- **Disparos de Teste Controlados**: Botões na interface para testar conexões com a API do X e Telegram.
+- **Telemetria de Disparos**: Histórico em tempo real persistido na tabela `public.social_settings` no Supabase.
+

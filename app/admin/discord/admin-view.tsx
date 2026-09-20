@@ -25,6 +25,7 @@ import {
   ShoppingBag,
   Mail,
   BarChart3,
+  Share2,
 } from "lucide-react";
 import { DiscordSettings, FreeGameHistory } from "@/types/database";
 import { DiscordAdminKPIs } from "@/lib/data/discord-admin";
@@ -285,6 +286,14 @@ export function AdminDiscordView({
           >
             <Mail className="w-3.5 h-3.5 text-brand-purple" />
             <span>Painel Newsletter</span>
+          </a>
+
+          <a
+            href="/admin/redes"
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors flex items-center gap-1.5"
+          >
+            <Share2 className="w-3.5 h-3.5 text-sky-400" />
+            <span>Redes Sociais</span>
           </a>
 
           <button
