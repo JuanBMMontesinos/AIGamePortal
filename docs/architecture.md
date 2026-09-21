@@ -374,6 +374,73 @@ flowchart LR
   * Assinantes ativos de newsletter e métricas de retenção.
 - **Exportador de Pitch Deck de Mídia**: Gera relatórios comerciais formatados em Markdown executivo, cópia instantânea, exportação JSON e impressão amigável A4/PDF.
 
+---
+
+## 11. Arquitetura de Fontes Multi-Tier e Enriquecimento Estruturado (Itens 1, 2, 3 e 4)
+
+Para manter o compromisso editorial de autoridade e integridade factual sem alucinações, o pipeline de ingestão opera sob uma classificação em 3 camadas (Multi-Tier) combinada a enriquecimento via APIs abertas de dados:
+
+```mermaid
+flowchart LR
+    subgraph T1["Tier 1: Fontes Primárias (Oficiais)"]
+        direction TB
+        T1A["PlayStation Blog"]
+        T1B["Xbox Wire"]
+        T1C["Nintendo Everything / Life"]
+        T1D["Steam News (Valve)"]
+        T1E["Games Press (Press Releases)"]
+    end
+
+    subgraph T2["Tier 2: Jornalismo Internacional"]
+        direction TB
+        T2A["VGC (Video Games Chronicle)"]
+        T2B["Eurogamer & Digital Foundry"]
+        T2C["Gematsu (Oriente / JRPGs)"]
+        T2D["PC Gamer & Rock Paper Shotgun"]
+        T2E["Destructoid & GamesIndustry.biz"]
+    end
+
+    subgraph T3["Tier 3: Comunidades Moderadas"]
+        direction TB
+        T3A["r/Games (Atom RSS)"]
+        T3B["r/GamingLeaksAndRumours"]
+    end
+
+    subgraph INGEST["Pipeline Central (scripts/sync-news.ts)"]
+        P1["Parser RSS/Atom + Anti-429 UA"]
+        P2["Extrator de Link Externo [link]"]
+        P3["Deduplicação URL + Vetorial 768d"]
+        P4["Gemini 1.5 Flash (Redação & SEO)"]
+    end
+
+    subgraph ENRICH["Enriquecimento por API (Item 3)"]
+        RAWG["RAWG API / OpenCritic"]
+        GENR["lib/services/game-enricher.ts"]
+    end
+
+    T1 --> INGEST
+    T2 --> INGEST
+    T3 --> INGEST
+    INGEST --> GENR
+    GENR --> RAWG
+    GENR --> DB[(Supabase: posts + game_hubs)]
+```
+
+### 11.1 Classificação e Governança Editorial
+- **Tier 1 (Fatos Consolidados / 100% Oficiais)**: Canais de comunicação direta de fabricantes, lojas e distribuidoras. A IA classifica automaticamente com nota `5/5` e `is_rumor: false`.
+- **Tier 2 (Jornalismo Investigativo Internacional)**: Veículos consolidados com histórico de furos, checagem e credibilidade global comprovada. Classificados com nota `4-5/5`. *(Nota: Portais brasileiros foram expressamente desqualificados e removidos da esteira por critérios de confiabilidade editorial).*
+- **Tier 3 (Comunidades Auditadas & Vazamentos)**: Subreddits de alta moderação (`r/Games`) e catalogação de rumores (`r/GamingLeaksAndRumours`). Itens de vazamentos recebem salvaguarda mandatória: `is_rumor: true`, nota de confiabilidade de `1 a 3/5` e aviso explícito de cautela para o leitor.
+
+### 11.2 Tratamento Específico de Feeds Atom do Reddit
+- **User-Agent Customizado**: Requisições com User-Agent genérico sofrem bloqueio HTTP 429 pelo Reddit. O `rss-parser` opera com `MadeByAIGames/1.0 (Gaming News Aggregator; +https://madebyaigames.com)`.
+- **Resolução de Link Original**: Em postagens que referenciam matérias jornalísticas externas (`<a href="...">[link]</a>`), o scraper extrai e redireciona a busca diretamente para a URL primária, garantindo fidelidade de texto e extração de capas em alta resolução.
+
+### 11.3 Camada de Enriquecimento Estruturado (`lib/services/game-enricher.ts`)
+- Após a estruturação inicial pelo Gemini, o sistema consulta APIs públicas de metadados de videogames (RAWG Video Games Database e OpenCritic).
+- **Dados complementados sem alterar schemas**: Estúdio desenvolvedor, publicadora, data exata de lançamento e notas consolidadas do Metacritic/OpenCritic.
+- **Tolerância a Falhas (Graceful Degradation)**: Se a API externa estiver sem chave configurada, demorar mais de 3 segundos ou atingir limite de cota, os dados originais são preservados integralmente sem bloquear a publicação.
+
+
 
 
 

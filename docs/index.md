@@ -30,11 +30,11 @@ Esta documentação foi estruturada para servir tanto a engenheiros humanos de s
 ## 🎯 Visão Executiva do Projeto
 
 O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre jogos eletrônicos através de uma abordagem híbrida:
-1. **Curadoria em Tempo Real**: Monitora feeds RSS de fontes oficiais de primeira mão (PlayStation Blog, Xbox Wire, Nintendo Life, PC Gamer, IGN Games).
+1. **Curadoria Multi-Tier em Tempo Real**: Monitora 15 fontes homologadas divididas em **Tier 1** (PlayStation Blog, Xbox Wire, Nintendo, Steam News, Games Press), **Tier 2** (VGC, Eurogamer, Gematsu, PC Gamer, Rock Paper Shotgun, Destructoid, GamesIndustry.biz) e **Tier 3** (r/Games e r/GamingLeaksAndRumours com Atom parser e anti-429). *(Veículos brasileiros foram desqualificados por critérios de integridade editorial).*
 2. **Pipeline de Imagens Resiliente (7 Etapas)**: Extração robusta com suporte a Media RSS (`media:content`, `media:thumbnail`), OpenGraph fallback, descarte de arquivos de áudio de podcasts (`.mp3`), filtragem de CDNs com Cloudflare anti-hotlink e fallbacks temáticos em alta resolução por plataforma.
 3. **Deduplicação Semântica Vetorial**: Evita publicar notícias repetidas sobre o mesmo fato utilizando embeddings densos (Google Gemini `gemini-embedding-001` / `text-embedding-004`, 768 dimensões) com distância de cosseno no PostgreSQL (`pgvector` com índice HNSW).
 4. **Resumos em 30 Segundos (TL;DR)**: Extrai 3 a 4 bullet points essenciais para leitura rápida.
-5. **Metadados Estruturados de Jogos**: Salva plataformas, nota Metacritic, estúdio desenvolvedor e data de lançamento em formato JSONB tipado.
+5. **Metadados Estruturados de Jogos & Enriquecimento por API**: Integração com as APIs abertas do RAWG e OpenCritic (`lib/services/game-enricher.ts`) para validação oficial de estúdios, distribuidoras, plataformas, datas de lançamento e notas consolidadas da crítica em JSONB tipado.
 6. **Transparência E-E-A-T**: Atribui autoria ao modelo de IA e exibe link canônico direto e transparente para a matéria original.
 7. **Entrega Ultra-Rápida (Core Web Vitals 95+)**: Páginas pré-renderizadas estaticamente no build (SSG) com revalidação sob demanda (ISR) disparada instantaneamente após a gravação no banco.
 8. **Monetização Híbrida de Alto Desempenho (Fase 3)**:

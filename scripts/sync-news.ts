@@ -25,6 +25,7 @@ import { Category, GameMetadata, Post, Source } from "../types/database";
 import { publishToSocialNetworks } from "../lib/services/social-publisher";
 import { matchOrSuggestGameHub } from "../lib/services/hub-matcher";
 import { sendDiscordNewsAlert } from "../lib/services/discord-notifier";
+import { enrichGameMetadata } from "../lib/services/game-enricher";
 
 // ============================================================================
 // CONFIGURAÇÕES & FONTES OFICIAIS
@@ -35,9 +36,11 @@ interface FeedConfig {
   url: string;
   websiteUrl: string;
   defaultCategorySlug: string;
+  isCommunityOrRumor?: boolean;
 }
 
 const OFFICIAL_FEEDS: FeedConfig[] = [
+  // 1. Fontes Primárias & Plataformas Oficiais (Item 2)
   {
     name: "PlayStation Blog",
     url: "https://blog.playstation.com/feed/",
@@ -57,10 +60,54 @@ const OFFICIAL_FEEDS: FeedConfig[] = [
     defaultCategorySlug: "nintendo",
   },
   {
+    name: "Steam News",
+    url: "https://store.steampowered.com/feeds/news.xml",
+    websiteUrl: "https://store.steampowered.com",
+    defaultCategorySlug: "pc-gaming",
+  },
+  {
+    name: "Games Press",
+    url: "https://www.gamespress.com/feed",
+    websiteUrl: "https://www.gamespress.com",
+    defaultCategorySlug: "industria",
+  },
+
+  // 2. Jornalismo Especializado Internacional (Item 1)
+  {
+    name: "VGC (Video Games Chronicle)",
+    url: "https://www.videogameschronicle.com/feed/",
+    websiteUrl: "https://www.videogameschronicle.com",
+    defaultCategorySlug: "industria",
+  },
+  {
+    name: "Eurogamer",
+    url: "https://www.eurogamer.net/feed",
+    websiteUrl: "https://www.eurogamer.net",
+    defaultCategorySlug: "geral",
+  },
+  {
+    name: "Gematsu",
+    url: "https://www.gematsu.com/feed",
+    websiteUrl: "https://www.gematsu.com",
+    defaultCategorySlug: "geral",
+  },
+  {
     name: "PC Gamer",
     url: "https://www.pcgamer.com/rss/",
     websiteUrl: "https://www.pcgamer.com",
     defaultCategorySlug: "pc-gaming",
+  },
+  {
+    name: "Rock Paper Shotgun",
+    url: "https://www.rockpapershotgun.com/feed",
+    websiteUrl: "https://www.rockpapershotgun.com",
+    defaultCategorySlug: "pc-gaming",
+  },
+  {
+    name: "Destructoid",
+    url: "https://www.destructoid.com/feed/",
+    websiteUrl: "https://www.destructoid.com",
+    defaultCategorySlug: "geral",
   },
   {
     name: "IGN Games",
@@ -73,6 +120,22 @@ const OFFICIAL_FEEDS: FeedConfig[] = [
     url: "https://www.gamesindustry.biz/feed",
     websiteUrl: "https://www.gamesindustry.biz",
     defaultCategorySlug: "industria",
+  },
+
+  // 3. Comunidades Auditadas & Fóruns Moderados (Item 4)
+  {
+    name: "r/Games",
+    url: "https://www.reddit.com/r/Games/.rss",
+    websiteUrl: "https://www.reddit.com/r/Games",
+    defaultCategorySlug: "geral",
+    isCommunityOrRumor: true,
+  },
+  {
+    name: "r/GamingLeaksAndRumours",
+    url: "https://www.reddit.com/r/GamingLeaksAndRumours/.rss",
+    websiteUrl: "https://www.reddit.com/r/GamingLeaksAndRumours",
+    defaultCategorySlug: "geral",
+    isCommunityOrRumor: true,
   },
 ];
 
@@ -364,11 +427,32 @@ async function fetchOgImage(url: string): Promise<string | null> {
  * Extrai o corpo de texto e capa de uma matéria com múltiplas estratégias defensivas
  */
 async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise<ScrapedContent> {
-  const url = item.link?.trim() || "";
+  let url = item.link?.trim() || "";
   const originalTitle = item.title?.trim() || "Sem título";
   let cleanText = "";
   let imageUrl: string | null = null;
   const rawItem = item as any;
+
+  // Suporte a feeds Reddit (Atom): extrair URL externa referenciada por [link]
+  if (url.includes("reddit.com/r/")) {
+    const rawFeedHtml =
+      rawItem.contentEncoded || rawItem["content:encoded"] || item.content || item.contentSnippet || rawItem.summary || "";
+    if (rawFeedHtml) {
+      try {
+        const $ = cheerio.load(rawFeedHtml);
+        $("a").each((_, el) => {
+          const href = $(el).attr("href");
+          const text = $(el).text().trim().toLowerCase();
+          if (text === "[link]" && href && !href.includes("reddit.com") && href.startsWith("http")) {
+            url = href;
+            return false;
+          }
+        });
+      } catch {
+        // Fallback mantém url original
+      }
+    }
+  }
 
   // 1. Tentar obter imagem das tags media:content ou media:thumbnail (Nintendo Everything, IGN, PC Gamer)
   const mediaContentUrl = extractMediaUrl(rawItem.mediaContent || rawItem["media:content"]);
@@ -829,7 +913,8 @@ export async function runNewsSync() {
   const parser = new Parser({
     headers: {
       "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "MadeByAIGames/1.0 (Gaming News Aggregator; +https://madebyaigames.com; contact@madebyaigames.com)",
+      Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
     },
     customFields: {
       item: [
@@ -838,7 +923,7 @@ export async function runNewsSync() {
         ["content:encoded", "contentEncoded"],
       ],
     },
-    timeout: 12000,
+    timeout: 15000,
   });
 
   // 3. Carregar Fontes e Categorias do Supabase
@@ -857,15 +942,32 @@ export async function runNewsSync() {
   // 5. Iteração pelas fontes oficiais
   for (const feedConfig of OFFICIAL_FEEDS) {
     console.log(`\n📡 [Feed] Lendo: ${feedConfig.name} (${feedConfig.url})`);
-    let feedData: Parser.Output<Parser.Item>;
+    if (feedConfig.url.includes("reddit.com")) {
+      // Pausa defensiva preventiva para respeitar o rate-limit do Reddit
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
 
+    let feedData: Parser.Output<Parser.Item>;
     try {
       feedData = await parser.parseURL(feedConfig.url);
       totalFeedsRead++;
     } catch (feedError: any) {
-      console.error(`❌ Falha ao obter feed "${feedConfig.name}": ${feedError?.message || feedError}`);
-      totalErrors++;
-      continue; // Não interrompe os demais feeds
+      if (feedConfig.url.includes("reddit.com") && feedError?.message?.includes("429")) {
+        console.warn(`  ⏳ [Reddit Rate Limit] Aguardando 3s para retentativa em "${feedConfig.name}"...`);
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        try {
+          feedData = await parser.parseURL(feedConfig.url);
+          totalFeedsRead++;
+        } catch (retryErr: any) {
+          console.error(`❌ Falha persistente ao obter feed "${feedConfig.name}": ${retryErr?.message || retryErr}`);
+          totalErrors++;
+          continue;
+        }
+      } else {
+        console.error(`❌ Falha ao obter feed "${feedConfig.name}": ${feedError?.message || feedError}`);
+        totalErrors++;
+        continue; // Não interrompe os demais feeds
+      }
     }
 
     const itemsToProcess = (feedData.items || []).slice(0, MAX_ITEMS_PER_FEED);
@@ -981,17 +1083,42 @@ export async function runNewsSync() {
         const categoryId = resolveCategoryId(generated.suggested_category, feedConfig.defaultCategorySlug, categoryMap);
         const sourceId = sourceMap.get(feedConfig.url) || null;
 
-        // Fact-Checking & Confiabilidade (Fase 2)
-        const isRumor = Boolean(generated.is_rumor);
-        const rawScore = Number(generated.reliability_score);
+        // Fact-Checking & Confiabilidade (Fase 2 + Item 4)
+        let isRumor = Boolean(generated.is_rumor);
+        let rawScore = Number(generated.reliability_score);
+
+        // Salvaguarda mandatória para feeds especializados em rumores ou vazamentos
+        if (feedConfig.name.includes("GamingLeaksAndRumours") || feedConfig.isCommunityOrRumor && isRumor) {
+          isRumor = true;
+          rawScore = Math.min(isNaN(rawScore) ? 2 : rawScore, 3);
+        }
+
         const reliabilityScore = !isNaN(rawScore) ? Math.max(1, Math.min(5, Math.round(rawScore))) : (isRumor ? 2 : 5);
         const rumorWarning = isRumor
-          ? (generated.rumor_warning?.trim() || "Atenção: Esta notícia é baseada em rumores ou vazamentos não confirmados oficialmente pelas empresas envolvidas. Trate as informações com cautela.")
+          ? (generated.rumor_warning?.trim() || "Atenção: Esta notícia é baseada em rumores, vazamentos ou discussões comunitárias não confirmadas oficialmente pelas publicadoras envolvidas. Trate os detalhes com cautela.")
           : null;
 
         console.log(`     🔎 [Fact-Checking] Rumor: ${isRumor ? "SIM ⚠️ (Vazamento/Especulação)" : "NÃO ✅ (Canal Oficial)"} | Confiabilidade: ${reliabilityScore}/5`);
         if (isRumor && rumorWarning) {
           console.log(`        Aviso Editorial: "${rumorWarning}"`);
+        }
+
+        // --------------------------------------------------------------------
+        // Enriquecimento Estruturado de Metadados (Item 3: RAWG / OpenCritic)
+        // --------------------------------------------------------------------
+        let enrichedGameMetadata: GameMetadata = {
+          ...generated.game_metadata,
+        };
+        if (generated.game_metadata?.game_name) {
+          console.log(`     🎲 [Enriquecimento API] Validando dados para "${generated.game_metadata.game_name}"...`);
+          try {
+            enrichedGameMetadata = await enrichGameMetadata(
+              generated.game_metadata.game_name,
+              generated.game_metadata
+            );
+          } catch (enrichErr: any) {
+            console.warn(`     ⚠️ Aviso no enriquecedor de metadados: ${enrichErr?.message || enrichErr}`);
+          }
         }
 
         // --------------------------------------------------------------------
@@ -1006,7 +1133,7 @@ export async function runNewsSync() {
             supabase,
             title: generated.title,
             content: generated.content,
-            gameMetadata: generated.game_metadata,
+            gameMetadata: enrichedGameMetadata,
             aiClient: ai,
             autoCreate: true,
             defaultCoverUrl: scraped.imageUrl,
@@ -1036,7 +1163,7 @@ export async function runNewsSync() {
           game_hub_id: gameHubId,
           source_original_url: itemUrl,
           source_original_title: itemTitle,
-          game_metadata: generated.game_metadata || {},
+          game_metadata: enrichedGameMetadata || {},
           community_sentiment: generated.community_sentiment || null,
           embedding: embedding || null,
           is_rumor: isRumor,

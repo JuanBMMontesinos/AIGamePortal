@@ -105,12 +105,17 @@ Para capturar tráfego orgânico perene de jogadores buscando pelas suas franqui
 
 O portal utiliza um pipeline TypeScript autônomo executado a cada 15 minutos via **GitHub Actions** (`.github/workflows/cron-sync-news.yml`):
 
-1. **Leitura de 5 Feeds RSS**: PlayStation Blog, Xbox Wire, Nintendo Life, PC Gamer e IGN Games.
+1. **Leitura Multi-Tier de 15 Feeds RSS/Atom**:
+   - **Tier 1 (Oficiais & Lojas)**: PlayStation Blog, Xbox Wire, Nintendo Everything, Nintendo Life, Steam News (Valve) e Games Press.
+   - **Tier 2 (Jornalismo Internacional)**: VGC, Eurogamer, Gematsu, PC Gamer, Rock Paper Shotgun, Destructoid e GamesIndustry.biz.
+   - **Tier 3 (Comunidades Moderadas)**: r/Games e r/GamingLeaksAndRumours (com resolução de links externos e marcação obrigatória de rumor).
+   *(Nota: Veículos de mídia brasileira foram expressamente desconsiderados por critérios de confiabilidade).*
 2. **Pipeline de Imagens Resiliente (7 Etapas)**: Extração com suporte a Media RSS (`media:content`, `media:thumbnail`), OpenGraph fallback, descarte de arquivos de áudio de podcasts (`.mp3`), filtragem de CDNs com Cloudflare anti-hotlink e fallbacks temáticos em alta resolução por plataforma.
 3. **Deduplicação Semântica com pgvector**: Embeddings `gemini-embedding-001` / `text-embedding-004` (768d) e RPC `match_recent_articles` (similaridade >= 0.82 em 48h).
 4. **Redação & SEO (Gemini 1.5 Flash)**: Temperatura 0.2, tom gamer-nativo, TL;DR, tabela de especificações, diretriz anti-alucinação rígida e schema JSON estruturado.
-5. **Persistência no Supabase**: Gravação na tabela `posts` com status `published`.
-6. **Revalidação ISR On-Demand**: Chamada imediata ao endpoint `/api/revalidate`.
+5. **Enriquecimento Estruturado via APIs (`lib/services/game-enricher.ts`)**: Validação de estúdio desenvolvedor, publicadora, datas de lançamento e notas consolidadas do Metacritic/OpenCritic via RAWG Video Games Database e OpenCritic.
+6. **Persistência no Supabase**: Gravação na tabela `posts` com status `published` e auto-associação com Game Hubs.
+7. **Revalidação ISR On-Demand**: Chamada imediata ao endpoint `/api/revalidate`.
 
 ### Como rodar a sincronização manualmente:
 

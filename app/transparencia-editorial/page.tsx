@@ -139,35 +139,106 @@ export default function EditorialTransparencyPage() {
         </ol>
       </section>
 
-      {/* Fontes Oficiais Monitoradas */}
-      <section id="fontes-monitoradas" className="space-y-4">
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-          <Rss className="w-5 h-5 text-brand-cyan" />
-          Fontes RSS Oficiais Homologadas
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-          {[
-            { name: "PlayStation Blog", url: "https://blog.playstation.com" },
-            { name: "Xbox Wire", url: "https://news.xbox.com" },
-            { name: "Nintendo Everything", url: "https://nintendoeverything.com" },
-            { name: "Nintendo Life", url: "https://www.nintendolife.com" },
-            { name: "PC Gamer", url: "https://www.pcgamer.com" },
-            { name: "Eurogamer", url: "https://www.eurogamer.net" },
-            { name: "GamesIndustry.biz", url: "https://www.gamesindustry.biz" },
-          ].map((src) => (
-            <div
-              key={src.name}
-              className="p-3 rounded-xl border border-zinc-200 dark:border-gamer-800 bg-white dark:bg-gamer-900 flex items-center justify-between"
-            >
-              <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                {src.name}
-              </span>
-              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-500 font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Ativo
-              </span>
-            </div>
-          ))}
+      {/* Fontes Oficiais Monitoradas (Multi-Tier) */}
+      <section id="fontes-monitoradas" className="space-y-6">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+            <Rss className="w-5 h-5 text-brand-cyan" />
+            Fontes & Feeds Oficiais Homologados
+          </h2>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            Nossa curadoria automatizada monitora apenas canais primários, jornalismo investigativo internacional e comunidades com estrita moderação editorial.
+          </p>
+        </div>
+
+        {/* Tier 1: Fontes Primárias */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            Tier 1: Fontes Primárias & Lojas Oficiais (Fatos Consolidados)
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+            {[
+              { name: "PlayStation Blog", url: "https://blog.playstation.com" },
+              { name: "Xbox Wire", url: "https://news.xbox.com" },
+              { name: "Nintendo Everything", url: "https://nintendoeverything.com" },
+              { name: "Nintendo Life", url: "https://www.nintendolife.com" },
+              { name: "Steam News (Valve)", url: "https://store.steampowered.com" },
+              { name: "Games Press (Press Releases)", url: "https://www.gamespress.com" },
+            ].map((src) => (
+              <div
+                key={src.name}
+                className="p-3 rounded-xl border border-zinc-200 dark:border-gamer-800 bg-white dark:bg-gamer-900 flex items-center justify-between"
+              >
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                  {src.name}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-500 font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  Oficial
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tier 2: Jornalismo Investigativo */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-brand-purple dark:text-purple-400 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-brand-purple" />
+            Tier 2: Jornalismo Investigativo & Especializado Internacional
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+            {[
+              { name: "VGC (Video Games Chronicle)", url: "https://www.videogameschronicle.com" },
+              { name: "Eurogamer", url: "https://www.eurogamer.net" },
+              { name: "Gematsu (Oriente & JRPGs)", url: "https://www.gematsu.com" },
+              { name: "PC Gamer", url: "https://www.pcgamer.com" },
+              { name: "Rock Paper Shotgun", url: "https://www.rockpapershotgun.com" },
+              { name: "Destructoid", url: "https://www.destructoid.com" },
+              { name: "GamesIndustry.biz", url: "https://www.gamesindustry.biz" },
+            ].map((src) => (
+              <div
+                key={src.name}
+                className="p-3 rounded-xl border border-zinc-200 dark:border-gamer-800 bg-white dark:bg-gamer-900 flex items-center justify-between"
+              >
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                  {src.name}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] text-brand-purple font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
+                  Verificado
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tier 3: Comunidades Moderadas */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            Tier 3: Comunidades Auditadas & Vazamentos (Com Aviso de Rumor)
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+            {[
+              { name: "r/Games (Moderação Estrita)", url: "https://www.reddit.com/r/Games" },
+              { name: "r/GamingLeaksAndRumours", url: "https://www.reddit.com/r/GamingLeaksAndRumours" },
+            ].map((src) => (
+              <div
+                key={src.name}
+                className="p-3 rounded-xl border border-zinc-200 dark:border-gamer-800 bg-white dark:bg-gamer-900 flex items-center justify-between"
+              >
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                  {src.name}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] text-amber-500 font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  Monitorado
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

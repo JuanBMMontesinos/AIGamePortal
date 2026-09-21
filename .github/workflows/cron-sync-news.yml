@@ -11,6 +11,7 @@ on:
     paths:
       - '.github/workflows/cron-sync-news.yml'
       - 'scripts/sync-news.ts'
+      - 'lib/services/game-enricher.ts'
 
 # Evita execuções simultâneas concorrentes gravando no mesmo banco
 concurrency:
@@ -21,7 +22,7 @@ jobs:
   sync-news:
     name: Sincronizar Feeds & Publicar com IA
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout do Repositório
@@ -44,6 +45,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
           MAX_ITEMS_PER_FEED: 3
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}

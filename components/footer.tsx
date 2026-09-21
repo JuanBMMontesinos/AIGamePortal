@@ -140,13 +140,14 @@ export function Footer() {
             </h4>
             <div className="flex flex-wrap gap-1.5">
               {[
-                "PlayStation Blog",
-                "Xbox Wire",
-                "Nintendo Everything",
-                "Nintendo Life",
+                "PlayStation",
+                "Xbox",
+                "Nintendo",
+                "Steam",
                 "PC Gamer",
+                "VGC",
                 "Eurogamer",
-                "GamesIndustry.biz",
+                "Games Press",
               ].map((source) => (
                 <span
                   key={source}
@@ -156,6 +157,13 @@ export function Footer() {
                   {source}
                 </span>
               ))}
+              <Link
+                href="/transparencia-editorial#fontes-monitoradas"
+                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md bg-brand-purple/10 hover:bg-brand-purple/20 text-brand-purple dark:text-purple-300 border border-brand-purple/30 transition-colors font-medium"
+                title="Ver todas as 15 fontes oficiais homologadas"
+              >
+                +7 fontes oficiais →
+              </Link>
             </div>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-500 mt-4 leading-relaxed">
               Todos os direitos de imagem e marcas registradas pertencem aos seus respectivos detentores de direitos autorais.

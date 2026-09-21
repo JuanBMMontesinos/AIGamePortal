@@ -148,16 +148,20 @@ Armazena as plataformas e editorias do portal.
 
 ### 2.2 Tabela `public.sources`
 
-Armazena os canais e feeds RSS monitorados pelo pipeline automatizado.
+Armazena os canais e feeds RSS/Atom monitorados pelo pipeline automatizado, categorizados pelo sistema de autoridade Multi-Tier:
+- **Tier 1 (Fontes Primárias & Lojas Oficiais)**: *PlayStation Blog*, *Xbox Wire*, *Nintendo Everything*, *Nintendo Life*, *Steam News*, *Games Press*.
+- **Tier 2 (Jornalismo Internacional Especializado)**: *VGC (Video Games Chronicle)*, *Eurogamer*, *Gematsu*, *PC Gamer*, *Rock Paper Shotgun*, *Destructoid*, *GamesIndustry.biz*.
+- **Tier 3 (Comunidades Auditadas com Moderação)**: *r/Games*, *r/GamingLeaksAndRumours*.
 
 | Coluna | Tipo | Modificadores | Descrição |
 | :--- | :--- | :--- | :--- |
 | `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Identificador único |
-| `name` | `TEXT` | `NOT NULL` | Nome do veículo (ex: *PlayStation Blog*, *PC Gamer*) |
+| `name` | `TEXT` | `NOT NULL` | Nome do veículo (ex: *VGC*, *Steam News*, *r/Games*) |
 | `feed_url` | `TEXT` | `NOT NULL UNIQUE` | URL do endpoint RSS/Atom |
 | `website_url` | `TEXT` | `NULL` | Domínio raiz da fonte |
-| `is_active` | `BOOLEAN` | `NOT NULL DEFAULT true` | Flag para pausar/ativar scraping no n8n |
+| `is_active` | `BOOLEAN` | `NOT NULL DEFAULT true` | Flag para pausar/ativar scraping no pipeline |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Data de cadastro da fonte |
+
 
 ---
 
@@ -419,3 +423,21 @@ Todas as tabelas possuem `ENABLE ROW LEVEL SECURITY`.
 7. **`public.discord_settings`** (Fase 4):
    - `SELECT`: Liberado para `anon`, `authenticated` e `service_role` (para leitura de status pelos clientes).
    - `ALL`: Restrito exclusivamente a `service_role` (protege alteração de chaves mestras e webhooks contra edições não autorizadas).
+
+---
+
+## 6. Histórico de Migrações do Supabase (`supabase/migrations/`)
+
+| Arquivo | Propósito |
+| :--- | :--- |
+| `20260912000001_initial_schema.sql` | Schema inicial (tabelas `categories`, `sources`, `posts`, extensão `vector` e RPC `match_recent_articles`). |
+| `20260912000002_fact_checking_reliability.sql` | Fact-checking & confiabilidade (`is_rumor`, `reliability_score`, `rumor_warning`). |
+| `20260914000001_add_gamesindustry_feed.sql` | Cadastro inicial da fonte oficial GamesIndustry.biz. |
+| `20260914000002_affiliate_system.sql` | Módulo de afiliados (`affiliate_products` e `affiliate_clicks`). |
+| `20260916000001_newsletter_subscribers.sql` | Tabela de assinantes da newsletter com verificação e opt-out. |
+| `20260916000002_game_hubs.sql` | Hubs permanentes de jogos (`game_hubs` e foreign key em `posts`). |
+| `20260916000003_newsletter_settings.sql` | Configurações operacionais e controle de despacho da newsletter. |
+| `20260916000004_free_games_history.sql` | Histórico e deduplicação de promoções da GamerPower API. |
+| `20260916000005_discord_settings.sql` | Configurações do bot de Discord para breaking news e alertas de jogos grátis. |
+| `20260920000001_social_settings.sql` | Chaves e credenciais para distribuição social automatizada. |
+| `20260920000002_multi_tier_sources.sql` | Inserção e atualização idempotente (`UPSERT`) das 15 fontes homologadas Multi-Tier e categorias padrão. |

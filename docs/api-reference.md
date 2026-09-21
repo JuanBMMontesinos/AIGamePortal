@@ -279,7 +279,7 @@ export interface Post {
 Módulo autônomo executado via CLI (`npm run sync:news`) ou via GitHub Actions (`cron-sync-news.yml`).
 
 ### `runNewsSync()`
-Função orquestradora principal. Executa o ciclo completo de leitura dos 5 feeds RSS oficiais, deduplicação em duas etapas, geração jornalística por IA, persistência relacional e disparo de revalidação ISR.
+Função orquestradora principal. Executa o ciclo completo de leitura de 15 fontes RSS/Atom homologadas (divididas em Tiers 1, 2 e 3), deduplicação em duas etapas (URL e similaridade semântica vetorial 768d), geração jornalística por IA, enriquecimento por APIs abertas, auto-associação a Game Hubs e persistência relacional com disparo de revalidação ISR.
 
 ### `isValidImageUrl(url)`
 Validador de integridade e segurança de imagens.
@@ -294,7 +294,7 @@ Validador de integridade e segurança de imagens.
 - **Retorno**: `boolean` (`true` se a imagem puder ser carregada com segurança).
 
 ### `scrapeArticle(item, feedConfig)`
-Extrai o texto higienizado e a capa da matéria através do pipeline defensivo de 7 etapas.
+Extrai o texto higienizado e a capa da matéria através do pipeline defensivo de 7 etapas, com suporte a feeds Atom do Reddit (resolvendo links externos `[link]` e higienizando discussões da comunidade).
 - **Assinatura**:
   ```typescript
   async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise<ScrapedContent>
@@ -309,10 +309,33 @@ Gera o vetor denso de 768 dimensões com chaveamento resiliente de modelos (`gem
   ```
 
 ### `rewriteArticleWithGemini(ai, scraped, feedName)`
-Submete o texto original raspado ao **Gemini 1.5 Flash** (temperatura 0.2) sob o System Prompt jornalístico e schema estruturado JSON com política anti-alucinação.
+Submete o texto original raspado ao **Gemini 1.5 Flash** (temperatura 0.2) sob o System Prompt jornalístico e schema estruturado JSON com política anti-alucinação e classificação de confiabilidade/rumor.
 
 ### `triggerISRRevalidation(siteUrl, secret, slug)`
 Dispara chamada HTTP ao endpoint `/api/revalidate` para invalidar instantaneamente o cache da notícia e da homepage.
+
+---
+
+## 5.1 Serviço de Enriquecimento de Metadados (`lib/services/game-enricher.ts`)
+
+Serviço modular que consulta APIs estruturadas de videogames (RAWG Video Games Database e OpenCritic) para validar e enriquecer os dados técnicos de artigos e Game Hubs.
+
+### `enrichGameMetadata(gameName, existingMetadata)`
+- **Assinatura**:
+  ```typescript
+  export async function enrichGameMetadata(
+    gameName?: string | null,
+    existingMetadata?: GameMetadata
+  ): Promise<GameMetadata>
+  ```
+- **Parâmetros**:
+  * `gameName`: Nome identificado do jogo.
+  * `existingMetadata`: Objeto `GameMetadata` gerado previamente pelo Gemini.
+- **Comportamento**:
+  * Se `RAWG_API_KEY` estiver configurada, consulta `/api/games?search=...` para capturar plataformas oficiais, data exata de lançamento, estúdio desenvolvedor e distribuidora.
+  * Consulta a API do OpenCritic para resgatar a média de notas consolidada da crítica (`topCriticScore`).
+  * Em caso de falha de conexão, timeout (3s) ou ausência de chave de API, retorna `existingMetadata` intacto sem interromper o fluxo de ingestão (degradação graciosa).
+
 
 ---
 
