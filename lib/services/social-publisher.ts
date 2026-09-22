@@ -1,6 +1,8 @@
 import { TwitterApi } from "twitter-api-v2";
 import { isValidImageUrl } from "../utils";
 import { getSocialSettingsAdmin, recordSocialDispatchTelemetry } from "../data/social-admin";
+import { logAITask, logSocialDispatch } from "./logger";
+import { FailureReasonCode } from "@/types/database";
 
 // ============================================================================
 // TIPAGEM & INTERFACES
@@ -21,6 +23,7 @@ export interface SocialArticlePayload {
 export interface SocialCopy {
   telegram: string;
   twitter: string;
+  instagram: string;
   hook: string;
   bullets: string[];
   hashtags: string[];
@@ -30,6 +33,7 @@ export interface ChannelPublishResult {
   success: boolean;
   messageId?: string | number;
   tweetId?: string;
+  postId?: string;
   error?: string;
   skipped?: boolean;
 }
@@ -37,6 +41,7 @@ export interface ChannelPublishResult {
 export interface SocialPublishResult {
   telegram: ChannelPublishResult;
   twitter: ChannelPublishResult;
+  instagram: ChannelPublishResult;
 }
 
 // ============================================================================
@@ -171,9 +176,26 @@ export function generateSocialCopy(payload: SocialArticlePayload): SocialCopy {
     hashtagsLine,
   });
 
+  // --------------------------------------------------------------------------
+  // C. Formatação para Instagram (Legenda limpa com gancho, bullets e CTA)
+  // --------------------------------------------------------------------------
+  const bulletsInstagram = rawBullets.map((b) => `▪️ ${b}`).join("\n");
+  const instagramCopy = [
+    rawHook,
+    "",
+    bulletsInstagram,
+    "",
+    `🔗 Leia a matéria completa no Made By AI Games: ${url}`,
+    "",
+    hashtagsLine,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   return {
     telegram: telegramCopy,
     twitter: twitterCopy,
+    instagram: instagramCopy,
     hook: rawHook,
     bullets: rawBullets,
     hashtags,
@@ -245,6 +267,38 @@ export function buildTwitterCopy(input: TwitterCopyInput): string {
 }
 
 // ============================================================================
+// ============================================================================
+// AUXILIARES DE ERRO E PARSE DO TELEGRAM
+// ============================================================================
+
+function parseTelegramFailure(errMsg: string): { reasonCode: FailureReasonCode; isRetryable: boolean } {
+  const lower = errMsg.toLowerCase();
+  if (
+    lower.includes("parse") ||
+    lower.includes("entity") ||
+    lower.includes("tag") ||
+    lower.includes("html") ||
+    lower.includes("can't parse")
+  ) {
+    return { reasonCode: "TELEGRAM_PARSE_ERROR", isRetryable: false };
+  }
+  if (lower.includes("timeout") || lower.includes("timed out") || lower.includes("aborterror")) {
+    return { reasonCode: "TELEGRAM_TIMEOUT_ERROR", isRetryable: true };
+  }
+  if (
+    lower.includes("bot was blocked") ||
+    lower.includes("chat not found") ||
+    lower.includes("user is deactivated") ||
+    lower.includes("chat_id is empty") ||
+    lower.includes("forbidden") ||
+    lower.includes("unauthorized")
+  ) {
+    return { reasonCode: "TELEGRAM_BLOCKED_ERROR", isRetryable: false };
+  }
+  return { reasonCode: "TELEGRAM_PARSE_ERROR", isRetryable: true };
+}
+
+// ============================================================================
 // ENVIO TELEGRAM (BOT API)
 // ============================================================================
 
@@ -260,6 +314,7 @@ export async function sendToTelegram(
     const reason = settings.telegram_disabled_reason || "Envio para o Telegram pausado pelo administrador no painel /admin/redes";
     console.log(`  ℹ️ [SocialPublisher:Telegram] ${reason}. Disparo pulado.`);
     await recordSocialDispatchTelemetry("telegram", "skipped", reason);
+    await logSocialDispatch("telegram", "skipped", reason, { disabled_by_admin: true });
     return { success: false, skipped: true, error: reason };
   }
 
@@ -267,8 +322,10 @@ export async function sendToTelegram(
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
 
   if (!token || !chatId) {
-    console.warn("  ℹ️ [SocialPublisher:Telegram] Credenciais não configuradas (TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID ausentes). Disparo pulado.");
+    const reason = "Credenciais do Telegram não configuradas (TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID ausentes). Disparo pulado.";
+    console.warn(`  ℹ️ [SocialPublisher:Telegram] ${reason}`);
     await recordSocialDispatchTelemetry("telegram", "skipped", "Credenciais do Telegram ausentes");
+    await logSocialDispatch("telegram", "skipped", reason, { missing_credentials: true }, undefined, "TELEGRAM_NOT_CONFIGURED");
     return { success: false, skipped: true, error: "Credenciais do Telegram ausentes" };
   }
 
@@ -308,10 +365,17 @@ export async function sendToTelegram(
         const msgId = data.result?.message_id;
         console.log(`  ✈️ [SocialPublisher:Telegram] Foto publicada com sucesso! (Message ID: ${msgId})`);
         await recordSocialDispatchTelemetry("telegram", "success", `Foto postada com sucesso (Message ID: ${msgId})`);
+        await logSocialDispatch("telegram", "success", `Foto publicada com sucesso no Telegram (Message ID: ${msgId})`, {
+          message_id: msgId,
+          title: payload.title,
+          slug: payload.slug,
+          type: "photo",
+        });
         return { success: true, messageId: msgId };
       } else {
+        const errDesc = data.description || `HTTP ${res.status}`;
         console.warn(
-          `  ⚠️ [SocialPublisher:Telegram] sendPhoto falhou (HTTP ${res.status}): ${data.description || "Erro desconhecido"}. Tentando fallback sendMessage...`
+          `  ⚠️ [SocialPublisher:Telegram] sendPhoto falhou (${errDesc}). Tentando fallback sendMessage...`
         );
       }
     } catch (photoErr: any) {
@@ -343,17 +407,49 @@ export async function sendToTelegram(
       const msgId = data.result?.message_id;
       console.log(`  ✈️ [SocialPublisher:Telegram] Mensagem publicada com sucesso! (Message ID: ${msgId})`);
       await recordSocialDispatchTelemetry("telegram", "success", `Mensagem postada com sucesso (Message ID: ${msgId})`);
+      await logSocialDispatch("telegram", "success", `Mensagem publicada com sucesso no Telegram (Message ID: ${msgId})`, {
+        message_id: msgId,
+        title: payload.title,
+        slug: payload.slug,
+        type: "text",
+      });
       return { success: true, messageId: msgId };
     } else {
       const errMsg = data.description || `HTTP ${res.status}`;
+      const { reasonCode, isRetryable } = parseTelegramFailure(errMsg);
       console.error(`  ❌ [SocialPublisher:Telegram] Erro ao enviar mensagem: ${errMsg}`);
       await recordSocialDispatchTelemetry("telegram", "failed", errMsg);
+      await logAITask({
+        service: "social_telegram",
+        action: "publish_post",
+        level: "error",
+        status: "failed",
+        task_completed: false,
+        failure_reason_code: reasonCode,
+        message: `Erro ao enviar para Telegram: ${errMsg}`,
+        error: errMsg,
+        metadata: { title: payload.title, slug: payload.slug, chatId },
+        is_retryable: isRetryable,
+      });
       return { success: false, error: errMsg };
     }
   } catch (err: any) {
     const errMsg = err?.message || String(err);
+    const { reasonCode, isRetryable } = parseTelegramFailure(errMsg);
     console.error(`  ❌ [SocialPublisher:Telegram] Exceção na requisição: ${errMsg}`);
     await recordSocialDispatchTelemetry("telegram", "failed", errMsg);
+    await logAITask({
+      service: "social_telegram",
+      action: "publish_post",
+      level: "error",
+      status: "failed",
+      task_completed: false,
+      failure_reason_code: reasonCode,
+      message: `Exceção na requisição Telegram: ${errMsg}`,
+      error: err,
+      metadata: { title: payload.title, slug: payload.slug, chatId },
+      is_retryable: isRetryable,
+    });
     return { success: false, error: errMsg };
   }
 }
@@ -366,7 +462,7 @@ export async function sendToTelegram(
  * Envia tweet via twitter-api-v2 com credenciais OAuth 1.0a User Context
  */
 export async function sendToTwitter(
-  _payload: SocialArticlePayload,
+  payload: SocialArticlePayload,
   copy: string
 ): Promise<ChannelPublishResult> {
   const settings = await getSocialSettingsAdmin();
@@ -374,6 +470,7 @@ export async function sendToTwitter(
     const reason = settings.twitter_disabled_reason || "Envio para o X/Twitter pausado pelo administrador no painel /admin/redes";
     console.log(`  ℹ️ [SocialPublisher:Twitter] ${reason}. Disparo pulado.`);
     await recordSocialDispatchTelemetry("twitter", "skipped", reason);
+    await logSocialDispatch("x", "skipped", reason, { disabled_by_admin: true });
     return { success: false, skipped: true, error: reason };
   }
 
@@ -383,8 +480,10 @@ export async function sendToTwitter(
   const accessSecret = process.env.TWITTER_ACCESS_SECRET?.trim();
 
   if (!appKey || !appSecret || !accessToken || !accessSecret) {
-    console.warn("  ℹ️ [SocialPublisher:Twitter] Credenciais não configuradas (TWITTER_API_KEY/SECRET ou ACCESS_TOKEN/SECRET ausentes). Disparo pulado.");
+    const reason = "Credenciais não configuradas (TWITTER_API_KEY/SECRET ou ACCESS_TOKEN/SECRET ausentes). Disparo pulado.";
+    console.warn(`  ℹ️ [SocialPublisher:Twitter] ${reason}`);
     await recordSocialDispatchTelemetry("twitter", "skipped", "Credenciais do X/Twitter ausentes");
+    await logSocialDispatch("x", "skipped", reason, { missing_credentials: true }, undefined, "TWITTER_NOT_CONFIGURED");
     return { success: false, skipped: true, error: "Credenciais do X/Twitter ausentes" };
   }
 
@@ -402,10 +501,19 @@ export async function sendToTwitter(
     if (tweet.data && tweet.data.id) {
       console.log(`  🐦 [SocialPublisher:Twitter] Tweet postado com sucesso! (Tweet ID: ${tweet.data.id})`);
       await recordSocialDispatchTelemetry("twitter", "success", `Tweet postado com sucesso (Tweet ID: ${tweet.data.id})`);
+      await logSocialDispatch("x", "success", `Tweet postado com sucesso no X (Tweet ID: ${tweet.data.id})`, {
+        tweet_id: tweet.data.id,
+        title: payload.title,
+        slug: payload.slug,
+      });
       return { success: true, tweetId: tweet.data.id };
     } else {
       console.warn("  ⚠️ [SocialPublisher:Twitter] Tweet enviado sem retorno de ID:", tweet);
       await recordSocialDispatchTelemetry("twitter", "success", "Tweet postado sem retorno de ID");
+      await logSocialDispatch("x", "success", "Tweet postado sem retorno de ID", {
+        title: payload.title,
+        slug: payload.slug,
+      });
       return { success: true };
     }
   } catch (err: any) {
@@ -413,26 +521,174 @@ export async function sendToTwitter(
     if (err?.data?.detail) {
       errorDetail = `${errorDetail} - ${err.data.detail}`;
     }
-    if (err?.code === 429 || err?.status === 429) {
-      errorDetail = `Rate limit atingido (HTTP 429): ${errorDetail}`;
-    } else if (
+
+    let reasonCode: FailureReasonCode = "TWITTER_FORBIDDEN_403";
+    let isRetryable = false;
+
+    if (
       err?.code === 402 ||
       err?.status === 402 ||
       err?.data?.detail?.includes("credits depleted") ||
       String(err).includes("credits depleted")
     ) {
+      reasonCode = "TWITTER_CREDITS_DEPLETED";
       errorDetail = `Saldo de créditos esgotado no X Developer Portal (HTTP 402 - credits depleted). O X/Twitter opera no modelo pré-pago (pay-per-use) e requer a adição de saldo/créditos em https://developer.x.com (seção Billing/Credits) para liberar a criação de posts.`;
+      isRetryable = false;
+    } else if (
+      err?.code === 429 ||
+      err?.status === 429 ||
+      err?.data?.title?.includes("Too Many Requests") ||
+      String(err).includes("Rate limit")
+    ) {
+      reasonCode = "TWITTER_RATE_LIMITED";
+      errorDetail = `Rate limit atingido no X/Twitter (HTTP 429): ${errorDetail}`;
+      isRetryable = true;
     } else if (
       err?.code === 403 ||
       err?.status === 403 ||
       err?.data?.type?.includes("oauth1-permissions") ||
       err?.data?.detail?.includes("oauth1 app permissions")
     ) {
+      reasonCode = "TWITTER_FORBIDDEN_403";
       errorDetail = `Permissão insuficiente no X Developer Portal (HTTP 403 Forbidden). O App precisa de permissão "Read and Write" em "User authentication settings" e os tokens (TWITTER_ACCESS_TOKEN e TWITTER_ACCESS_SECRET) devem ser REGENERADOS após alterar a permissão. Detalhe: ${err?.data?.detail || errorDetail}`;
+      isRetryable = false;
     }
+
     console.error(`  ❌ [SocialPublisher:Twitter] Erro ao postar tweet: ${errorDetail}`);
     await recordSocialDispatchTelemetry("twitter", "failed", errorDetail);
+    await logAITask({
+      service: "social_x",
+      action: "publish_post",
+      level: "error",
+      status: "failed",
+      task_completed: false,
+      failure_reason_code: reasonCode,
+      message: `Erro ao postar no X/Twitter: ${errorDetail.slice(0, 300)}`,
+      error: err,
+      metadata: {
+        title: payload.title,
+        slug: payload.slug,
+        http_code: err?.code || err?.status || null,
+      },
+      is_retryable: isRetryable,
+    });
     return { success: false, error: errorDetail };
+  }
+}
+
+// ============================================================================
+// ENVIO INSTAGRAM (META GRAPH API CONTENT PUBLISHING)
+// ============================================================================
+
+/**
+ * Envia publicação para o perfil do Instagram Business via Meta Graph API
+ * Requer INSTAGRAM_ACCESS_TOKEN e INSTAGRAM_BUSINESS_ACCOUNT_ID.
+ */
+export async function sendToInstagram(
+  payload: SocialArticlePayload,
+  copy: string
+): Promise<ChannelPublishResult> {
+  const token = process.env.INSTAGRAM_ACCESS_TOKEN?.trim();
+  const accountId = (process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || process.env.INSTAGRAM_ACCOUNT_ID)?.trim();
+
+  // Validação estrita de credenciais
+  if (!token || !accountId) {
+    const reason = "Credenciais do Instagram não configuradas (INSTAGRAM_ACCESS_TOKEN ou INSTAGRAM_BUSINESS_ACCOUNT_ID ausentes). Disparo pulado.";
+    console.warn(`  ℹ️ [SocialPublisher:Instagram] ${reason}`);
+    await logSocialDispatch("instagram", "skipped", reason, { missing_credentials: true }, undefined, "INSTAGRAM_NOT_CONFIGURED");
+    return { success: false, skipped: true, error: "Credenciais do Instagram ausentes" };
+  }
+
+  // Validação estrita de imagem pública
+  const imageUrl = payload.coverImageUrl;
+  if (!imageUrl || !isValidImageUrl(imageUrl)) {
+    const reason = `Publicação no Instagram requer imagem de capa válida. Disparo pulado para "${payload.title}".`;
+    console.warn(`  ℹ️ [SocialPublisher:Instagram] ${reason}`);
+    await logSocialDispatch(
+      "instagram",
+      "skipped",
+      reason,
+      { invalid_image: true, coverImageUrl: imageUrl || null },
+      undefined,
+      "INSTAGRAM_NOT_CONFIGURED"
+    );
+    return { success: false, skipped: true, error: "Imagem de capa inválida para o Instagram" };
+  }
+
+  try {
+    // Etapa 1: Criação do Container de Mídia na Meta Graph API
+    const containerUrl = `https://graph.facebook.com/v19.0/${accountId}/media`;
+    const containerRes = await fetch(containerUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image_url: imageUrl,
+        caption: copy,
+        access_token: token,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    const containerData = await containerRes.json().catch(() => ({}));
+
+    if (!containerRes.ok || !containerData.id) {
+      const errMsg = containerData.error?.message || `HTTP ${containerRes.status} na criação do container`;
+      throw new Error(`Meta Graph API Container Error: ${errMsg}`);
+    }
+
+    const creationId = containerData.id;
+
+    // Etapa 2: Publicação do Container de Mídia
+    const publishUrl = `https://graph.facebook.com/v19.0/${accountId}/media_publish`;
+    const publishRes = await fetch(publishUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        creation_id: creationId,
+        access_token: token,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    const publishData = await publishRes.json().catch(() => ({}));
+
+    if (!publishRes.ok || !publishData.id) {
+      const errMsg = publishData.error?.message || `HTTP ${publishRes.status} no despacho de publicação`;
+      throw new Error(`Meta Graph API Publish Error: ${errMsg}`);
+    }
+
+    const postId = publishData.id;
+    console.log(`  📸 [SocialPublisher:Instagram] Post publicado com sucesso! (ID: ${postId})`);
+    await logSocialDispatch("instagram", "success", `Post publicado com sucesso no Instagram (ID: ${postId})`, {
+      post_id: postId,
+      container_id: creationId,
+      title: payload.title,
+      slug: payload.slug,
+    });
+
+    return { success: true, postId, messageId: postId };
+  } catch (err: any) {
+    const errMsg = err?.message || String(err);
+    console.error(`  ❌ [SocialPublisher:Instagram] Falha na Meta Graph API: ${errMsg}`);
+    await logAITask({
+      service: "social_instagram",
+      action: "publish_post",
+      level: "error",
+      status: "failed",
+      task_completed: false,
+      failure_reason_code: "INSTAGRAM_API_ERROR",
+      message: `Erro ao publicar no Instagram: ${errMsg.slice(0, 300)}`,
+      error: err,
+      metadata: {
+        title: payload.title,
+        slug: payload.slug,
+        accountId,
+        imageUrl,
+      },
+      is_retryable: true,
+    });
+
+    return { success: false, error: errMsg };
   }
 }
 
@@ -441,7 +697,7 @@ export async function sendToTwitter(
 // ============================================================================
 
 /**
- * Dispara automaticamente publicações nas redes sociais conectadas (Telegram & X/Twitter)
+ * Dispara automaticamente publicações nas redes sociais conectadas (Telegram, X/Twitter e Instagram)
  * de forma 100% não-bloqueante e segura contra exceções.
  */
 export async function publishToSocialNetworks(
@@ -453,9 +709,10 @@ export async function publishToSocialNetworks(
   const copy = generateSocialCopy(payload);
 
   // Executa o disparo para todos os canais de forma paralela e resiliente
-  const [telegramOutcome, twitterOutcome] = await Promise.allSettled([
+  const [telegramOutcome, twitterOutcome, instagramOutcome] = await Promise.allSettled([
     sendToTelegram(payload, copy.telegram),
     sendToTwitter(payload, copy.twitter),
+    sendToInstagram(payload, copy.instagram),
   ]);
 
   const telegramResult: ChannelPublishResult =
@@ -468,16 +725,24 @@ export async function publishToSocialNetworks(
       ? twitterOutcome.value
       : { success: false, error: twitterOutcome.reason?.message || String(twitterOutcome.reason) };
 
+  const instagramResult: ChannelPublishResult =
+    instagramOutcome.status === "fulfilled"
+      ? instagramOutcome.value
+      : { success: false, error: instagramOutcome.reason?.message || String(instagramOutcome.reason) };
+
   console.log(
     `📢 [SocialPublisher] Concluído: Telegram: ${
       telegramResult.success ? "✅ OK" : telegramResult.skipped ? "⏭️ Pulado" : "❌ Falhou"
     } | X/Twitter: ${
       twitterResult.success ? "✅ OK" : twitterResult.skipped ? "⏭️ Pulado" : "❌ Falhou"
+    } | Instagram: ${
+      instagramResult.success ? "✅ OK" : instagramResult.skipped ? "⏭️ Pulado" : "❌ Falhou"
     }`
   );
 
   return {
     telegram: telegramResult,
     twitter: twitterResult,
+    instagram: instagramResult,
   };
 }

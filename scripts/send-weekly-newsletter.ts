@@ -10,6 +10,7 @@ import { Database, Post, AffiliateProduct, NewsletterSubscriber } from "../types
 import { MOCK_POSTS, MOCK_CATEGORIES } from "../lib/data/mock-news";
 import { MOCK_AFFILIATE_PRODUCTS } from "../lib/data/affiliates";
 import { generateUnsubscribeToken } from "../lib/utils/security";
+import { logAITask, logAISuccess, logAIFailure } from "../lib/services/logger";
 
 // ==============================================================================
 // CONFIGURAÇÕES & PARÂMETROS
@@ -583,6 +584,15 @@ async function runWeeklyNewsletter() {
             // Ignora se tabela ainda não tiver sido criada
           }
         }
+        await logAITask({
+          service: "newsletter",
+          action: "send_weekly_newsletter",
+          level: "warn",
+          status: "skipped",
+          task_completed: true,
+          message: `Disparo semanal ignorado (desabilitado no painel): ${reason}`,
+          metadata: { disabled_by_admin: true, reason },
+        });
         return;
       }
     } else {
@@ -594,6 +604,15 @@ async function runWeeklyNewsletter() {
     const articles = await fetchTopArticles();
     if (articles.length === 0) {
       console.error("❌ Nenhum artigo encontrado para compor a newsletter. Abortando.");
+      await logAITask({
+        service: "newsletter",
+        action: "send_weekly_newsletter",
+        level: "error",
+        status: "failed",
+        task_completed: false,
+        failure_reason_code: "CONTENT_TOO_SHORT",
+        message: "Nenhum artigo encontrado para compor a newsletter semanal.",
+      });
       process.exit(1);
     }
 
@@ -639,6 +658,15 @@ async function runWeeklyNewsletter() {
       console.error(
         "❌ Chave RESEND_API_KEY não configurada no ambiente. Configure no .env.local ou secrets."
       );
+      await logAITask({
+        service: "newsletter",
+        action: "send_weekly_newsletter",
+        level: "error",
+        status: "failed",
+        task_completed: false,
+        failure_reason_code: "RESEND_KEY_MISSING",
+        message: "Chave RESEND_API_KEY não configurada no ambiente. Configure no .env.local ou secrets.",
+      });
       process.exit(1);
     }
 
@@ -676,6 +704,18 @@ async function runWeeklyNewsletter() {
         if (error) {
           console.error(`  ❌ [${i + 1}/${subscribers.length}] Falha para ${email}:`, error.message);
           failedCount++;
+          await logAITask({
+            service: "newsletter",
+            action: "send_newsletter_email",
+            level: "error",
+            status: "failed",
+            task_completed: false,
+            failure_reason_code: "RESEND_BATCH_ERROR",
+            message: `Falha ao enviar e-mail para ${email}: ${error.message}`,
+            error: error.message,
+            metadata: { email, subject, index: i + 1, total: subscribers.length },
+            is_retryable: true,
+          });
         } else {
           console.log(`  ✅ [${i + 1}/${subscribers.length}] Enviado com sucesso para ${email} (ID: ${data?.id})`);
           sentCount++;
@@ -688,6 +728,18 @@ async function runWeeklyNewsletter() {
       } catch (err: any) {
         console.error(`  ❌ [${i + 1}/${subscribers.length}] Exceção para ${email}:`, err.message);
         failedCount++;
+        await logAITask({
+          service: "newsletter",
+          action: "send_newsletter_email",
+          level: "error",
+          status: "failed",
+          task_completed: false,
+          failure_reason_code: "RESEND_BATCH_ERROR",
+          message: `Exceção ao disparar e-mail para ${email}: ${err?.message || err}`,
+          error: err,
+          metadata: { email, subject, index: i + 1, total: subscribers.length },
+          is_retryable: true,
+        });
       }
     }
 
@@ -714,8 +766,32 @@ async function runWeeklyNewsletter() {
     console.log(`✅ Sucessos: ${sentCount}`);
     console.log(`❌ Falhas: ${failedCount}`);
     console.log("====================================================================\n");
+
+    if (failedCount > 0 && sentCount === 0) {
+      await logAIFailure("newsletter", "send_weekly_newsletter_cycle", `Disparo semanal falhou integralmente: 0 enviados, ${failedCount} falhas`, {
+        failureReasonCode: "RESEND_BATCH_ERROR",
+        metadata: { sentCount, failedCount, total: subscribers.length, elapsed },
+      });
+    } else {
+      await logAISuccess("newsletter", "send_weekly_newsletter_cycle", `Disparo semanal concluído: ${sentCount} enviados com sucesso, ${failedCount} falhas.`, {
+        sentCount,
+        failedCount,
+        total: subscribers.length,
+        elapsed,
+      });
+    }
   } catch (error: any) {
     console.error("❌ Falha crítica no pipeline da newsletter:", error.message || error);
+    await logAITask({
+      service: "newsletter",
+      action: "send_weekly_newsletter_cycle",
+      level: "critical",
+      status: "failed",
+      task_completed: false,
+      failure_reason_code: "RESEND_BATCH_ERROR",
+      message: `Falha crítica no pipeline da newsletter: ${error?.message || error}`,
+      error: error,
+    });
     process.exit(1);
   }
 }

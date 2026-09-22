@@ -13,6 +13,8 @@
  */
 
 import { isValidImageUrl } from "../utils";
+import { logAITask, logSocialDispatch } from "./logger";
+import { FailureReasonCode } from "@/types/database";
 
 // ==============================================================================
 // TIPAGEM OFICIAL DISCORD WEBHOOK API
@@ -82,6 +84,8 @@ export interface DiscordSendResult {
   skipped?: boolean;
   error?: string;
   rateLimited?: boolean;
+  statusCode?: number;
+  failureReasonCode?: FailureReasonCode;
 }
 
 // ==============================================================================
@@ -228,7 +232,12 @@ export async function executeDiscordWebhook(
     !trimmedUrl.startsWith("https://discordapp.com/api/webhooks/")
   ) {
     console.warn(`  ⚠️ [DiscordNotifier] URL de webhook inválida: ${trimmedUrl.slice(0, 35)}...`);
-    return { success: false, error: "Formato de Webhook URL inválido" };
+    return {
+      success: false,
+      error: "Formato de Webhook URL inválido",
+      statusCode: 400,
+      failureReasonCode: "DISCORD_BAD_REQUEST_400",
+    };
   }
 
   // Clona payload para permitir mutação segura em caso de fallback
@@ -264,7 +273,7 @@ export async function executeDiscordWebhook(
         } catch {
           // 204 No Content não tem body
         }
-        return { success: true, messageId };
+        return { success: true, messageId, statusCode: response.status };
       }
 
       // 2. Tratamento de Rate-Limit (HTTP 429)
@@ -285,6 +294,8 @@ export async function executeDiscordWebhook(
         return {
           success: false,
           rateLimited: true,
+          statusCode: 429,
+          failureReasonCode: "DISCORD_RATE_LIMITED",
           error: `Discord rate-limit excedido após retries (retry_after: ${retryAfterSec}s)`,
         };
       }
@@ -304,7 +315,18 @@ export async function executeDiscordWebhook(
       console.error(
         `  ❌ [DiscordNotifier] Erro HTTP ${response.status} ao disparar webhook: ${errText.slice(0, 200)}`
       );
-      return { success: false, error: `HTTP ${response.status}: ${errText.slice(0, 100)}` };
+
+      let failureReasonCode: FailureReasonCode = "DISCORD_WEBHOOK_ERROR";
+      if (response.status === 400) failureReasonCode = "DISCORD_BAD_REQUEST_400";
+      else if (response.status === 404) failureReasonCode = "DISCORD_NOT_FOUND_404";
+      else if (response.status === 429) failureReasonCode = "DISCORD_RATE_LIMITED";
+
+      return {
+        success: false,
+        statusCode: response.status,
+        failureReasonCode,
+        error: `HTTP ${response.status}: ${errText.slice(0, 100)}`,
+      };
     } catch (err: any) {
       console.error(
         `  ❌ [DiscordNotifier] Falha de conexão ao enviar webhook (Tentativa ${attempt}): ${err?.message || err}`
@@ -315,11 +337,19 @@ export async function executeDiscordWebhook(
         continue;
       }
 
-      return { success: false, error: err?.message || String(err) };
+      return {
+        success: false,
+        failureReasonCode: "DISCORD_WEBHOOK_ERROR",
+        error: err?.message || String(err),
+      };
     }
   }
 
-  return { success: false, error: "Número máximo de tentativas de reenvio excedido" };
+  return {
+    success: false,
+    failureReasonCode: "DISCORD_WEBHOOK_ERROR",
+    error: "Número máximo de tentativas de reenvio excedido",
+  };
 }
 
 // ==============================================================================
@@ -424,10 +454,49 @@ export async function sendDiscordFreeGameAlert(
 
   if (result.success) {
     console.log(`  ✅ [DiscordNotifier] Alerta de "${cleanTitle}" postado com sucesso no Discord!`);
+    await logSocialDispatch(
+      "discord",
+      "success",
+      `Alerta de Jogo Grátis "${cleanTitle}" postado com sucesso no Discord (Message ID: ${result.messageId || "N/A"})`,
+      {
+        deal_id: deal.id,
+        title: cleanTitle,
+        platform,
+        worth: deal.worth,
+        message_id: result.messageId || null,
+      },
+      undefined,
+      { action: "free_game_alert" }
+    );
   } else if (result.skipped) {
     console.log(`  ⏭️ [DiscordNotifier] Alerta de "${cleanTitle}" ignorado (Webhook não configurado).`);
+    await logSocialDispatch(
+      "discord",
+      "skipped",
+      `Alerta de Jogo Grátis "${cleanTitle}" ignorado (Webhook DISCORD_WEBHOOK_FREE_GAMES não configurado)`,
+      { deal_id: deal.id, title: cleanTitle },
+      undefined,
+      { action: "free_game_alert" }
+    );
   } else {
     console.error(`  ❌ [DiscordNotifier] Falha ao postar alerta de "${cleanTitle}": ${result.error}`);
+    await logAITask({
+      service: "social_discord",
+      action: "free_game_alert",
+      level: "error",
+      status: "failed",
+      task_completed: false,
+      failure_reason_code: result.failureReasonCode || "DISCORD_WEBHOOK_ERROR",
+      message: `Falha ao postar alerta de jogo grátis "${cleanTitle}" no Discord: ${result.error}`,
+      error: result.error,
+      metadata: {
+        deal_id: deal.id,
+        title: cleanTitle,
+        platform,
+        status_code: result.statusCode || null,
+      },
+      is_retryable: result.rateLimited === true || (result.statusCode !== 400 && result.statusCode !== 404),
+    });
   }
 
   return result;
@@ -537,10 +606,49 @@ export async function sendDiscordNewsAlert(
 
   if (result.success) {
     console.log(`  ✅ [DiscordNotifier] Notícia urgente enviada ao Discord com sucesso!`);
+    await logSocialDispatch(
+      "discord",
+      "success",
+      `Notícia urgente "${post.title}" enviada ao Discord com sucesso (Message ID: ${result.messageId || "N/A"})`,
+      {
+        slug: post.slug,
+        title: post.title,
+        category: post.category,
+        is_rumor: post.isRumor,
+        message_id: result.messageId || null,
+      },
+      undefined,
+      { action: "breaking_news_alert" }
+    );
   } else if (result.skipped) {
     console.log(`  ⏭️ [DiscordNotifier] Notícia urgente ignorada (DISCORD_WEBHOOK_NEWS não configurado).`);
+    await logSocialDispatch(
+      "discord",
+      "skipped",
+      `Notícia urgente "${post.title}" ignorada (Webhook DISCORD_WEBHOOK_NEWS não configurado)`,
+      { slug: post.slug, title: post.title },
+      undefined,
+      { action: "breaking_news_alert" }
+    );
   } else {
     console.error(`  ❌ [DiscordNotifier] Falha ao enviar notícia urgente ao Discord: ${result.error}`);
+    await logAITask({
+      service: "social_discord",
+      action: "breaking_news_alert",
+      level: "error",
+      status: "failed",
+      task_completed: false,
+      failure_reason_code: result.failureReasonCode || "DISCORD_WEBHOOK_ERROR",
+      message: `Falha ao enviar notícia urgente "${post.title}" ao Discord: ${result.error}`,
+      error: result.error,
+      metadata: {
+        slug: post.slug,
+        title: post.title,
+        category: post.category,
+        status_code: result.statusCode || null,
+      },
+      is_retryable: result.rateLimited === true || (result.statusCode !== 400 && result.statusCode !== 404),
+    });
   }
 
   return result;

@@ -49,6 +49,11 @@ const SECRET_PATTERNS = [
     regex: /(?:oauth_token|oauth_token_secret|oauth_consumer_key|consumer_secret|access_token|access_token_secret)=([A-Za-z0-9_-]+)/gi,
     replacement: "$1=[REDACTED_TWITTER_CREDENTIAL]",
   },
+  // Tokens de Acesso Meta Graph API / Instagram (EAA...)
+  {
+    regex: /\bEAA[A-Za-z0-9_-]{50,}\b/g,
+    replacement: "[REDACTED_META_TOKEN]",
+  },
   // Cookies de sessão sensíveis
   {
     regex: /(connect\.sid|sb-[a-z0-9-]+-auth-token|admin_session|session_token)=([^;]+)/gi,
@@ -468,6 +473,12 @@ export async function logAIFailure(
   });
 }
 
+export interface SocialDispatchOptions {
+  failureReasonCode?: FailureReasonCode | null;
+  action?: string;
+  isRetryable?: boolean;
+}
+
 /**
  * Atalho para registrar o resultado de publicações nas redes sociais e canais
  */
@@ -476,7 +487,8 @@ export async function logSocialDispatch(
   status: "success" | "failed" | "skipped",
   message: string,
   metadata?: Record<string, any>,
-  error?: unknown
+  error?: unknown,
+  optionsOrCode?: FailureReasonCode | SocialDispatchOptions | null
 ): Promise<AISystemLog> {
   const serviceMap: Record<string, LogService> = {
     x: "social_x",
@@ -486,12 +498,24 @@ export async function logSocialDispatch(
   };
 
   const service = serviceMap[network] || "system";
-  const action = "publish_post";
+  let customCode: FailureReasonCode | null = null;
+  let customAction = "publish_post";
+  let isRetryable: boolean | undefined = undefined;
+
+  if (typeof optionsOrCode === "string") {
+    customCode = optionsOrCode;
+  } else if (optionsOrCode && typeof optionsOrCode === "object") {
+    customCode = optionsOrCode.failureReasonCode || null;
+    if (optionsOrCode.action) customAction = optionsOrCode.action;
+    if (typeof optionsOrCode.isRetryable === "boolean") isRetryable = optionsOrCode.isRetryable;
+  }
+
+  const action = customAction;
   const level: LogLevel = status === "success" ? "info" : status === "skipped" ? "warn" : "error";
   const task_completed = status === "success" || status === "skipped";
 
-  let failure_reason_code: FailureReasonCode | null = null;
-  if (status === "failed") {
+  let failure_reason_code: FailureReasonCode | null = customCode;
+  if (!failure_reason_code && status === "failed") {
     if (network === "x") failure_reason_code = "TWITTER_FORBIDDEN_403";
     else if (network === "telegram") failure_reason_code = "TELEGRAM_PARSE_ERROR";
     else if (network === "discord") failure_reason_code = "DISCORD_WEBHOOK_ERROR";
@@ -508,6 +532,6 @@ export async function logSocialDispatch(
     message,
     error,
     metadata,
-    is_retryable: status === "failed",
+    is_retryable: isRetryable !== undefined ? isRetryable : status === "failed",
   });
 }

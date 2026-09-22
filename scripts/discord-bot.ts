@@ -32,6 +32,7 @@ import {
   formatDealPrice,
   formatExpiryDate,
 } from "../lib/services/discord-notifier";
+import { logAITask, logAISuccess, logAIFailure } from "../lib/services/logger";
 
 // ==============================================================================
 // CONFIGURAÇÕES & VARIÁVEIS DE AMBIENTE
@@ -240,24 +241,66 @@ async function updateDispatchStatus(
 async function fetchGiveaways(): Promise<FreeGameDeal[]> {
   console.log(`🌐 [GamerPower] Consultando API de gratuidades: ${GAMERPOWER_API_URL}`);
 
-  const res = await fetch(GAMERPOWER_API_URL, {
-    headers: {
-      "User-Agent": "MadeByAIGames-DiscordBot/1.0",
-      Accept: "application/json",
-    },
-    signal: AbortSignal.timeout(15000),
-  });
+  try {
+    const res = await fetch(GAMERPOWER_API_URL, {
+      headers: {
+        "User-Agent": "MadeByAIGames-DiscordBot/1.0",
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(15000),
+    });
 
-  if (!res.ok) {
-    throw new Error(`Falha na API GamerPower (HTTP ${res.status}): ${await res.text().catch(() => "")}`);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      await logAITask({
+        service: "social_discord",
+        action: "fetch_giveaways",
+        level: "error",
+        status: "failed",
+        task_completed: false,
+        failure_reason_code: "GAMERPOWER_API_ERROR",
+        message: `Falha na API GamerPower (HTTP ${res.status}): ${errText.slice(0, 200)}`,
+        error: `HTTP ${res.status}: ${errText}`,
+        metadata: { endpoint: GAMERPOWER_API_URL, http_status: res.status },
+        is_retryable: true,
+      });
+      throw new Error(`Falha na API GamerPower (HTTP ${res.status}): ${errText}`);
+    }
+
+    const data = await res.json();
+    if (!Array.isArray(data)) {
+      await logAITask({
+        service: "social_discord",
+        action: "fetch_giveaways",
+        level: "error",
+        status: "failed",
+        task_completed: false,
+        failure_reason_code: "GAMERPOWER_API_ERROR",
+        message: "Formato inesperado de resposta da API GamerPower (não é um array)",
+        error: "Resposta não é um array",
+        metadata: { endpoint: GAMERPOWER_API_URL },
+      });
+      throw new Error("Formato inesperado de resposta da API GamerPower (não é um array)");
+    }
+
+    return data as FreeGameDeal[];
+  } catch (err: any) {
+    if (!err?.message?.includes("Falha na API GamerPower")) {
+      await logAITask({
+        service: "social_discord",
+        action: "fetch_giveaways",
+        level: "error",
+        status: "failed",
+        task_completed: false,
+        failure_reason_code: "GAMERPOWER_API_ERROR",
+        message: `Erro ao consultar API GamerPower: ${err?.message || err}`,
+        error: err,
+        metadata: { endpoint: GAMERPOWER_API_URL },
+        is_retryable: true,
+      });
+    }
+    throw err;
   }
-
-  const data = await res.json();
-  if (!Array.isArray(data)) {
-    throw new Error("Formato inesperado de resposta da API GamerPower (não é um array)");
-  }
-
-  return data as FreeGameDeal[];
 }
 
 // ==============================================================================
@@ -392,11 +435,21 @@ async function runDiscordDealsBot() {
         "failed",
         `Execução falhou com ${totalErrors} erros. Nenhuma oferta enviada.`
       );
+      await logAIFailure("social_discord", "deals_dispatch_cycle", `Ciclo de jogos grátis falhou com ${totalErrors} erros. Nenhuma oferta enviada.`, {
+        failureReasonCode: "DISCORD_WEBHOOK_ERROR",
+        metadata: { totalErrors, totalSkipped, durationSec },
+      });
     } else {
       await updateDispatchStatus(
         "success",
         `Executado com sucesso. ${totalPosted} novas ofertas enviadas ao Discord, ${totalSkipped} já existentes puladas.`
       );
+      await logAISuccess("social_discord", "deals_dispatch_cycle", `Ciclo de jogos grátis concluído: ${totalPosted} novos alertas enviados, ${totalSkipped} pulados.`, {
+        totalPosted,
+        totalSkipped,
+        totalErrors,
+        durationSec,
+      });
     }
   }
 
