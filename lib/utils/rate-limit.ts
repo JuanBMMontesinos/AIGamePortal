@@ -195,21 +195,37 @@ async function checkUpstashRateLimit(
 // ==============================================================================
 
 /**
- * Extrai o endereço IP real do cliente a partir dos cabeçalhos de proxy reverso e CDN.
+ * Extrai o endereço IP real do cliente com proteção contra IP Spoofing.
+ *
+ * Precedência de avaliação de cabeçalhos:
+ * 1. `cf-connecting-ip`: Injetado pela borda da Cloudflare (não pode ser forjado pelo cliente quando sob CDN).
+ * 2. `x-real-ip`: Fornecido por proxy reverso direto e confiável (Nginx / Vercel).
+ * 3. `x-forwarded-for`: Primeiro IP da cadeia de proxies, sanitizado (remoção de porta).
+ * 4. Fallback seguro: "127.0.0.1".
  */
 export function getClientIp(request: NextRequest): string {
+  // 1. Cloudflare (maior prioridade: CDN autoritativa de borda)
+  const cfIp = request.headers.get("cf-connecting-ip");
+  if (cfIp && cfIp.trim()) {
+    return cfIp.trim();
+  }
+
+  // 2. Proxy reverso direto confiável (Nginx, Vercel x-real-ip)
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp && realIp.trim()) {
+    return realIp.trim();
+  }
+
+  // 3. X-Forwarded-For (sanitizado, primeiro IP da cadeia de proxies)
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     const firstIp = forwarded.split(",")[0].trim();
-    if (firstIp) return firstIp;
+    // Remove possível sufixo de porta (ex: "192.168.1.1:8080" -> "192.168.1.1")
+    const cleanIp = firstIp.replace(/:\d+$/, "").trim();
+    if (cleanIp) return cleanIp;
   }
 
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp && realIp.trim()) return realIp.trim();
-
-  const cfIp = request.headers.get("cf-connecting-ip");
-  if (cfIp && cfIp.trim()) return cfIp.trim();
-
+  // 4. Fallback local seguro
   return "127.0.0.1";
 }
 

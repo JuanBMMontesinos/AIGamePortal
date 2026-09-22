@@ -12,6 +12,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export function NewsletterBox({ variant = "default", className = "" }: NewsletterBoxProps) {
   const [email, setEmail] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -42,7 +43,10 @@ export function NewsletterBox({ variant = "default", className = "" }: Newslette
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: cleanEmail }),
+        body: JSON.stringify({
+          email: cleanEmail,
+          website_url_hp: honeypot,
+        }),
       });
 
       const data = await response.json();
@@ -54,6 +58,7 @@ export function NewsletterBox({ variant = "default", className = "" }: Newslette
             "🎉 Inscrição confirmada! Você receberá nosso resumo gamer todo domingo."
         );
         setEmail("");
+        setHoneypot("");
       } else {
         setStatus("error");
         setMessage(data.error || "Não foi possível concluir sua inscrição. Tente novamente.");
@@ -117,6 +122,7 @@ export function NewsletterBox({ variant = "default", className = "" }: Newslette
               onClick={() => {
                 setStatus("idle");
                 setMessage("");
+                setHoneypot("");
               }}
               className="text-[11px] font-semibold text-brand-purple dark:text-brand-cyan underline pt-1 cursor-pointer"
             >
@@ -126,6 +132,23 @@ export function NewsletterBox({ variant = "default", className = "" }: Newslette
         ) : (
           /* Form Input */
           <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Campo Honeypot Anti-Spam (invisível para humanos, atrai bots automatizados) */}
+            <div
+              className="sr-only absolute -left-[9999px] opacity-0 pointer-events-none"
+              aria-hidden="true"
+            >
+              <label htmlFor={`newsletter-hp-${variant}`}>Website URL</label>
+              <input
+                id={`newsletter-hp-${variant}`}
+                type="text"
+                name="website_url_hp"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             <div
               className={`flex ${
                 isSidebar ? "flex-col" : "flex-col sm:flex-row"

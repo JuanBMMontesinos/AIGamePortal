@@ -57,32 +57,52 @@ export async function generateStaticParams() {
 
 O Route Handler [app/api/revalidate/route.ts](file:///d:/IAProjects/AIGamePortal/app/api/revalidate/route.ts) aceita requisições `POST` ou `GET` autenticadas por segredo.
 
-### 3.1 Parâmetros Suportados (Query String)
+### 3.1 Métodos de Autenticação Suportados
+
+Para evitar o vazamento de segredos em logs de acesso HTTP, proxies intermediários e histórico de navegadores, recomenda-se autenticar prioritariamente via **cabeçalhos HTTP**:
+
+| Método | Cabeçalho / Parâmetro | Formato | Recomendação |
+| :--- | :--- | :--- | :--- |
+| **Cabeçalho Dedicado** | `x-revalidate-secret` | `<token>` | **Recomendado** (seguro, não expõe em URLs) |
+| **Bearer Token** | `Authorization` | `Bearer <token>` | **Recomendado** (padrão RFC 6750) |
+| **Query String** | `secret` | `?secret=<token>` | Legado (mantido para compatibilidade retroativa) |
+
+> [!TIP]
+> A comparação do segredo no servidor é executada via `safeConstantTimeCompare()`, mitigando ataques de temporização (*timing attacks*).
+
+### 3.2 Parâmetros Suportados (Query String)
 
 | Parâmetro | Tipo | Obrigatório | Descrição | Exemplo |
 | :--- | :---: | :---: | :--- | :--- |
-| `secret` | `string` | **Sim** | Token secreto que deve coincidir com `REVALIDATION_SECRET` do `.env.local`. | `aigameportal_super_secret_token_2026` |
 | `slug` | `string` | Opcional | Slug da notícia recém-adicionada. Revalida `/noticias/{slug}` e a Homepage `/`. | `ghost-of-yotei-gameplay-ps5-pro-combate` |
 | `path` | `string` | Opcional | Caminho arbitrário que deve ter seu cache expurgado. | `/categoria/playstation` |
 | `tag` | `string` | Opcional | Tag de cache para revalidação atômica via `revalidateTag()`. | `news-feed` |
+| `secret` | `string` | Apenas se sem cabeçalho | Token de segurança (necessário caso `x-revalidate-secret` ou `Authorization` não sejam enviados). | `aigameportal_super_secret_token_2026` |
 
 ---
 
-### 3.2 Exemplos de Chamada
+### 3.3 Exemplos de Chamada
 
-#### Exemplo A: Revalidação de Nova Notícia via cURL (Disparo Típico do n8n)
+#### Exemplo A: Revalidação via Cabeçalho `x-revalidate-secret` (Recomendado)
+```bash
+curl -X POST "http://localhost:3000/api/revalidate?slug=ghost-of-yotei-gameplay-ps5-pro-combate" \
+  -H "x-revalidate-secret: aigameportal_super_secret_token_2026"
+```
+
+#### Exemplo B: Revalidação via Cabeçalho `Authorization: Bearer`
+```bash
+curl -X POST "http://localhost:3000/api/revalidate?path=/" \
+  -H "Authorization: Bearer aigameportal_super_secret_token_2026"
+```
+
+#### Exemplo C: Revalidação Legada via Query Param (n8n retrocompatível)
 ```bash
 curl -X POST "http://localhost:3000/api/revalidate?secret=aigameportal_super_secret_token_2026&slug=ghost-of-yotei-gameplay-ps5-pro-combate"
 ```
 
-#### Exemplo B: Revalidação da Homepage
-```bash
-curl -X POST "http://localhost:3000/api/revalidate?secret=aigameportal_super_secret_token_2026&path=/"
-```
-
 ---
 
-### 3.3 Respostas da API
+### 3.4 Respostas da API
 
 #### Sucesso (200 OK)
 ```json
@@ -127,10 +147,9 @@ No workflow do n8n, após o nó **Supabase: Insert Post**, adicione um nó do ti
            ▼
 [ HTTP Request: Revalidate Cache ]
   ├── Method: POST
-  ├── URL: =https://seu-dominio.com/api/revalidate
-  ├── Query Parameters:
-  │     ├── secret: aigameportal_super_secret_token_2026
-  │     └── slug: ={{ $json.slug }}
+  ├── URL: =https://seu-dominio.com/api/revalidate?slug={{ $json.slug }}
+  ├── Headers:
+  │     └── x-revalidate-secret: aigameportal_super_secret_token_2026
   └── Options:
         └── Retry on Fail: 3 vezes
 ```

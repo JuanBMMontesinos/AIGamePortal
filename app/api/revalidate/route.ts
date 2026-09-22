@@ -34,10 +34,23 @@ async function handleRevalidation(request: NextRequest) {
   }
 
   const searchParams = request.nextUrl.searchParams;
-  const secret = searchParams.get("secret");
   const slug = searchParams.get("slug");
   const path = searchParams.get("path");
   const tag = searchParams.get("tag");
+
+  // 1. Extração do token de autenticação (Header dedicado, Bearer Token ou Query Param legado)
+  let secret = request.headers.get("x-revalidate-secret")?.trim() || null;
+
+  if (!secret) {
+    const authHeader = request.headers.get("authorization");
+    if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+      secret = authHeader.slice(7).trim();
+    }
+  }
+
+  if (!secret) {
+    secret = searchParams.get("secret");
+  }
 
   const expectedSecret =
     process.env.REVALIDATION_SECRET?.trim() ||
@@ -56,7 +69,7 @@ async function handleRevalidation(request: NextRequest) {
     );
   }
 
-  // 1. Validação de token de segurança
+  // 2. Validação de token de segurança em tempo constante
   if (!secret || !safeConstantTimeCompare(secret, expectedSecret)) {
     return NextResponse.json(
       {

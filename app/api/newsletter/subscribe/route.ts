@@ -53,6 +53,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Proteção Anti-Spam (Honeypot): robôs e scrapers automatizados preenchem campos invisíveis.
+    // Descarte Silencioso (Silent Discard): retorna sucesso simulado sem gravar no banco de dados nem disparar e-mails.
+    const honeypot = body.website_url_hp || body.hp;
+    if (typeof honeypot === "string" && honeypot.trim().length > 0) {
+      console.warn(
+        `[Newsletter Subscribe] Bot detectado via honeypot field ("${honeypot.trim().slice(0, 50)}"). Descarte silencioso executado.`
+      );
+      return NextResponse.json(
+        {
+          success: true,
+          message: "🎉 Inscrição confirmada! Você receberá nosso resumo gamer todo domingo.",
+        },
+        { status: 200 }
+      );
+    }
+
     const cleanEmail = body.email.trim().toLowerCase();
 
     // Validação de formato e tamanho
