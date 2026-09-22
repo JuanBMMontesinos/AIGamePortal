@@ -43,11 +43,15 @@ flowchart TD
     G --> H
 
     I[Usuário Clica no Link / Card] --> J[GET /api/out/[id]?postId=...]
-    J --> K{ID Válido & Ativo?}
+    J --> RL{Rate Limit <= 30/min?}
+    RL -->|Não| R429[HTTP 429 Too Many Requests - Sem gravação]
+    RL -->|Sim| K{ID Válido & Ativo?}
     K -->|Não| L[Redirect HTTP 307 -> Home /]
-    K -->|Sim| M[Gravação Assíncrona na tabela affiliate_clicks]
+    K -->|Sim| U{Protocolo HTTP/HTTPS Seguro?}
+    U -->|Não| L
+    U -->|Sim| M[Gravação Assíncrona na tabela affiliate_clicks]
     M -.-> N[(Supabase: affiliate_clicks)]
-    K -->|Sim| O[Redirect HTTP 307 -> Loja com Tag de Parceiro]
+    U -->|Sim| O[Redirect HTTP 307 -> Loja com Tag de Parceiro]
 ```
 
 ---
@@ -252,8 +256,29 @@ Disallow: /api/admin/
 - **URL**: `/api/out/search?q=...&category=...&postId=...`
 - **Finalidade**: Fallback resiliente para matérias sem produto cadastrado.
 - **Funcionamento**:
-  1. Cria dinamicamente ou reutiliza um produto tipo busca na tabela `affiliate_products`.
+  1. Aplica o rate limit de 30 requisições por minuto por IP.
   2. Registra o clique analítico em `affiliate_clicks`.
   3. Redireciona via **HTTP 307** para:
      `https://www.amazon.com.br/s?k=[query]&tag=aigameportal-20`
+
+---
+
+## 11. Segurança de Redirecionamento e Proteção Anti-Fraude (Fase 6)
+
+### 11.1 Mitigação de Click Fraud e Ataques DoS
+Endpoints de afiliados frequentemente são alvo de bots de raspagem, cliques automatizados fraudulentos ou concorrentes mal-intencionados que tentam inflar contadores e gerar poluição na tabela analítica `affiliate_clicks` ou esgotar limites de conexão do banco de dados.
+
+- **Mecanismo de Proteção**:
+  Ambas as rotas ([`/api/out/[id]`](../app/api/out/[id]/route.ts) e [`/api/out/search`](../app/api/out/search/route.ts)) integram a engine de rate limiting ([lib/utils/rate-limit.ts](../lib/utils/rate-limit.ts)):
+  - **Teto**: 30 cliques/buscas por minuto por IP do cliente.
+  - **Identificação de IP**: Camada de precedência anti-spoofing (`cf-connecting-ip` -> `x-real-ip` -> `x-forwarded-for`).
+  - **Resposta a Excesso**: HTTP 429 Too Many Requests com cabeçalhos RFC 6585 (`Retry-After`, `X-RateLimit-*`).
+  - **Isolamento de Banco**: Em caso de bloqueio 429, nenhuma linha é gravada em `affiliate_clicks`.
+
+### 11.2 Prevenção contra Open Redirect e Execução Arbitrária (XSS)
+O endpoint de redirecionamento dinâmico `/api/out/[id]` valida estritamente a URL de destino cadastrada no acervo antes de efetuar o redirecionamento:
+- **Validação de Protocolo**: A URL é submetida a parsing via `new URL()` nativo e deve possuir obrigatoriamente protocolo `http:` ou `https:`.
+- **Mitigação de Esquemas Perigosos**: Esquemas como `javascript:`, `data:`, `file:`, `vbscript:` ou caminhos relativos maliciosos são imediatamente rejeitados.
+- **Fallback Resiliente**: Em caso de URL inválida ou não conforme, o sistema emite alerta no console e redireciona o usuário de volta para a Home (`/`) com HTTP 307, protegendo a integridade da navegação.
+
 

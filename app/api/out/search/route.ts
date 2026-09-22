@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { recordAffiliateClick } from "@/lib/data/affiliates";
+import { rateLimit, createRateLimitResponse } from "@/lib/utils/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -7,11 +8,26 @@ export const dynamic = "force-dynamic";
  * Endpoint de Smart Search Fallback (Forma 2 de Automação de Afiliados)
  * Rota: GET /api/out/search?q=...&postId=...&ref=...
  *
- * 1. Recebe a query de busca (ex: nome do jogo ou console citado no artigo).
- * 2. Registra o evento de clique na tabela `affiliate_clicks` de forma assíncrona.
- * 3. Redireciona com HTTP 307 para a busca oficial da Amazon Brasil com a tag aigameportal-20.
+ * 1. Aplica Rate Limiting anti-fraude (30 buscas/minuto por IP).
+ * 2. Recebe a query de busca (ex: nome do jogo ou console citado no artigo).
+ * 3. Registra o evento de clique na tabela `affiliate_clicks` de forma assíncrona.
+ * 4. Redireciona com HTTP 307 para a busca oficial da Amazon Brasil com a tag aigameportal-20.
  */
 export async function GET(request: NextRequest) {
+  // 1. Rate Limit Anti-Click Fraud e Anti-DoS: máximo de 30 requisições por minuto por IP
+  const rl = await rateLimit(request, {
+    limit: 30,
+    windowSeconds: 60,
+    prefix: "affiliate_search",
+  });
+
+  if (!rl.success) {
+    return createRateLimitResponse(
+      rl,
+      "Muitas buscas de afiliados registradas em curto período. Proteção anti-fraude ativada. Aguarde antes de tentar novamente."
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const rawQuery = searchParams.get("q") || "Jogos PS5 Xbox Nintendo PC";
   const postId = searchParams.get("postId");

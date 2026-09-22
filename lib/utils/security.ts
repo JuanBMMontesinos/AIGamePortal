@@ -33,12 +33,22 @@ export function safeConstantTimeCompare(a: unknown, b: unknown): boolean {
 }
 
 function getUnsubscribeSecret(): string {
-  return (
+  const secret = (
     process.env.NEWSLETTER_UNSUBSCRIBE_SECRET ||
     process.env.ADMIN_SECRET_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "aigameportal_newsletter_unsubscribe_secret_default"
-  );
+    ""
+  ).trim();
+
+  if (!secret) {
+    console.error(
+      "[Security CRITICAL] Nenhum segredo configurado para tokens de cancelamento de newsletter. " +
+        "Defina NEWSLETTER_UNSUBSCRIBE_SECRET, ADMIN_SECRET_KEY ou SUPABASE_SERVICE_ROLE_KEY."
+    );
+    return "";
+  }
+
+  return secret;
 }
 
 /**
@@ -46,20 +56,27 @@ function getUnsubscribeSecret(): string {
  *
  * Garante que apenas quem recebeu o link gerado pelo servidor consiga solicitar o cancelamento
  * de determinado e-mail, neutralizando enumeração forjada por terceiros ou robôs.
+ * Se nenhuma chave de assinatura estiver presente nas variáveis de ambiente, adota fail-closed
+ * e retorna string vazia, impedindo o uso de segredos estáticos inseguros.
  *
  * @param email Endereço de e-mail do assinante
- * @returns Token hexadecimal de 64 caracteres
+ * @returns Token hexadecimal de 64 caracteres ou string vazia em caso de ausência de segredo
  */
 export function generateUnsubscribeToken(email: string): string {
   if (!email || typeof email !== "string") return "";
-  const normalized = email.trim().toLowerCase();
   const secret = getUnsubscribeSecret();
+  if (!secret) {
+    console.error("[Security] Geração de token de cancelamento abortada: segredo ausente.");
+    return "";
+  }
+  const normalized = email.trim().toLowerCase();
   return crypto.createHmac("sha256", secret).update(normalized).digest("hex");
 }
 
 /**
  * Valida o token de descadastro contra o e-mail informado.
  * Utiliza safeConstantTimeCompare para mitigar ataques de temporização.
+ * Em caso de segredo não configurado no servidor, falha de forma segura (fail-closed) retornando false.
  *
  * @param email Endereço de e-mail a validar
  * @param token Token fornecido na requisição
@@ -67,6 +84,11 @@ export function generateUnsubscribeToken(email: string): string {
  */
 export function verifyUnsubscribeToken(email: string, token: string): boolean {
   if (!email || !token || typeof email !== "string" || typeof token !== "string") {
+    return false;
+  }
+  const secret = getUnsubscribeSecret();
+  if (!secret) {
+    console.error("[Security] Verificação de token de cancelamento abortada: segredo ausente.");
     return false;
   }
   const expectedToken = generateUnsubscribeToken(email);
