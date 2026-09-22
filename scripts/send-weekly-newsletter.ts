@@ -9,6 +9,7 @@ import path from "path";
 import { Database, Post, AffiliateProduct, NewsletterSubscriber } from "../types/database";
 import { MOCK_POSTS, MOCK_CATEGORIES } from "../lib/data/mock-news";
 import { MOCK_AFFILIATE_PRODUCTS } from "../lib/data/affiliates";
+import { generateUnsubscribeToken } from "../lib/utils/security";
 
 // ==============================================================================
 // CONFIGURAÇÕES & PARÂMETROS
@@ -161,9 +162,10 @@ function buildHtmlTemplate(
   deals: AffiliateProduct[],
   subscriberEmail: string
 ): { html: string; text: string } {
-  const unsubscribeUrl = `${siteUrl}/api/newsletter/unsubscribe?email=${encodeURIComponent(
+  const token = generateUnsubscribeToken(subscriberEmail);
+  const unsubscribeUrl = `${siteUrl}/newsletter/unsubscribe?email=${encodeURIComponent(
     subscriberEmail
-  )}`;
+  )}&token=${encodeURIComponent(token)}`;
   const featuredUrl = `${siteUrl}/noticias/${featuredPost.slug}`;
   const currentDate = new Intl.DateTimeFormat("pt-BR", {
     day: "numeric",
@@ -653,6 +655,11 @@ async function runWeeklyNewsletter() {
       const subject = `🎮 Resumo Gamer: ${featuredPost.title}`;
       const { html, text } = buildHtmlTemplate(featuredPost, secondaryPosts, deals, email);
 
+      const token = generateUnsubscribeToken(email);
+      const oneClickUrl = `${siteUrl}/api/newsletter/unsubscribe?email=${encodeURIComponent(
+        email
+      )}&token=${encodeURIComponent(token)}`;
+
       try {
         const { data, error } = await resend.emails.send({
           from: resendFromEmail,
@@ -660,6 +667,10 @@ async function runWeeklyNewsletter() {
           subject: subject,
           html: html,
           text: text,
+          headers: {
+            "List-Unsubscribe": `<${oneClickUrl}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
         });
 
         if (error) {

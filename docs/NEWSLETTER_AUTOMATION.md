@@ -118,6 +118,7 @@ import { NewsletterBox } from "@/components/NewsletterBox";
 ## 4. Endpoints de API
 
 ### Inscrição: `POST /api/newsletter/subscribe`
+- **Rate Limit**: Máximo de 3 inscrições por minuto por IP (mitigação contra bots de spam).
 - **Body**: `{ "email": "gamer@dominio.com" }`
 - **Validações**:
   - Regex RFC 5322 e normalização para minúsculas.
@@ -125,9 +126,11 @@ import { NewsletterBox } from "@/components/NewsletterBox";
   - Se estiver com cadastro cancelado: reativa automaticamente (`is_active = true`).
   - Se for novo: insere registro e retorna confirmação.
 
-### Descadastro: `GET /api/newsletter/unsubscribe?email=...`
-- Conforme as leis de proteção de dados (LGPD e CAN-SPAM), todo e-mail enviado possui no rodapé um link direto e único de descadastro.
-- Ao clicar, o sistema atualiza `is_active = false`, define `unsubscribed_at = now()` e redireciona o usuário para a página amigável [`/newsletter/unsubscribe`](../app/newsletter/unsubscribe/page.tsx), onde é possível desfazer a ação com um clique caso tenha sido acidental.
+### Descadastro Seguro: `GET` & `POST /api/newsletter/unsubscribe`
+- Conforme as leis de proteção de dados (LGPD, CAN-SPAM e RFC 8058):
+  - **`GET /api/newsletter/unsubscribe?email=...&token=...`**: Idempotente (sem mutação no banco). Redireciona o usuário para a interface amigável de confirmação [`/newsletter/unsubscribe`](../app/newsletter/unsubscribe/page.tsx). Scanners automáticos de antivírus não desativam mais o usuário indevidamente.
+  - **`POST /api/newsletter/unsubscribe`**: Endpoint com mutação segura, protegido por **Rate Limiting** (5 req/min) e **CSRF Same-Origin**. Exige o token criptográfico `HMAC-SHA256(email, SECRET)`. Atualiza `is_active = false` e `unsubscribed_at = now()`.
+  - **Suporte RFC 8058 One-Click**: Clientes de e-mail modernos (Gmail, Yahoo) realizam o cancelamento direto via cabeçalhos `List-Unsubscribe` e `List-Unsubscribe-Post`.
 
 ---
 

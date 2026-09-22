@@ -1,4 +1,4 @@
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { createServerClient, createAdminClient, isSupabaseConfigured, isServiceRoleConfigured } from "@/lib/supabase/server";
 import { NewsletterSettings, NewsletterSubscriber } from "@/types/database";
 
 export interface NewsletterAdminKPIs {
@@ -39,7 +39,7 @@ export async function getNewsletterSettingsAdmin(): Promise<NewsletterSettings> 
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { ...DEFAULT_NEWSLETTER_SETTINGS };
 
     const { data, error } = await supabase
@@ -77,7 +77,7 @@ export async function updateNewsletterSettingsAdmin(
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { success: false, error: "Cliente Supabase indisponível." };
 
     const updateData = {
@@ -142,7 +142,7 @@ export async function getNewsletterKPIsAdmin(): Promise<NewsletterAdminKPIs> {
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) {
       return {
         isEnabled: settings.is_enabled,
@@ -269,7 +269,7 @@ export async function getNewsletterSubscribersAdmin(options?: {
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return [];
 
     let query = supabase
@@ -313,7 +313,7 @@ export async function toggleSubscriberActiveAdmin(
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { success: false, error: "Cliente indisponível." };
 
     const payload = is_active
@@ -345,7 +345,7 @@ export async function deleteSubscriberAdmin(
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { success: false, error: "Cliente indisponível." };
 
     const { error } = await supabase

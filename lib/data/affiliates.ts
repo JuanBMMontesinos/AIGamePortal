@@ -1,4 +1,4 @@
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { createServerClient, createAdminClient, isSupabaseConfigured, isServiceRoleConfigured } from "@/lib/supabase/server";
 import { AffiliateProduct, AffiliateClick, Post } from "@/types/database";
 
 export const AMAZON_DEFAULT_TAG =
@@ -252,7 +252,7 @@ export async function recordAffiliateClick(payload: {
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { success: true };
 
     // Se for smart search virtual e não existir no DB, podemos registrar com product_id mock/placeholder se FK permitir
@@ -407,7 +407,7 @@ export async function getAllAffiliateProductsAdmin(): Promise<AffiliateAdminItem
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) {
       return MOCK_AFFILIATE_PRODUCTS.map((p) => ({ ...p, clicks_count: 0 }));
     }
@@ -458,7 +458,7 @@ export async function toggleAffiliateProductActive(
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { success: false, error: "Supabase não conectado." };
 
     const { error } = await (supabase.from("affiliate_products") as any)
@@ -504,7 +504,7 @@ export async function createAffiliateProductAdmin(payload: {
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { success: false, error: "Supabase não conectado." };
 
     const { data, error } = await supabase
@@ -542,7 +542,7 @@ export async function deleteAffiliateProductAdmin(
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { success: false, error: "Supabase não conectado." };
 
     const { error } = await supabase

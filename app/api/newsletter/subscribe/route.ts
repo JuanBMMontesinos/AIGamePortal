@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database";
+import { rateLimit, createRateLimitResponse } from "@/lib/utils/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,20 @@ function getSupabaseClient() {
  * Body: { email: string }
  */
 export async function POST(request: NextRequest) {
+  // Rate Limit: 3 inscrições por IP por minuto (60s)
+  const rl = await rateLimit(request, {
+    limit: 3,
+    windowSeconds: 60,
+    prefix: "newsletter_subscribe",
+  });
+
+  if (!rl.success) {
+    return createRateLimitResponse(
+      rl,
+      "Muitas tentativas de inscrição a partir deste IP. Por favor, aguarde antes de tentar novamente."
+    );
+  }
+
   try {
     const body = await request.json().catch(() => null);
 

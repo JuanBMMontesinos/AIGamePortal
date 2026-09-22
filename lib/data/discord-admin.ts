@@ -8,7 +8,7 @@
  * Garante segurança com padrão desabilitado e consultas paginadas de histórico.
  */
 
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { createServerClient, createAdminClient, isSupabaseConfigured, isServiceRoleConfigured } from "@/lib/supabase/server";
 import { DiscordSettings, FreeGameHistory } from "@/types/database";
 
 export interface DiscordAdminKPIs {
@@ -83,7 +83,7 @@ export async function getDiscordSettingsAdmin(): Promise<DiscordSettings> {
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { ...DEFAULT_DISCORD_SETTINGS };
 
     const { data, error } = await supabase
@@ -121,7 +121,7 @@ export async function updateDiscordSettingsAdmin(
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { success: false, error: "Cliente Supabase indisponível." };
 
     const updateData = {
@@ -171,7 +171,7 @@ export async function getDiscordKPIsAdmin(): Promise<DiscordAdminKPIs> {
 
   if (isSupabaseConfigured) {
     try {
-      const supabase = createServerClient();
+      const supabase = createAdminClient() || createServerClient();
       if (supabase) {
         const { count, error } = await supabase
           .from("free_games_history")
@@ -227,7 +227,7 @@ export async function getDiscordDealsHistoryAdmin(options?: {
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { items: [], total: 0, page: 1, totalPages: 1 };
 
     let query = supabase

@@ -67,7 +67,7 @@ export async function getSocialSettingsAdmin(): Promise<SocialSettings> {
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient() || createServerClient();
     if (!supabase) return { ...DEFAULT_SOCIAL_SETTINGS };
 
     const { data, error } = await supabase

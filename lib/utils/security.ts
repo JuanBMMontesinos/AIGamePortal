@@ -31,3 +31,45 @@ export function safeConstantTimeCompare(a: unknown, b: unknown): boolean {
 
   return crypto.timingSafeEqual(hashA, hashB);
 }
+
+function getUnsubscribeSecret(): string {
+  return (
+    process.env.NEWSLETTER_UNSUBSCRIBE_SECRET ||
+    process.env.ADMIN_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "aigameportal_newsletter_unsubscribe_secret_default"
+  );
+}
+
+/**
+ * Gera um token criptográfico HMAC-SHA256 para links de cancelamento de inscrição (Unsubscribe).
+ *
+ * Garante que apenas quem recebeu o link gerado pelo servidor consiga solicitar o cancelamento
+ * de determinado e-mail, neutralizando enumeração forjada por terceiros ou robôs.
+ *
+ * @param email Endereço de e-mail do assinante
+ * @returns Token hexadecimal de 64 caracteres
+ */
+export function generateUnsubscribeToken(email: string): string {
+  if (!email || typeof email !== "string") return "";
+  const normalized = email.trim().toLowerCase();
+  const secret = getUnsubscribeSecret();
+  return crypto.createHmac("sha256", secret).update(normalized).digest("hex");
+}
+
+/**
+ * Valida o token de descadastro contra o e-mail informado.
+ * Utiliza safeConstantTimeCompare para mitigar ataques de temporização.
+ *
+ * @param email Endereço de e-mail a validar
+ * @param token Token fornecido na requisição
+ * @returns true se a assinatura do token for válida
+ */
+export function verifyUnsubscribeToken(email: string, token: string): boolean {
+  if (!email || !token || typeof email !== "string" || typeof token !== "string") {
+    return false;
+  }
+  const expectedToken = generateUnsubscribeToken(email);
+  if (!expectedToken) return false;
+  return safeConstantTimeCompare(token.trim(), expectedToken);
+}

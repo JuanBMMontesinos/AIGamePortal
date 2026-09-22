@@ -8,6 +8,7 @@ import {
 } from "@/lib/data/social-admin";
 import { TwitterApi } from "twitter-api-v2";
 import { safeConstantTimeCompare } from "@/lib/utils/security";
+import { rateLimit, createRateLimitResponse } from "@/lib/utils/rate-limit";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "aigameportal_admin_2026";
 const COOKIE_NAME = "admin_session";
@@ -104,6 +105,20 @@ export async function PATCH(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!(await isAuthorized(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
+  }
+
+  // Rate limit: Máximo de 3 disparos de teste por minuto por IP
+  const rl = await rateLimit(request, {
+    limit: 3,
+    windowSeconds: 60,
+    prefix: "admin_social_test",
+  });
+
+  if (!rl.success) {
+    return createRateLimitResponse(
+      rl,
+      "Limite de disparos de teste de redes sociais excedido (máximo 3 por minuto). Por favor, aguarde."
+    );
   }
 
   try {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { safeConstantTimeCompare } from "@/lib/utils/security";
+import { rateLimit, createRateLimitResponse } from "@/lib/utils/rate-limit";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "aigameportal_admin_2026";
 const COOKIE_NAME = "admin_session";
@@ -10,6 +11,20 @@ const SESSION_TOKEN = "aigameportal_admin_authenticated_v1";
  * Endpoint de Autenticação do Administrador
  */
 export async function POST(request: NextRequest) {
+  // Mitigação contra força bruta: 5 tentativas por IP a cada 15 minutos (900s)
+  const rl = await rateLimit(request, {
+    limit: 5,
+    windowSeconds: 15 * 60,
+    prefix: "admin_auth",
+  });
+
+  if (!rl.success) {
+    return createRateLimitResponse(
+      rl,
+      "Muitas tentativas de autenticação detectadas. Acesso bloqueado por segurança. Tente novamente mais tarde."
+    );
+  }
+
   try {
     const body = await request.json();
     const { secretKey } = body;

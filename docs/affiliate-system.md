@@ -234,6 +234,17 @@ Disallow: /admin/
 Disallow: /api/admin/
 ```
 
+### 9.3 Privilégios de Acesso e Supabase RLS
+- **Leitura Pública vs Administrativa**:
+  - Usuários anônimos e leitores só têm permissão RLS para consultar produtos com `is_active = true`.
+  - A tabela analítica `affiliate_clicks` possui permissão de leitura restrita exclusivamente para `service_role`.
+- **Camada de Dados Administrativa**:
+  - As operações de gestão em [`lib/data/affiliates.ts`](../lib/data/affiliates.ts) (`getAllAffiliateProductsAdmin`, `toggleAffiliateProductActive`, `createAffiliateProductAdmin`, `deleteAffiliateProductAdmin`) utilizam a padronização:
+    ```typescript
+    const supabase = createAdminClient() || createServerClient();
+    ```
+  - Isso garante a passagem da chave `SUPABASE_SERVICE_ROLE_KEY` para contornar o bloqueio de RLS e calcular métricas de cliques por produto, com fallback resiliente para o catálogo mock caso a chave não esteja presente em ambiente local.
+
 ---
 
 ## 10. Rota de Redirecionamento de Busca (`GET /api/out/search`)

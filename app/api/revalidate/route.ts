@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { safeConstantTimeCompare } from "@/lib/utils/security";
+import { rateLimit, createRateLimitResponse } from "@/lib/utils/rate-limit";
 
 /**
  * Endpoint de Revalidação Incremental sob Demanda (ISR)
@@ -18,6 +19,20 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleRevalidation(request: NextRequest) {
+  // Rate Limit: 10 revalidações por IP por minuto (60s)
+  const rl = await rateLimit(request, {
+    limit: 10,
+    windowSeconds: 60,
+    prefix: "revalidate",
+  });
+
+  if (!rl.success) {
+    return createRateLimitResponse(
+      rl,
+      "Muitas requisições de revalidação de cache. Por favor, aguarde antes de tentar novamente."
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const secret = searchParams.get("secret");
   const slug = searchParams.get("slug");
