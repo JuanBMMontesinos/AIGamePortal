@@ -74,11 +74,11 @@ npm run start
 
 ## 🏛️ Estrutura de Rotas e Páginas
 
-- `/` (`app/page.tsx`): **Homepage** com seção Hero em destaque, Grid de Últimas Notícias com badges de categoria e TL;DR rápido, além de Sidebar com ranking de Mais Lidas e radar de sentimento da comunidade.
+- `/` (`app/page.tsx`): **Homepage** com seção Hero em destaque (página 1), Grid de Últimas Notícias com paginação clássica (`?page=X`), badges de categoria e TL;DR rápido, além de Sidebar com ranking de Mais Lidas e radar de sentimento da comunidade.
 - `/jogos` (`app/jogos/page.tsx`): **Diretório de Hubs de Jogos**, vitrine com filtros, notas Metacritic e total de matérias publicadas por franquia.
 - `/jogos/[slug]` (`app/jogos/[slug]/page.tsx`): **Central do Jogo Permanente (SEO Long-Tail)** com Hero widescreen, Ficha Técnica oficial, Linha do Tempo de matérias, box de Afiliados Onde Comprar e Schema.org `VideoGame`.
 - `/noticias/[slug]` (`app/noticias/[slug]/page.tsx`): **Página da Matéria** com cabeçalho editorial, Box TL;DR (30s), Ficha Técnica do jogo com nota Metacritic colorida, conteúdo em prosa rica, box de sentimento Reddit/X, Atribuição E-E-A-T com link canônico e metatags JSON-LD `NewsArticle`.
-- `/categoria/[slug]` (`app/categoria/[slug]/page.tsx`): **Feed por Categoria** (PlayStation, Xbox, Nintendo, PC Gaming, Hardware, Indústria, Geral).
+- `/categoria/[slug]` (`app/categoria/[slug]/page.tsx`): **Feed por Categoria** (PlayStation, Xbox, Nintendo, PC Gaming, Hardware, Indústria, Geral) com grid responsivo e paginação clássica (`?page=X`).
 - `/transparencia-editorial` (`app/transparencia-editorial/page.tsx`): **Transparência e Governança de IA**, detalhando o pipeline, política anti-alucinação, deduplicação vetorial e contato de retificação.
 - `/admin/metricas` (`app/admin/metricas/page.tsx`): **Painel de Métricas B2B & Patrocínio**, visualização de KPIs comerciais (Página 5 do plano), CAC de IA, distribuição por plataforma e gerador de Pitch Deck para marcas.
 - `/admin/afiliados` (`app/admin/afiliados/page.tsx`): **Painel de Afiliados**, gestão de produtos parceiros e métricas de cliques.

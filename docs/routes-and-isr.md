@@ -8,9 +8,9 @@ Este documento detalha o sistema de roteamento baseado no **Next.js App Router**
 
 | Rota HTTP | Arquivo no Projeto | Tipo de Renderização | Cache / Revalidação | Descrição |
 | :--- | :--- | :---: | :---: | :--- |
-| `GET /` | [app/page.tsx](file:///d:/IAProjects/AIGamePortal/app/page.tsx) | Estático (SSG + ISR) | `120s` ou via webhook | Homepage com Hero em destaque, Grid de Notícias e Sidebar lateral. |
+| `GET /` | [app/page.tsx](file:///d:/IAProjects/AIGamePortal/app/page.tsx) | Estático (SSG + ISR) | `120s` ou via webhook | Homepage com Hero em destaque (Pág. 1), Grid de Notícias e Paginação clássica (`?page=X`). |
 | `GET /noticias/[slug]` | [app/noticias/[slug]/page.tsx](file:///d:/IAProjects/AIGamePortal/app/noticias/[slug]/page.tsx) | Estático (SSG + ISR) | `1800s` (30m Edge Cache) | Matéria completa com TL;DR, Ficha Técnica, Sentimento, E-E-A-T e JSON-LD. |
-| `GET /categoria/[slug]` | [app/categoria/[slug]/page.tsx](file:///d:/IAProjects/AIGamePortal/app/categoria/[slug]/page.tsx) | Estático (SSG + ISR) | `1800s` (30m Edge Cache) | Feed de notícias filtrado pela plataforma/categoria. |
+| `GET /categoria/[slug]` | [app/categoria/[slug]/page.tsx](file:///d:/IAProjects/AIGamePortal/app/categoria/[slug]/page.tsx) | Estático (SSG + ISR) | `1800s` (30m Edge Cache) | Feed filtrado por plataforma com grid de 12 matérias e Paginação clássica (`?page=X`). |
 | `GET /jogos` | [app/jogos/page.tsx](file:///d:/IAProjects/AIGamePortal/app/jogos/page.tsx) | Estático (SSG + ISR) | `3600s` (1h) ou webhook | Diretório geral de Centrais de Jogos Permanentes (SEO Long-Tail). |
 | `GET /jogos/[slug]` | [app/jogos/[slug]/page.tsx](file:///d:/IAProjects/AIGamePortal/app/jogos/[slug]/page.tsx) | Estático (SSG + ISR) | `1800s` (30m Edge Cache) | Central do jogo com Hero, Ficha Técnica, Linha do Tempo, Onde Comprar e Schema VideoGame. |
 | `GET /api/metrics/summary` | [app/api/metrics/summary/route.ts](file:///d:/IAProjects/AIGamePortal/app/api/metrics/summary/route.ts) | Route Handler Privado | Privado (`no-store`) | Endpoint restrito a administradores (HMAC / x-admin-key) com telemetria completa. |
@@ -154,3 +154,28 @@ No workflow do n8n, após o nó **Supabase: Insert Post**, adicione um nó do ti
         └── Retry on Fail: 3 vezes
 ```
 Isso garante que, no mesmo segundo em que a inteligência artificial finaliza a gravação da notícia no PostgreSQL, a página pública é regenerada e colocada no ar para todos os usuários.
+ 
+---
+
+## 5. Paginação Clássica de Matérias via URL (`?page=X`)
+
+Para permitir a exploração completa do acervo histórico de notícias sem onerar a velocidade de carregamento inicial, tanto a **Homepage** quanto as **Páginas de Categoria** contam com paginação clássica orientada por URL query string:
+
+### 5.1 Especificação Técnica por Rota
+
+| Rota | Query Param | Itens por Página | Comportamento na Página 1 | Comportamento na Página > 1 |
+| :--- | :---: | :---: | :--- | :--- |
+| `GET /` | `?page=X` | 10 | Exibe `HeroFeatured` (post 1) + 9 notícias no grid. | Oculta `HeroFeatured` para leitura direta do feed; exibe 10 notícias no grid. |
+| `GET /categoria/[slug]` | `?page=X` | 12 | Grid de 12 notícias (múltiplo exato das 3 colunas desktop). | Grid de 12 notícias com subtítulo de status e paginação inferior. |
+
+### 5.2 Diretrizes de SEO & Acessibilidade
+
+1. **URLs Canônicas Limpas**:
+   - A primeira página é sempre acessível na raiz (`/` ou `/categoria/slug`), sem a query string `?page=1`.
+   - Páginas secundárias apontam a URL canônica para si mesmas (`canonical: ...?page=X`), preservando a integridade de indexação pelo Googlebot.
+2. **Títulos Dinâmicos**:
+   - Páginas `page > 1` recebem dinamicamente o sufixo `• Página X` na tag `<title>`, prevenindo alertas de metadados duplicados em ferramentas de auditoria técnica (Search Console / Ahrefs).
+3. **Design Discreto (`<Pagination />`)**:
+   - Se `totalPages <= 1`, o componente é auto-ocultado para máxima discrição.
+   - Utiliza controles com contraste e estados desabilitados com `aria-disabled="true"`.
+

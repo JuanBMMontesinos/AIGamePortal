@@ -41,8 +41,38 @@ Busca uma categoria específica pelo seu identificador amigável (slug).
 
 ---
 
+### `getPaginatedLatestPosts(page, limit)`
+Obtém as notícias mais recentes de forma paginada, retornando a lista de matérias, contagem total de registros e número de páginas disponíveis.
+
+- **Assinatura**:
+  ```typescript
+  export async function getPaginatedLatestPosts(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedPosts>
+  ```
+- **Parâmetros**:
+  - `page` (`number`, opcional, padrão: `1`): Número da página solicitada (índice 1-based com sanitização).
+  - `limit` (`number`, opcional, padrão: `10`): Quantidade máxima de registros retornados por página.
+- **Retorno (`PaginatedPosts`)**:
+  - `posts` (`Post[]`): Array de matérias ordenadas por `published_at DESC`.
+  - `total` (`number`): Quantidade total de matérias publicadas no portal.
+  - `totalPages` (`number`): Total de páginas calculadas (`Math.ceil(total / limit)`).
+  - `currentPage` (`number`): Página atual resolvida de forma segura.
+  - `limit` (`number`): Limite de itens por página.
+- **Query Supabase**:
+  ```sql
+  SELECT *, categories (*), sources (*), game_hubs (*)
+  FROM posts
+  WHERE status = 'published'
+  ORDER BY published_at DESC
+  OFFSET :offset LIMIT :limit;
+  ```
+
+---
+
 ### `getLatestPosts(limit)`
-Obtém as notícias mais recentes publicadas no portal, incluindo os relacionamentos com `categories` e `sources`.
+Obtém as notícias mais recentes publicadas no portal (página 1), mantendo retrocompatibilidade transparente com o código existente ao chamar internamente `getPaginatedLatestPosts(1, limit)`.
 
 - **Assinatura**:
   ```typescript
@@ -52,14 +82,6 @@ Obtém as notícias mais recentes publicadas no portal, incluindo os relacioname
   - `limit` (`number`, opcional, padrão: `12`): Quantidade máxima de registros retornados.
 - **Retorno**:
   - `Promise<Post[]>`: Array de posts ordenados por `published_at DESC`.
-- **Query Supabase**:
-  ```sql
-  SELECT *, categories (*), sources (*)
-  FROM posts
-  WHERE status = 'published'
-  ORDER BY published_at DESC
-  LIMIT :limit;
-  ```
 
 ---
 
@@ -92,23 +114,28 @@ Busca uma notícia completa pelo slug, incluindo o conteúdo em Markdown rico, T
 
 ---
 
-### `getPostsByCategory(categorySlug, limit)`
-Filtra as matérias publicadas de uma determinada categoria/plataforma.
+### `getPostsByCategory(categorySlug, limit, page)`
+Filtra as matérias publicadas de uma determinada categoria/plataforma com paginação clássica e contagem total exata.
 
 - **Assinatura**:
   ```typescript
   export async function getPostsByCategory(
     categorySlug: string,
-    limit: number = 20
-  ): Promise<{ category: Category | null; posts: Post[] }>
+    limit: number = 12,
+    page: number = 1
+  ): Promise<PaginatedCategoryPosts>
   ```
 - **Parâmetros**:
   - `categorySlug` (`string`): Slug da categoria a filtrar.
-  - `limit` (`number`, opcional, padrão: `20`): Limite de matérias retornadas.
-- **Retorno**:
-  - Objeto contendo:
-    - `category`: Metadados da categoria correspondente.
-    - `posts`: Array de posts pertencentes a essa categoria.
+  - `limit` (`number`, opcional, padrão: `12`): Limite de matérias retornadas por página.
+  - `page` (`number`, opcional, padrão: `1`): Número da página solicitada.
+- **Retorno (`PaginatedCategoryPosts`)**:
+  - `category` (`Category | null`): Metadados da categoria correspondente.
+  - `posts` (`Post[]`): Array de posts pertencentes a essa categoria na página.
+  - `total` (`number`): Total absoluto de matérias na categoria.
+  - `totalPages` (`number`): Total de páginas disponíveis.
+  - `currentPage` (`number`): Página atual resolvida.
+  - `limit` (`number`): Limite por página.
 
 ---
 

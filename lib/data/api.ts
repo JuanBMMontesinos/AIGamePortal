@@ -31,35 +31,111 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
   return categories.find((c) => c.slug === slug) || null;
 }
 
-export async function getLatestPosts(limit: number = 12): Promise<Post[]> {
+export interface PaginatedPosts {
+  posts: Post[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
+}
+
+export interface PaginatedCategoryPosts {
+  category: Category | null;
+  posts: Post[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
+}
+
+export async function getPaginatedLatestPosts(
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginatedPosts> {
+  const safePage = Math.max(1, Math.floor(page) || 1);
+  const safeLimit = Math.max(1, Math.min(100, Math.floor(limit) || 10));
+  const offset = (safePage - 1) * safeLimit;
+
   if (!isSupabaseConfigured) {
-    return MOCK_POSTS.slice(0, limit);
+    const total = MOCK_POSTS.length;
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+    const posts = MOCK_POSTS.slice(offset, offset + safeLimit);
+    return {
+      posts,
+      total,
+      totalPages,
+      currentPage: safePage,
+      limit: safeLimit,
+    };
   }
 
   try {
     const supabase = createServerClient();
-    if (!supabase) return MOCK_POSTS.slice(0, limit);
+    if (!supabase) {
+      const total = MOCK_POSTS.length;
+      const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+      return {
+        posts: MOCK_POSTS.slice(offset, offset + safeLimit),
+        total,
+        totalPages,
+        currentPage: safePage,
+        limit: safeLimit,
+      };
+    }
 
-    const { data, error } = await supabase
+    const { data, count, error } = await supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         *,
         categories (*),
         sources (*),
         game_hubs (*)
-      `)
+      `,
+        { count: "exact" }
+      )
       .eq("status", "published")
       .order("published_at", { ascending: false })
-      .limit(limit);
+      .range(offset, offset + safeLimit - 1);
 
-    if (error || !data || data.length === 0) {
-      return MOCK_POSTS.slice(0, limit);
+    if (error || !data) {
+      const total = MOCK_POSTS.length;
+      const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+      return {
+        posts: MOCK_POSTS.slice(offset, offset + safeLimit),
+        total,
+        totalPages,
+        currentPage: safePage,
+        limit: safeLimit,
+      };
     }
 
-    return data as Post[];
+    const total = count ?? data.length;
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+
+    return {
+      posts: data as Post[],
+      total,
+      totalPages,
+      currentPage: safePage,
+      limit: safeLimit,
+    };
   } catch {
-    return MOCK_POSTS.slice(0, limit);
+    const total = MOCK_POSTS.length;
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+    return {
+      posts: MOCK_POSTS.slice(offset, offset + safeLimit),
+      total,
+      totalPages,
+      currentPage: safePage,
+      limit: safeLimit,
+    };
   }
+}
+
+export async function getLatestPosts(limit: number = 12): Promise<Post[]> {
+  const result = await getPaginatedLatestPosts(1, limit);
+  return result.posts;
 }
 
 export async function getTrendingPosts(limit: number = 5): Promise<Post[]> {
@@ -140,15 +216,28 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
 
 export async function getPostsByCategory(
   categorySlug: string,
-  limit: number = 20
-): Promise<{ category: Category | null; posts: Post[] }> {
+  limit: number = 12,
+  page: number = 1
+): Promise<PaginatedCategoryPosts> {
+  const safePage = Math.max(1, Math.floor(page) || 1);
+  const safeLimit = Math.max(1, Math.min(100, Math.floor(limit) || 12));
+  const offset = (safePage - 1) * safeLimit;
   const category = await getCategoryBySlug(categorySlug);
 
   if (!isSupabaseConfigured || !category) {
     const filtered = MOCK_POSTS.filter(
       (p) => p.categories?.slug === categorySlug || p.category_id === category?.id
     );
-    return { category, posts: filtered.slice(0, limit) };
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+    return {
+      category,
+      posts: filtered.slice(offset, offset + safeLimit),
+      total,
+      totalPages,
+      currentPage: safePage,
+      limit: safeLimit,
+    };
   }
 
   try {
@@ -157,35 +246,75 @@ export async function getPostsByCategory(
       const filtered = MOCK_POSTS.filter(
         (p) => p.categories?.slug === categorySlug || p.category_id === category.id
       );
-      return { category, posts: filtered.slice(0, limit) };
+      const total = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+      return {
+        category,
+        posts: filtered.slice(offset, offset + safeLimit),
+        total,
+        totalPages,
+        currentPage: safePage,
+        limit: safeLimit,
+      };
     }
 
-    const { data, error } = await supabase
+    const { data, count, error } = await supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         *,
         categories (*),
         sources (*),
         game_hubs (*)
-      `)
+      `,
+        { count: "exact" }
+      )
       .eq("category_id", category.id)
       .eq("status", "published")
       .order("published_at", { ascending: false })
-      .limit(limit);
+      .range(offset, offset + safeLimit - 1);
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       const filtered = MOCK_POSTS.filter(
         (p) => p.categories?.slug === categorySlug || p.category_id === category.id
       );
-      return { category, posts: filtered.slice(0, limit) };
+      const total = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+      return {
+        category,
+        posts: filtered.slice(offset, offset + safeLimit),
+        total,
+        totalPages,
+        currentPage: safePage,
+        limit: safeLimit,
+      };
     }
 
-    return { category, posts: data as Post[] };
+    const total = count ?? data.length;
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+
+    return {
+      category,
+      posts: data as Post[],
+      total,
+      totalPages,
+      currentPage: safePage,
+      limit: safeLimit,
+    };
   } catch {
     const filtered = MOCK_POSTS.filter(
       (p) => p.categories?.slug === categorySlug || p.category_id === category?.id
     );
-    return { category, posts: filtered.slice(0, limit) };
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+    return {
+      category,
+      posts: filtered.slice(offset, offset + safeLimit),
+      total,
+      totalPages,
+      currentPage: safePage,
+      limit: safeLimit,
+    };
   }
 }
 

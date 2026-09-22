@@ -95,6 +95,28 @@ Este documento detalha todos os componentes visuais desenvolvidos para o **AIGam
 
 ---
 
+### `<Pagination currentPage={currentPage} totalPages={totalPages} baseUrl={baseUrl} />`
+- **Arquivo**: [components/pagination.tsx](file:///d:/IAProjects/AIGamePortal/components/pagination.tsx)
+- **Tipo**: Server / Client Component compatível
+- **Props**:
+  ```typescript
+  interface PaginationProps {
+    currentPage: number;
+    totalPages: number;
+    baseUrl: string;
+    searchParamKey?: string; // Padrão: "page"
+    className?: string;
+  }
+  ```
+- **Funcionalidades**:
+  - **Design Minimalista e Discreto**: Concebido para não competir visualmente com o conteúdo editorial. Bordas finas neutras (`border-zinc-200 dark:border-gamer-800`), tipografia compacta (`text-xs`), transições sutis e highlight leve na página ativa (`bg-brand-purple/15 text-brand-purple border-brand-purple/35`).
+  - **Auto-Ocultamento Inteligente**: Retorna `null` imediatamente caso `totalPages <= 1`, garantindo poluição visual zero quando todo o acervo couber em uma única página.
+  - **Algoritmo de Janela Compacta**: Gera janelas dinâmicas para catálogos extensos (ex: `1 … 4 5 6 … 20`), limitando o número de botões visíveis tanto no mobile quanto no desktop.
+  - **Preservação de Querystrings & Canonical**: A primeira página gera links sem o parâmetro `?page=1` para unificação canônica. Quando a `baseUrl` contém outros filtros, novos parâmetros de página são anexados ou atualizados sem perda de contexto.
+  - **Acessibilidade Completa**: Marcado com `<nav aria-label="Navegação entre páginas de matérias">`, botões com `aria-label`, página ativa com `aria-current="page"` e botões inativos com `aria-disabled="true"`.
+
+---
+
 ## 3. Componentes da Página do Artigo
 
 ### `<RumorBanner warning={warning} reliabilityScore={reliabilityScore} />`

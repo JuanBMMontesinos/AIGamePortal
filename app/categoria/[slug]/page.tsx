@@ -8,12 +8,16 @@ import {
   getCategoryBySlug,
 } from "@/lib/data/api";
 import { NewsCard } from "@/components/news-card";
+import { Pagination } from "@/components/pagination";
 
 export const revalidate = 1800; // 30 minutos (1800s) para Edge Caching Cloudflare/Vercel
 
 interface CategoryPageProps {
   params: Promise<{
     slug: string;
+  }>;
+  searchParams?: Promise<{
+    page?: string;
   }>;
 }
 
@@ -26,6 +30,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params;
   const category = await getCategoryBySlug(slug);
@@ -36,15 +41,37 @@ export async function generateMetadata({
     };
   }
 
+  const resolvedSearchParams = await searchParams;
+  const pageParam = parseInt(resolvedSearchParams?.page || "1", 10);
+  const currentPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com").replace(/\/+$/, "");
+
+  if (currentPage > 1) {
+    return {
+      title: `${category.name} • Notícias e Lançamentos (Página ${currentPage}) | Made By AI Games`,
+      description: `Acompanhe as notícias de ${category.name} na página ${currentPage} com curadoria e resumos em tempo real no Made By AI Games.`,
+      alternates: {
+        canonical: `${siteUrl}/categoria/${category.slug}?page=${currentPage}`,
+      },
+    };
+  }
+
   return {
-    title: `${category.name} • Notícias e Lançamentos`,
+    title: `${category.name} • Notícias e Lançamentos | Made By AI Games`,
     description: `Acompanhe as últimas notícias, análises e novidades de ${category.name} com curadoria e resumos em tempo real no Made By AI Games.`,
+    alternates: {
+      canonical: `${siteUrl}/categoria/${category.slug}`,
+    },
   };
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slug } = await params;
-  const { category, posts } = await getPostsByCategory(slug);
+  const resolvedSearchParams = await searchParams;
+  const pageParam = parseInt(resolvedSearchParams?.page || "1", 10);
+  const currentPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+
+  const { category, posts, total, totalPages } = await getPostsByCategory(slug, 12, currentPage);
 
   if (!category) {
     notFound();
@@ -90,16 +117,30 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-gamer-800">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
             <Newspaper className="w-4 h-4 text-brand-purple" />
-            Matérias em {category.name} ({posts.length})
+            <span>Matérias em {category.name} ({total})</span>
+            {currentPage > 1 && (
+              <span className="text-xs font-normal px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-gamer-800 text-zinc-500 dark:text-zinc-400">
+                Página {currentPage} de {totalPages}
+              </span>
+            )}
           </h2>
         </div>
 
         {posts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((post, idx) => (
-              <NewsCard key={post.id} post={post} priority={idx < 3} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {posts.map((post, idx) => (
+                <NewsCard key={post.id} post={post} priority={currentPage === 1 && idx < 3} />
+              ))}
+            </div>
+
+            {/* Paginação Discreta */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              baseUrl={`/categoria/${category.slug}`}
+            />
+          </>
         ) : (
           <div className="p-16 text-center rounded-2xl border border-zinc-200 dark:border-gamer-800 bg-white dark:bg-gamer-900 space-y-3">
             <div className="flex justify-center">

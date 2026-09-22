@@ -1,32 +1,66 @@
 import { Metadata } from "next";
-import { getLatestPosts, getTrendingPosts, getCategories } from "@/lib/data/api";
+import { getPaginatedLatestPosts, getTrendingPosts, getCategories } from "@/lib/data/api";
 import { HeroFeatured } from "@/components/hero-featured";
 import { NewsCard } from "@/components/news-card";
 import { Sidebar } from "@/components/sidebar";
 import { NewsletterBox } from "@/components/NewsletterBox";
-import { Sparkles, Newspaper, Zap } from "lucide-react";
+import { Pagination } from "@/components/pagination";
+import { Newspaper, Zap } from "lucide-react";
 
 export const revalidate = 120; // ISR fallback a cada 2 minutos (também revalidável sob demanda via /api/revalidate)
 
-export const metadata: Metadata = {
-  title: "Made By AI Games • Notícias Gamer com IA em Tempo Real",
-  description:
-    "Descubra as últimas notícias, análises de sentimento e resumos em 30 segundos dos maiores lançamentos do mundo dos games.",
-};
+interface HomePageProps {
+  searchParams?: Promise<{
+    page?: string;
+  }>;
+}
 
-export default async function HomePage() {
-  const [posts, trendingPosts, categories] = await Promise.all([
-    getLatestPosts(10),
+export async function generateMetadata({
+  searchParams,
+}: HomePageProps): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const pageParam = parseInt(resolvedSearchParams?.page || "1", 10);
+  const currentPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://aigameportal.com").replace(/\/+$/, "");
+
+  if (currentPage > 1) {
+    return {
+      title: `Notícias Gamer com IA em Tempo Real • Página ${currentPage} | Made By AI Games`,
+      description: `Explore a página ${currentPage} das últimas notícias do mundo dos games com curadoria de IA e resumos instantâneos no Made By AI Games.`,
+      alternates: {
+        canonical: `${siteUrl}?page=${currentPage}`,
+      },
+    };
+  }
+
+  return {
+    title: "Made By AI Games • Notícias Gamer com IA em Tempo Real",
+    description:
+      "Descubra as últimas notícias, análises de sentimento e resumos em 30 segundos dos maiores lançamentos do mundo dos games.",
+    alternates: {
+      canonical: siteUrl,
+    },
+  };
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const resolvedSearchParams = await searchParams;
+  const pageParam = parseInt(resolvedSearchParams?.page || "1", 10);
+  const currentPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+
+  const [{ posts, totalPages }, trendingPosts, categories] = await Promise.all([
+    getPaginatedLatestPosts(currentPage, 10),
     getTrendingPosts(5),
     getCategories(),
   ]);
 
-  const heroPost = posts.length > 0 ? posts[0] : null;
-  const gridPosts = posts.length > 1 ? posts.slice(1) : [];
+  const isFirstPage = currentPage === 1;
+  const heroPost = isFirstPage && posts.length > 0 ? posts[0] : null;
+  const gridPosts = isFirstPage && posts.length > 1 ? posts.slice(1) : posts;
 
   return (
     <div className="space-y-12">
-      {/* 1. Hero Section */}
+      {/* 1. Hero Section (Apenas na Página 1 para não sobrecarregar navegações secundárias) */}
       {heroPost && <HeroFeatured post={heroPost} />}
 
       {/* 2. Main Content Grid & Sidebar */}
@@ -39,11 +73,18 @@ export default async function HomePage() {
                 <Newspaper className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-                  Últimas Notícias
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <span>Últimas Notícias</span>
+                  {!isFirstPage && (
+                    <span className="text-xs font-normal px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-gamer-800 text-zinc-500 dark:text-zinc-400">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                  )}
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Atualizado em tempo real pelo pipeline autônomo
+                  {isFirstPage
+                    ? "Atualizado em tempo real pelo pipeline autônomo"
+                    : `Mostrando registros do acervo histórico do portal`}
                 </p>
               </div>
             </div>
@@ -57,7 +98,7 @@ export default async function HomePage() {
           {gridPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {gridPosts.map((post, idx) => (
-                <NewsCard key={post.id} post={post} priority={idx < 2} />
+                <NewsCard key={post.id} post={post} priority={isFirstPage && idx < 2} />
               ))}
             </div>
           ) : (
@@ -68,6 +109,13 @@ export default async function HomePage() {
               </p>
             </div>
           )}
+
+          {/* Paginação Discreta */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            baseUrl="/"
+          />
         </section>
 
         {/* Right Column: Sidebar (4 cols) */}
