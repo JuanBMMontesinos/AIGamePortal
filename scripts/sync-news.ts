@@ -21,12 +21,13 @@ import { extract } from "@extractus/article-extractor";
 import * as cheerio from "cheerio";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { Category, GameMetadata, Post, Source } from "../types/database";
+import { Category, FailureReasonCode, GameMetadata, Post, Source } from "../types/database";
 import { publishToSocialNetworks } from "../lib/services/social-publisher";
 import { matchOrSuggestGameHub } from "../lib/services/hub-matcher";
 import { sendDiscordNewsAlert } from "../lib/services/discord-notifier";
 import { enrichGameMetadata } from "../lib/services/game-enricher";
 import { isValidImageUrl, isAllowedImageHost } from "../lib/utils";
+import { logAITask, logAISuccess, logAIFailure } from "../lib/services/logger";
 
 // ============================================================================
 // CONFIGURAÇÕES & FONTES OFICIAIS
@@ -505,8 +506,13 @@ const GENERATION_MODELS = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-1.
 /**
  * Gera vetor denso de 768 dimensões com suporte resiliente a múltiplos modelos
  */
-async function generateEmbedding(ai: GoogleGenAI, text: string): Promise<number[] | null> {
+async function generateEmbedding(
+  ai: GoogleGenAI,
+  text: string,
+  context?: { title?: string; url?: string }
+): Promise<number[] | null> {
   const cleanSnippet = text.slice(0, 2048);
+  const modelErrors: Record<string, string> = {};
 
   for (const model of EMBEDDING_MODELS) {
     try {
@@ -521,11 +527,30 @@ async function generateEmbedding(ai: GoogleGenAI, text: string): Promise<number[
         return values;
       }
     } catch (error: any) {
-      // Tenta próximo modelo na lista se este não estiver disponível
+      modelErrors[model] = error?.message || String(error);
     }
   }
 
   console.warn("  ⚠️ [Embedding] Não foi possível gerar vetor 768d com nenhum dos modelos disponíveis.");
+  try {
+    await logAITask({
+      service: "ai_embedding",
+      action: "embedding_generation",
+      level: "error",
+      status: "failed",
+      task_completed: false,
+      failure_reason_code: "EMBEDDING_ALL_MODELS_FAILED",
+      message: `Todos os modelos de embedding falharam ao gerar vetor para "${context?.title || cleanSnippet.slice(0, 60)}"`,
+      metadata: {
+        models_attempted: EMBEDDING_MODELS,
+        model_errors: modelErrors,
+        text_snippet: cleanSnippet.slice(0, 100),
+        ...(context || {}),
+      },
+      is_retryable: true,
+    });
+  } catch {}
+
   return null;
 }
 
@@ -543,6 +568,8 @@ Título Original do Feed: ${scraped.title}
 
 Conteúdo Extraído da Matéria:
 ${scraped.cleanText}`;
+
+  const modelAttemptsSummary: Array<{ model: string; reason: string; error?: string }> = [];
 
   for (const model of GENERATION_MODELS) {
     try {
@@ -623,27 +650,154 @@ ${scraped.cleanText}`;
         ],
       });
 
-      const responseText = response.text;
-      if (!responseText) {
+      // 1. Verificação de Safety Filter em candidate
+      const candidate = response.candidates?.[0];
+      if (candidate?.finishReason && candidate.finishReason === "SAFETY") {
+        console.warn(`    ⚠️ [Gemini ${model}] Bloqueado por filtro de segurança (SAFETY).`);
+        modelAttemptsSummary.push({ model, reason: "SAFETY_BLOCK" });
+        try {
+          await logAITask({
+            service: "ai_writer",
+            action: "article_rewrite",
+            level: "warn",
+            status: "failed",
+            task_completed: false,
+            failure_reason_code: "GEMINI_SAFETY_BLOCK",
+            message: `Modelo ${model} bloqueou o artigo "${scraped.title}" por filtro de segurança`,
+            metadata: {
+              model,
+              title: scraped.title,
+              canonical_url: scraped.canonicalUrl,
+              finish_reason: candidate.finishReason,
+            },
+          });
+        } catch {}
         continue;
       }
 
-      // Remove eventuais blocos de código se presentes
-      const sanitizedJson = responseText.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
-      const parsed: AIArticleOutput = JSON.parse(sanitizedJson);
+      const responseText = response.text;
+      if (!responseText) {
+        modelAttemptsSummary.push({ model, reason: "EMPTY_RESPONSE" });
+        continue;
+      }
 
-      // Validação de integridade dos campos obrigatórios
-      if (!parsed.title || !parsed.content || !Array.isArray(parsed.tldr)) {
+      // 2. Parse e validação do JSON retornado
+      const sanitizedJson = responseText.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
+      let parsed: AIArticleOutput;
+      try {
+        parsed = JSON.parse(sanitizedJson);
+      } catch (jsonErr: any) {
+        console.warn(`    ⚠️ [Gemini ${model}] JSON retornado quebrado/inválido: ${jsonErr?.message}`);
+        modelAttemptsSummary.push({ model, reason: "JSON_PARSE_ERROR", error: jsonErr?.message });
+        try {
+          await logAITask({
+            service: "ai_writer",
+            action: "article_rewrite",
+            level: "warn",
+            status: "failed",
+            task_completed: false,
+            failure_reason_code: "JSON_SCHEMA_INVALID",
+            message: `Modelo ${model} gerou JSON sintaticamente inválido para "${scraped.title}": ${jsonErr?.message}`,
+            error: jsonErr,
+            metadata: {
+              model,
+              title: scraped.title,
+              canonical_url: scraped.canonicalUrl,
+              json_snippet: sanitizedJson.slice(0, 300),
+            },
+          });
+        } catch {}
+        continue;
+      }
+
+      // 3. Validação de integridade dos campos obrigatórios
+      if (!parsed.title || !parsed.content || !Array.isArray(parsed.tldr) || parsed.tldr.length === 0) {
+        console.warn(`    ⚠️ [Gemini ${model}] JSON sem campos obrigatórios mínimos.`);
+        modelAttemptsSummary.push({ model, reason: "SCHEMA_FIELDS_MISSING" });
+        try {
+          await logAITask({
+            service: "ai_writer",
+            action: "article_rewrite",
+            level: "warn",
+            status: "failed",
+            task_completed: false,
+            failure_reason_code: "JSON_SCHEMA_INVALID",
+            message: `Modelo ${model} gerou JSON com campos obrigatórios ausentes para "${scraped.title}"`,
+            metadata: {
+              model,
+              title: scraped.title,
+              canonical_url: scraped.canonicalUrl,
+              has_title: Boolean(parsed?.title),
+              has_content: Boolean(parsed?.content),
+              has_tldr: Array.isArray(parsed?.tldr),
+            },
+          });
+        } catch {}
         continue;
       }
 
       return parsed;
     } catch (error: any) {
       console.warn(`    ⚠️ [Gemini ${model}] Erro: ${error?.message || error}`);
+      const rawMsg = String(error?.message || error);
+      const isQuota =
+        error?.status === 429 ||
+        rawMsg.includes("429") ||
+        rawMsg.toLowerCase().includes("quota") ||
+        rawMsg.includes("RESOURCE_EXHAUSTED");
+      const isSafety =
+        rawMsg.toLowerCase().includes("safety") ||
+        rawMsg.toLowerCase().includes("blocked");
+
+      let failureCode: FailureReasonCode = "GEMINI_FALLBACK_EXHAUSTED";
+      if (isQuota) failureCode = "GEMINI_QUOTA_EXCEEDED";
+      else if (isSafety) failureCode = "GEMINI_SAFETY_BLOCK";
+
+      modelAttemptsSummary.push({ model, reason: failureCode, error: rawMsg });
+
+      try {
+        await logAITask({
+          service: "ai_writer",
+          action: "article_rewrite",
+          level: "warn",
+          status: "failed",
+          task_completed: false,
+          failure_reason_code: failureCode,
+          message: `Falha na tentativa com modelo ${model} para "${scraped.title}": ${rawMsg}`,
+          error,
+          metadata: {
+            model,
+            title: scraped.title,
+            canonical_url: scraped.canonicalUrl,
+            isQuota,
+            isSafety,
+          },
+          is_retryable: isQuota,
+        });
+      } catch {}
     }
   }
 
   console.error("  ❌ [Gemini Flash] Falha na redação com IA com todos os modelos candidatos.");
+  try {
+    await logAITask({
+      service: "ai_writer",
+      action: "article_rewrite",
+      level: "error",
+      status: "failed",
+      task_completed: false,
+      failure_reason_code: "GEMINI_GENERATION_FAILED",
+      message: `Todos os modelos de IA (${GENERATION_MODELS.join(", ")}) falharam na redação da matéria "${scraped.title}"`,
+      metadata: {
+        models_attempted: GENERATION_MODELS,
+        title: scraped.title,
+        canonical_url: scraped.canonicalUrl,
+        source_name: sourceName,
+        attempts_summary: modelAttemptsSummary,
+      },
+    });
+  } catch {}
+
   return null;
 }
 
@@ -924,11 +1078,47 @@ export async function runNewsSync() {
         } catch (retryErr: any) {
           console.error(`❌ Falha persistente ao obter feed "${feedConfig.name}": ${retryErr?.message || retryErr}`);
           totalErrors++;
+          try {
+            await logAITask({
+              service: "rss_scraper",
+              action: "scrape_feed",
+              level: "warn",
+              status: "failed",
+              task_completed: false,
+              failure_reason_code: "RSS_FEED_UNREACHABLE",
+              message: `Falha persistente ao obter feed RSS "${feedConfig.name}" (${feedConfig.url}): ${retryErr?.message || retryErr}`,
+              error: retryErr,
+              metadata: {
+                feed_name: feedConfig.name,
+                feed_url: feedConfig.url,
+                default_category: feedConfig.defaultCategorySlug,
+              },
+              is_retryable: true,
+            });
+          } catch {}
           continue;
         }
       } else {
         console.error(`❌ Falha ao obter feed "${feedConfig.name}": ${feedError?.message || feedError}`);
         totalErrors++;
+        try {
+          await logAITask({
+            service: "rss_scraper",
+            action: "scrape_feed",
+            level: "warn",
+            status: "failed",
+            task_completed: false,
+            failure_reason_code: "RSS_FEED_UNREACHABLE",
+            message: `Falha ao obter feed RSS "${feedConfig.name}" (${feedConfig.url}): ${feedError?.message || feedError}`,
+            error: feedError,
+            metadata: {
+              feed_name: feedConfig.name,
+              feed_url: feedConfig.url,
+              default_category: feedConfig.defaultCategorySlug,
+            },
+            is_retryable: true,
+          });
+        } catch {}
         continue; // Não interrompe os demais feeds
       }
     }
@@ -937,6 +1127,7 @@ export async function runNewsSync() {
     console.log(`  🔎 ${itemsToProcess.length} itens recentes selecionados para análise.`);
 
     for (const item of itemsToProcess) {
+      const itemStartTime = Date.now();
       totalItemsInspected++;
       const itemUrl = (item.link || "").trim();
       const itemTitle = (item.title || "").trim();
@@ -976,6 +1167,23 @@ export async function runNewsSync() {
 
       if (!scraped.cleanText || scraped.cleanText.length < 80) {
         console.log("     ⚠️ Conteúdo extraído insuficiente para redação de qualidade. Pulando item.");
+        try {
+          await logAITask({
+            service: "rss_scraper",
+            action: "content_extraction",
+            level: "info",
+            status: "aborted",
+            task_completed: false,
+            failure_reason_code: "CONTENT_TOO_SHORT",
+            message: `Conteúdo extraído insuficiente (${scraped.cleanText?.length || 0} caracteres) para "${itemTitle}". Item ignorado.`,
+            metadata: {
+              url: itemUrl,
+              title: itemTitle,
+              content_length: scraped.cleanText?.length || 0,
+              feed_name: feedConfig.name,
+            },
+          });
+        } catch {}
         continue;
       }
 
@@ -984,7 +1192,7 @@ export async function runNewsSync() {
       // ----------------------------------------------------------------------
       console.log("     🧠 Gerando vetor de embedding (text-embedding-004)...");
       const embeddingText = `${itemTitle}\n\n${scraped.cleanText.slice(0, 1200)}`;
-      const embedding = await generateEmbedding(ai, embeddingText);
+      const embedding = await generateEmbedding(ai, embeddingText, { title: itemTitle, url: itemUrl });
 
       if (embedding) {
         try {
@@ -996,6 +1204,23 @@ export async function runNewsSync() {
 
           if (rpcError) {
             console.warn(`     ⚠️ Erro na RPC match_recent_articles: ${rpcError.message}`);
+            try {
+              await logAITask({
+                service: "database",
+                action: "vector_search",
+                level: "warn",
+                status: "failed",
+                task_completed: false,
+                failure_reason_code: "PGVECTOR_RPC_ERROR",
+                message: `Erro na busca vetorial match_recent_articles: ${rpcError.message}`,
+                error: rpcError,
+                metadata: {
+                  match_threshold: SIMILARITY_THRESHOLD,
+                  hours_limit: LOOKBACK_HOURS,
+                  item_title: itemTitle,
+                },
+              });
+            } catch {}
           } else if (matches && Array.isArray(matches) && matches.length > 0) {
             const bestMatch = matches[0] as {
               id: string;
@@ -1017,6 +1242,21 @@ export async function runNewsSync() {
           }
         } catch (rpcCatch: any) {
           console.warn(`     ⚠️ Falha na execução da busca vetorial: ${rpcCatch?.message || rpcCatch}`);
+          try {
+            await logAITask({
+              service: "database",
+              action: "vector_search",
+              level: "warn",
+              status: "failed",
+              task_completed: false,
+              failure_reason_code: "PGVECTOR_RPC_ERROR",
+              message: `Exceção na busca vetorial match_recent_articles: ${rpcCatch?.message || rpcCatch}`,
+              error: rpcCatch,
+              metadata: {
+                item_title: itemTitle,
+              },
+            });
+          } catch {}
         }
       }
 
@@ -1081,6 +1321,20 @@ export async function runNewsSync() {
             );
           } catch (enrichErr: any) {
             console.warn(`     ⚠️ Aviso no enriquecedor de metadados: ${enrichErr?.message || enrichErr}`);
+            try {
+              await logAITask({
+                service: "game_enricher",
+                action: "enrich_metadata",
+                level: "warn",
+                status: "failed",
+                task_completed: false,
+                message: `Falha não-bloqueante no enriquecimento para "${generated.game_metadata.game_name}": ${enrichErr?.message || enrichErr}`,
+                error: enrichErr,
+                metadata: {
+                  game_name: generated.game_metadata.game_name,
+                },
+              });
+            } catch {}
           }
         }
 
@@ -1152,14 +1406,55 @@ export async function runNewsSync() {
           .single();
 
         if (insertError || !insertedPost) {
+          try {
+            await logAITask({
+              service: "database",
+              action: "post_insert",
+              level: "critical",
+              status: "failed",
+              task_completed: false,
+              failure_reason_code: "DATABASE_INSERT_ERROR",
+              message: `Falha crítica ao persistir matéria "${newPost.title}" no Supabase: ${insertError?.message || "Registro retornado nulo"}`,
+              error: insertError,
+              metadata: {
+                title: newPost.title,
+                slug: finalSlug,
+                category_id: categoryId,
+                source_id: sourceId,
+                source_url: itemUrl,
+              },
+            });
+          } catch {}
           throw new Error(`Erro no insert do Supabase: ${insertError?.message}`);
         }
 
         const saved = insertedPost as { id: string; title: string; slug: string };
-        console.log(`     🎉 Artigo publicado com sucesso!`);
+        const itemDurationMs = Date.now() - itemStartTime;
+        console.log(`     🎉 Artigo publicado com sucesso! (${itemDurationMs}ms)`);
         console.log(`        Título: "${saved.title}"`);
         console.log(`        Slug: /noticias/${saved.slug}`);
         totalPublished++;
+
+        try {
+          await logAISuccess(
+            "ai_writer",
+            "article_rewrite",
+            `Matéria "${saved.title}" publicada com sucesso em ${itemDurationMs}ms`,
+            {
+              post_id: saved.id,
+              slug: saved.slug,
+              title: saved.title,
+              total_generation_ms: itemDurationMs,
+              category_id: categoryId,
+              source_id: sourceId,
+              is_rumor: isRumor,
+              reliability_score: reliabilityScore,
+              game_hub_id: gameHubId,
+              source_name: feedConfig.name,
+              source_url: itemUrl,
+            }
+          );
+        } catch {}
 
         // --------------------------------------------------------------------
         // PASSO F: Revalidação On-Demand do Cache Next.js (ISR)

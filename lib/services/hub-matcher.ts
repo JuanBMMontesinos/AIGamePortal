@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { GameHub } from "@/types/database";
+import { logAITask, logAISuccess } from "./logger";
 
 export interface HubMatchResult {
   matched: boolean;
@@ -247,6 +248,26 @@ ${content.slice(0, 2000)}
     }
   }
 
+  // Se esgotou todos os modelos sem conseguir resposta válida
+  try {
+    await logAITask({
+      service: "ai_hub",
+      action: "hub_suggestion",
+      level: "warn",
+      status: "failed",
+      task_completed: false,
+      failure_reason_code: "HUB_SUGGESTION_FAILED",
+      message: `Agente de sugestão de Hubs falhou em todos os modelos para "${title.slice(0, 80)}"`,
+      metadata: {
+        models_attempted: models,
+        title,
+        has_metadata: Boolean(gameMetadata),
+      },
+    });
+  } catch {
+    // Fail-safe defensivo
+  }
+
   return null;
 }
 
@@ -348,6 +369,15 @@ export async function matchOrSuggestGameHub(params: {
           if (!insertError && insertedHub) {
             const created = insertedHub as GameHub;
             console.log(`🎮 [HubMatcher] Novo Hub criado automaticamente pela IA: "${created.name}" (/jogos/${created.slug})`);
+            try {
+              await logAISuccess("ai_hub", "hub_creation", `Novo Hub criado pela IA: "${created.name}"`, {
+                hub_id: created.id,
+                slug: created.slug,
+                title,
+              });
+            } catch {
+              // Fail-safe defensivo
+            }
             return {
               matched: true,
               hubId: created.id,
@@ -357,6 +387,25 @@ export async function matchOrSuggestGameHub(params: {
             };
           } else {
             console.warn("[HubMatcher] Erro ao inserir novo Hub no banco:", insertError?.message);
+            try {
+              await logAITask({
+                service: "ai_hub",
+                action: "hub_suggestion",
+                level: "warn",
+                status: "failed",
+                task_completed: false,
+                failure_reason_code: "HUB_SUGGESTION_FAILED",
+                message: `Supabase rejeitou criação de Hub para "${newHubData.name}": ${insertError?.message || "Erro desconhecido"}`,
+                error: insertError,
+                metadata: {
+                  hub_name: newHubData.name,
+                  slug: newHubData.slug,
+                  error: insertError?.message,
+                },
+              });
+            } catch {
+              // Fail-safe defensivo
+            }
           }
         }
 

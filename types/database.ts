@@ -179,9 +179,131 @@ export interface SocialSettings {
   updated_at: string;
 }
 
+// ============================================================================
+// SISTEMA CENTRALIZADO DE LOGS & AUDITORIA DE IA (FASE 1)
+// ============================================================================
+
+export type LogService =
+  | "ai_writer"
+  | "ai_embedding"
+  | "ai_hub"
+  | "social_x"
+  | "social_telegram"
+  | "social_discord"
+  | "social_instagram"
+  | "rss_scraper"
+  | "game_enricher"
+  | "affiliate_sync"
+  | "newsletter"
+  | "database"
+  | "system"
+  | (string & {});
+
+export type LogLevel = "info" | "warn" | "error" | "critical";
+
+export type LogStatus = "success" | "failed" | "skipped" | "aborted" | "retry_exhausted";
+
+export type FailureReasonCode =
+  | "GEMINI_QUOTA_EXCEEDED"
+  | "GEMINI_SAFETY_BLOCK"
+  | "GEMINI_FALLBACK_EXHAUSTED"
+  | "GEMINI_GENERATION_FAILED"
+  | "EMBEDDING_ALL_MODELS_FAILED"
+  | "JSON_SCHEMA_INVALID"
+  | "CONTENT_TOO_SHORT"
+  | "RSS_FEED_UNREACHABLE"
+  | "TWITTER_CREDITS_DEPLETED"
+  | "TWITTER_FORBIDDEN_403"
+  | "TELEGRAM_PARSE_ERROR"
+  | "DISCORD_WEBHOOK_ERROR"
+  | "INSTAGRAM_API_ERROR"
+  | "PGVECTOR_RPC_ERROR"
+  | "DATABASE_INSERT_ERROR"
+  | "HUB_SUGGESTION_FAILED"
+  | (string & {});
+
+export interface AISystemLog {
+  id: string;
+  created_at: string;
+  service: LogService;
+  action: string;
+  level: LogLevel;
+  status: LogStatus;
+  task_completed: boolean;
+  failure_reason_code: FailureReasonCode | null;
+  message: string;
+  error_details: string | null;
+  metadata: Record<string, any>;
+  is_retryable: boolean;
+  repeat_count: number;
+  resolved_at: string | null;
+  resolved_by: string | null;
+}
+
+export interface LogKPIs {
+  total_logs: number;
+  total_failures: number;
+  failure_rate_percentage: number;
+  incomplete_tasks: number;
+  critical_errors: number;
+  top_failure_reasons: { reason: FailureReasonCode; count: number }[];
+  services_health: { service: LogService; success_count: number; failure_count: number }[];
+}
+
+export interface LogFilterParams {
+  service?: LogService;
+  level?: LogLevel;
+  status?: LogStatus;
+  task_completed?: boolean;
+  failure_reason_code?: FailureReasonCode;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
 export interface Database {
   public: {
     Tables: {
+      ai_system_logs: {
+        Row: AISystemLog;
+        Insert: {
+          id?: string;
+          created_at?: string;
+          service: LogService;
+          action: string;
+          level: LogLevel;
+          status: LogStatus;
+          task_completed?: boolean;
+          failure_reason_code?: FailureReasonCode | null;
+          message: string;
+          error_details?: string | null;
+          metadata?: Record<string, any> | Json;
+          is_retryable?: boolean;
+          repeat_count?: number;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          service?: LogService;
+          action?: string;
+          level?: LogLevel;
+          status?: LogStatus;
+          task_completed?: boolean;
+          failure_reason_code?: FailureReasonCode | null;
+          message?: string;
+          error_details?: string | null;
+          metadata?: Record<string, any> | Json;
+          is_retryable?: boolean;
+          repeat_count?: number;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+        };
+        Relationships: [];
+      };
       newsletter_settings: {
         Row: NewsletterSettings;
         Insert: {
@@ -439,6 +561,12 @@ export interface Database {
           published_at: string;
           source_original_url: string;
         }[];
+      };
+      purge_old_system_logs: {
+        Args: {
+          days_to_keep?: number;
+        };
+        Returns: number;
       };
     };
     Enums: {

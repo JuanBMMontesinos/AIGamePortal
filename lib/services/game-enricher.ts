@@ -1,4 +1,5 @@
 import { GameMetadata } from "@/types/database";
+import { logAITask } from "./logger";
 
 /**
  * Interface de resposta mínima da API RAWG
@@ -118,9 +119,32 @@ export async function enrichGameMetadata(
             }
           }
         }
+      } else {
+        try {
+          await logAITask({
+            service: "game_enricher",
+            action: "enrich_metadata",
+            level: "warn",
+            status: "failed",
+            task_completed: false,
+            message: `API RAWG retornou status HTTP ${searchRes.status} para "${cleanName}"`,
+            metadata: { api: "RAWG", game_name: cleanName, status: searchRes.status },
+          });
+        } catch {}
       }
-    } catch {
-      // Falha tolerada na API RAWG
+    } catch (rawgErr: any) {
+      try {
+        await logAITask({
+          service: "game_enricher",
+          action: "enrich_metadata",
+          level: "warn",
+          status: "failed",
+          task_completed: false,
+          message: `Falha não-bloqueante na API RAWG para "${cleanName}": ${rawgErr?.message || rawgErr}`,
+          error: rawgErr,
+          metadata: { api: "RAWG", game_name: cleanName },
+        });
+      } catch {}
     }
   }
 
@@ -151,9 +175,32 @@ export async function enrichGameMetadata(
             }
           }
         }
+      } else {
+        try {
+          await logAITask({
+            service: "game_enricher",
+            action: "enrich_metadata",
+            level: "warn",
+            status: "failed",
+            task_completed: false,
+            message: `API OpenCritic retornou status HTTP ${ocRes.status} para "${cleanName}"`,
+            metadata: { api: "OpenCritic", game_name: cleanName, status: ocRes.status },
+          });
+        } catch {}
       }
-    } catch {
-      // Falha tolerada na API OpenCritic
+    } catch (ocErr: any) {
+      try {
+        await logAITask({
+          service: "game_enricher",
+          action: "enrich_metadata",
+          level: "warn",
+          status: "failed",
+          task_completed: false,
+          message: `Falha não-bloqueante na API OpenCritic para "${cleanName}": ${ocErr?.message || ocErr}`,
+          error: ocErr,
+          metadata: { api: "OpenCritic", game_name: cleanName },
+        });
+      } catch {}
     }
   }
 
