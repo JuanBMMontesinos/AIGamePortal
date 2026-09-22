@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { safeConstantTimeCompare } from "@/lib/utils/security";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "aigameportal_admin_2026";
 const COOKIE_NAME = "admin_session";
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { secretKey } = body;
 
-    if (!secretKey || secretKey !== ADMIN_SECRET) {
+    if (!secretKey || !safeConstantTimeCompare(secretKey, ADMIN_SECRET)) {
       return NextResponse.json(
         { success: false, message: "Chave de Administrador incorreta ou ausente." },
         { status: 401 }
@@ -58,7 +59,7 @@ export async function DELETE() {
 export async function GET() {
   const cookieStore = await cookies();
   const session = cookieStore.get(COOKIE_NAME);
-  const isAuthenticated = session?.value === SESSION_TOKEN;
+  const isAuthenticated = Boolean(session?.value && safeConstantTimeCompare(session.value, SESSION_TOKEN));
 
   return NextResponse.json({
     authenticated: isAuthenticated,

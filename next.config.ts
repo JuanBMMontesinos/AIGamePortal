@@ -59,14 +59,42 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    // Content Security Policy (CSP) estruturado para Next.js 15, Google AdSense, Supabase, Google Fonts e CDNs parceiras
+    const contentSecurityPolicy = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://tpc.googlesyndication.com https://ep1.adtrafficquality.google",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com data:",
+      "img-src 'self' data: blob: https://images.unsplash.com https://*.steamstatic.com https://*.steampowered.com https://*.playstation.com https://*.xbox.com https://*.nintendo.com https://*.nintendolife.com https://m.media-amazon.com https://images-na.ssl-images-amazon.com https://*.epicgames.com https://media.rawg.io https://images.igdb.com https://*.pcgamer.com https://*.eurogamer.net https://*.gamesindustry.biz https://*.ign.com https://*.gamespot.com https://*.polygon.com https://*.videogameschronicle.com https://gematsu.com https://*.gematsu.com https://*.rockpapershotgun.com https://*.destructoid.com https://preview.redd.it https://i.redd.it https://external-preview.redd.it https://*.gamespress.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https:",
+      "connect-src 'self' https://*.supabase.co https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://ep1.adtrafficquality.google https://rawg.io https://api.rawg.io",
+      "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://pagead2.googlesyndication.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'self'",
+      "upgrade-insecure-requests",
+    ].join("; ");
+
     return [
-      // Cabeçalhos de Segurança Padrão
+      // Cabeçalhos de Segurança HTTP Completos (Fase 1 Hardening)
       {
         source: "/:path*",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains; preload",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: contentSecurityPolicy,
+          },
         ],
       },
       // Edge Caching Otimizado para Notícias (Sustenta picos de +100k views com zero custo)

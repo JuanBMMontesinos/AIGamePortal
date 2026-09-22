@@ -226,7 +226,8 @@ Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
 - [docs/components.md](file:///d:/IAProjects/AIGamePortal/docs/components.md): Catálogo de componentes UI e guardas defensivas.
 - [docs/database.md](file:///d:/IAProjects/AIGamePortal/docs/database.md): Modelagem relacional, índices HNSW e RPCs do pgvector.
 - [docs/environment-variables.md](file:///d:/IAProjects/AIGamePortal/docs/environment-variables.md): Variáveis de ambiente e GitHub Secrets.
-- [docs/routes-and-isr.md](file:///d:/IAProjects/AIGamePortal/docs/routes-and-isr.md): Mapeamento de rotas e contrato da API de revalidação.
+- [docs/security/hardening-phase1.md](file:///d:/IAProjects/AIGamePortal/docs/security/hardening-phase1.md): Hardening de Segurança (Fase 1) — Cabeçalhos HTTP (HSTS, CSP, Permissions-Policy), mitigação de Timing Attacks e sanitização Markdown.
 - [docs/ai-context.md](file:///d:/IAProjects/AIGamePortal/docs/ai-context.md): Diretrizes para agentes de IA e conformidade E-E-A-T.
 - [docs/gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md): System Prompt oficial do Agente Redator Gemini.
+
 

@@ -73,6 +73,59 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
 }
 
 /**
+ * Validador e sanitizador de URLs para mitigar XSS via Markdown / links HTML.
+ *
+ * Permite estritamente:
+ * - Protocolos web seguros: http: e https:
+ * - Protocolos de contato: mailto:
+ * - Caminhos relativos seguros: iniciados por '/' (rejeitando '//' protocol-relative)
+ * - Âncoras internas: iniciadas por '#'
+ *
+ * Bloqueia e neutraliza esquemas perigosos como:
+ * - javascript: (execução arbitrária de código)
+ * - data: (injeção de payloads HTML/SVG/JS codificados)
+ * - vbscript: (execução de scripts legados)
+ * - Esquemas desconhecidos ou malformados
+ */
+export function sanitizeHref(rawHref: string): { isSafe: boolean; href: string } {
+  if (!rawHref) {
+    return { isSafe: false, href: "#" };
+  }
+
+  const trimmed = rawHref.trim();
+
+  // Rejeita strings com caracteres de controle nulos ou invisíveis
+  if (/[\x00-\x1F\x7F]/.test(trimmed)) {
+    return { isSafe: false, href: "#" };
+  }
+
+  // 1. Caminhos relativos seguros (ex: /noticias/..., /api/out/...)
+  // Bloqueia '//' (protocol-relative) para impedir open redirect / evasão
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+    return { isSafe: true, href: trimmed };
+  }
+
+  // 2. Âncoras de página (ex: #topico, #resumo)
+  if (trimmed.startsWith("#")) {
+    return { isSafe: true, href: trimmed };
+  }
+
+  // 3. Protocolos absolutos permitidos
+  try {
+    const parsed = new URL(trimmed);
+    const protocol = parsed.protocol.toLowerCase();
+
+    if (protocol === "https:" || protocol === "http:" || protocol === "mailto:") {
+      return { isSafe: true, href: trimmed };
+    }
+  } catch {
+    return { isSafe: false, href: "#" };
+  }
+
+  return { isSafe: false, href: "#" };
+}
+
+/**
  * Processador inline com suporte a:
  * 1. Tags HTML <a> (como as geradas pelo injetor de afiliados com rel="sponsored nofollow")
  * 2. Links Markdown [texto](url)
@@ -100,7 +153,18 @@ function renderInline(text: string): React.ReactNode {
         const titleMatch = attrsString.match(/title="([^"]+)"/i);
         const classMatch = attrsString.match(/class="([^"]+)"/i);
 
-        const href = hrefMatch ? hrefMatch[1] : "#";
+        const rawHref = hrefMatch ? hrefMatch[1] : "#";
+        const { isSafe, href } = sanitizeHref(rawHref);
+
+        // Se a URL for perigosa, neutraliza exibindo apenas o texto sem tag âncora
+        if (!isSafe) {
+          return (
+            <span key={i} className="text-zinc-600 dark:text-zinc-400" title="Link bloqueado por segurança">
+              {renderInline(innerText)}
+            </span>
+          );
+        }
+
         const isAffiliate = href.startsWith("/api/out/");
         const rel = relMatch ? relMatch[1] : (isAffiliate ? "sponsored nofollow" : undefined);
         const target = targetMatch ? targetMatch[1] : (isAffiliate ? "_blank" : undefined);
@@ -131,7 +195,18 @@ function renderInline(text: string): React.ReactNode {
       const mdLinkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/s);
       if (mdLinkMatch) {
         const innerText = mdLinkMatch[1];
-        const href = mdLinkMatch[2];
+        const rawHref = mdLinkMatch[2];
+        const { isSafe, href } = sanitizeHref(rawHref);
+
+        // Se a URL for perigosa (javascript:, data:, vbscript:), neutraliza exibindo apenas o texto sem tag âncora
+        if (!isSafe) {
+          return (
+            <span key={i} className="text-zinc-600 dark:text-zinc-400" title="Link bloqueado por segurança">
+              {renderInline(innerText)}
+            </span>
+          );
+        }
+
         const isAffiliate = href.startsWith("/api/out/");
         const isExternal = href.startsWith("http://") || href.startsWith("https://");
 

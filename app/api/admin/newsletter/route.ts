@@ -9,6 +9,7 @@ import {
   deleteSubscriberAdmin,
 } from "@/lib/data/newsletter-admin";
 import { Resend } from "resend";
+import { safeConstantTimeCompare } from "@/lib/utils/security";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "aigameportal_admin_2026";
 const COOKIE_NAME = "admin_session";
@@ -16,11 +17,11 @@ const SESSION_TOKEN = "aigameportal_admin_authenticated_v1";
 
 async function isAuthorized(request: NextRequest): Promise<boolean> {
   const headerKey = request.headers.get("x-admin-key");
-  if (headerKey && headerKey === ADMIN_SECRET) return true;
+  if (headerKey && safeConstantTimeCompare(headerKey, ADMIN_SECRET)) return true;
 
   const cookieStore = await cookies();
   const session = cookieStore.get(COOKIE_NAME);
-  return session?.value === SESSION_TOKEN;
+  return Boolean(session?.value && safeConstantTimeCompare(session.value, SESSION_TOKEN));
 }
 
 /**

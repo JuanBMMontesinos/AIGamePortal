@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getB2BMetricsSummary } from "@/lib/data/metrics-summary";
 import { AdminMetricsView } from "./admin-view";
 import { AdminMetricsLoginForm } from "./login-form";
+import { safeConstantTimeCompare } from "@/lib/utils/security";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +31,8 @@ export default async function AdminMetricsPage({ searchParams }: AdminMetricsPag
   const session = cookieStore.get("admin_session");
 
   // Autenticação dupla: via Cookie de Sessão OU via Query Param (?key=...)
-  const isKeyValid = Boolean(params.key && params.key === ADMIN_SECRET);
-  const isSessionValid = session?.value === SESSION_TOKEN;
+  const isKeyValid = Boolean(params.key && safeConstantTimeCompare(params.key, ADMIN_SECRET));
+  const isSessionValid = Boolean(session?.value && safeConstantTimeCompare(session.value, SESSION_TOKEN));
   const isAuthenticated = isKeyValid || isSessionValid;
 
   if (!isAuthenticated) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { safeConstantTimeCompare } from "@/lib/utils/security";
 
 /**
  * Endpoint de Revalidação Incremental sob Demanda (ISR)
@@ -26,7 +27,7 @@ async function handleRevalidation(request: NextRequest) {
   const expectedSecret = process.env.REVALIDATION_SECRET || "aigameportal_super_secret_token_2026";
 
   // 1. Validação de token de segurança
-  if (!secret || secret !== expectedSecret) {
+  if (!secret || !safeConstantTimeCompare(secret, expectedSecret)) {
     return NextResponse.json(
       {
         revalidated: false,
