@@ -48,18 +48,26 @@ jobs:
         run: npm ci
 
       - name: Executar Pipeline de Disparo da Newsletter
-        run: |
-          FLAGS=""
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            FLAGS="$FLAGS --dry-run"
-          fi
-          if [ -n "${{ github.event.inputs.test_email }}" ]; then
-            FLAGS="$FLAGS --test-email=${{ github.event.inputs.test_email }}"
-          fi
-          npm run newsletter:send -- $FLAGS
         env:
+          INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          INPUT_TEST_EMAIL: ${{ github.event.inputs.test_email }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+        run: |
+          FLAGS=""
+          if [ "$INPUT_DRY_RUN" = "true" ]; then
+            FLAGS="$FLAGS --dry-run"
+          fi
+          if [ -n "$INPUT_TEST_EMAIL" ]; then
+            # Validação estrita de formato de e-mail (Prevenção de Expression/Command Injection)
+            if echo "$INPUT_TEST_EMAIL" | grep -Eq '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'; then
+              FLAGS="$FLAGS --test-email=$INPUT_TEST_EMAIL"
+            else
+              echo "::error::Formato de e-mail de teste inválido ou perigoso fornecido: $INPUT_TEST_EMAIL"
+              exit 1
+            fi
+          fi
+          npm run newsletter:send -- $FLAGS

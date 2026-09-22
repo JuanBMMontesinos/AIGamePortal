@@ -167,33 +167,19 @@ Durante o ciclo de sincronização de notícias, o script de ingestão executa u
    - CDNs protegidas por Cloudflare Managed Challenge (como `images.nintendolife.com`) respondem com HTTP 403 Forbidden e páginas HTML de captcha para acessos externos.
    - O validador central descarta automaticamente essas URLs protegidas, ativando o fallback por categoria (`FALLBACK_COVERS_BY_CATEGORY`), que seleciona wallpapers temáticos de alta definição correspondentes à plataforma da notícia (**PlayStation**, **Xbox**, **Nintendo**, **PC Gaming** ou **Geral**).
 
-### 5.2 Validador Centralizado de Imagens (`isValidImageUrl`)
+### 5.2 Validador Centralizado de Imagens & Anti-SSRF (`isValidImageUrl` & `isAllowedImageHost`)
 
-Tanto no script de ingestão quanto no frontend ([lib/utils.ts](file:///d:/IAProjects/AIGamePortal/lib/utils.ts)), a função central `isValidImageUrl` atua como barreira de segurança:
-```typescript
-export function isValidImageUrl(url?: string | null): boolean {
-  if (!url || typeof url !== "string") return false;
-  const trimmed = url.trim();
-  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) return false;
-  // Rejeita extensões de áudio e vídeo comuns em feeds/enclosures
-  if (/\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm|mkv|avi)(\?.*)?$/i.test(trimmed)) return false;
-  // Rejeita CDNs conhecidas por Cloudflare Bot Challenge bloqueando hotlinking
-  if (trimmed.includes("images.nintendolife.com")) return false;
-  return true;
-}
-```
+Tanto no script de ingestão quanto no frontend ([lib/utils.ts](file:///d:/IAProjects/AIGamePortal/lib/utils.ts)), as funções `isValidImageUrl` e `isAllowedImageHost` atuam como barreira defensiva mandatória:
+- **Mitigação Estrita de SSRF**: Bloqueia alvos locais e redes internas (`localhost`, `127.0.0.0/8`, `::1`, `169.254.169.254`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `metadata.google.internal`).
+- **Prevenção de Bypasses**: Validação com verificação de limites de domínio contra `ALLOWED_IMAGE_HOST_PATTERNS`, impedindo ataques de prefixo/sufixo falso (ex: `steamstatic.com.attacker.com`).
+- **Validação de Formato e Descarte Ativo**: Rejeita formatos de áudio (`.mp3`, etc.), SVGs com placeholders 1x1 e CDNs conhecidas por bloqueio Cloudflare Bot Challenge (`images.nintendolife.com`).
 
-### 5.3 Configuração do Next.js Image Optimization ([next.config.ts](file:///d:/IAProjects/AIGamePortal/next.config.ts))
+### 5.3 Configuração Hardened do Next.js Image Optimization ([next.config.ts](file:///d:/IAProjects/AIGamePortal/next.config.ts))
 
-O Next.js é configurado com wildcard global nos protocolos `https` e `http`, permitindo a otimização de imagens de qualquer assessoria de imprensa ou CDN oficial de videogame:
-```typescript
-images: {
-  remotePatterns: [
-    { protocol: "https", hostname: "**" },
-    { protocol: "http", hostname: "**" },
-  ],
-}
-```
+O Next.js opera com **whitelist estrita de domínios auditados**, eliminando por completo wildcards globais (`**`):
+- Array `images.remotePatterns` restrito e otimizado com no máximo 50 entradas (conforme especificações do Next.js 15).
+- Cobre exclusivamente feeds oficiais (PlayStation, Xbox Wire, Nintendo, PC Gamer, Eurogamer, VGC, Gematsu, etc.), plataformas (Steam, Epic, RAWG, IGDB), e-commerces parceiros (Amazon, KaBuM!, Nuuvem) e CDNs editoriais (Unsplash, Reddit).
+- A Content Security Policy (CSP) na diretiva `img-src` reflete os mesmos provedores de mídia autorizados.
 
 ### 5.4 Proteção nos Componentes de Interface
 
@@ -202,6 +188,13 @@ Os componentes visuais ([NewsCard](file:///d:/IAProjects/AIGamePortal/components
 ### 5.5 Tipografia com `next/font`
 
 - Fontes `Inter` (leitura editorial) e `Outfit` (estética gamer) são carregadas com `display: "swap"` e declaradas como variáveis CSS (`--font-inter`, `--font-outfit`), sem gerar requisições de rede em tempo de execução para servidores do Google.
+
+### 5.6 Blindagem de Automações CI/CD (GitHub Actions)
+
+Para mitigar vulnerabilidades de **Expression / Command Injection** (OWASP Top 10 CI/CD):
+- Nenhum workflow interpola expressões não confiáveis (`${{ github.event.inputs... }}`) diretamente em blocos de script `run: |`.
+- Todos os inputs de operadores são obrigatoriamente passados através de variáveis de ambiente intermediárias no bloco `env:` do step.
+- O script bash aplica validação estrita de formato via regex antes de compilar argumentos para a CLI da aplicação (`send-weekly-newsletter.ts`).
 
 ---
 

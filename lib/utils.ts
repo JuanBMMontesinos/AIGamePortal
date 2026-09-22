@@ -67,8 +67,167 @@ export function getMetacriticColor(score: number | null | undefined): {
 }
 
 /**
+ * Lista canônica de domínios e padrões curinga autorizados para Next.js Image Optimization
+ * e ingestão de feeds RSS de notícias e produtos de lojas parceiras.
+ */
+export const ALLOWED_IMAGE_HOST_PATTERNS: readonly string[] = [
+  // Feeds Oficiais de Notícias e Comunicação de Games
+  "blog.playstation.com",
+  "*.playstation.com",
+  "news.xbox.com",
+  "*.xbox.com",
+  "store-images.s-microsoft.com",
+  "*.s-microsoft.com",
+  "xboxwire.thesourcemediaassets.com",
+  "*.thesourcemediaassets.com",
+  "images.nintendolife.com",
+  "*.nintendolife.com",
+  "*.nintendo.com",
+  "nintendoeverything.com",
+  "*.nintendoeverything.com",
+  "cdn.mos.cms.futurecdn.net",
+  "*.futurecdn.net",
+  "*.pcgamer.com",
+  "pcgamer.com",
+  "assets.reedpopservices.com",
+  "*.reedpopservices.com",
+  "assetsio.gnwcdn.com",
+  "*.gnwcdn.com",
+  "*.eurogamer.net",
+  "eurogamer.net",
+  "*.gamesindustry.biz",
+  "gamesindustry.biz",
+
+  // Mídia Editorial Geral e Banco de Imagens
+  "images.unsplash.com",
+  "*.ign.com",
+  "ign.com",
+  "assets-prd.ignimgs.com",
+  "*.ignimgs.com",
+  "*.gamespot.com",
+  "gamespot.com",
+  "*.polygon.com",
+  "polygon.com",
+  "www.videogameschronicle.com",
+  "*.videogameschronicle.com",
+  "videogameschronicle.com",
+  "gematsu.com",
+  "*.gematsu.com",
+  "www.gematsu.com",
+  "rockpapershotgun.com",
+  "*.rockpapershotgun.com",
+  "www.rockpapershotgun.com",
+  "destructoid.com",
+  "*.destructoid.com",
+  "www.destructoid.com",
+  "preview.redd.it",
+  "i.redd.it",
+  "external-preview.redd.it",
+  "*.redd.it",
+  "gamespress.com",
+  "*.gamespress.com",
+  "www.gamespress.com",
+
+  // CDNs de Jogos e Plataformas
+  "shared.fastly.steamstatic.com",
+  "cdn.cloudflare.steamstatic.com",
+  "cdn.akamai.steamstatic.com",
+  "store.fastly.steamstatic.com",
+  "*.steamstatic.com",
+  "*.steampowered.com",
+  "steampowered.com",
+  "*.epicgames.com",
+  "epicgames.com",
+  "media.rawg.io",
+  "images.igdb.com",
+
+  // Lojas e Parceiros de Afiliados
+  "m.media-amazon.com",
+  "images-na.ssl-images-amazon.com",
+  "*.media-amazon.com",
+  "media-amazon.com",
+  "images.kabum.com.br",
+  "*.kabum.com.br",
+  "static.kabum.com.br",
+  "assets.nuuvem.com",
+  "*.nuuvem.com",
+] as const;
+
+/**
+ * Valida se um host ou URL de imagem pertence à lista explícita de domínios permitidos,
+ * prevenindo ataques de Server-Side Request Forgery (SSRF) contra redes internas e serviços de metadados.
+ */
+export function isAllowedImageHost(urlOrHost: string): boolean {
+  if (!urlOrHost || typeof urlOrHost !== "string") return false;
+
+  let hostname = "";
+  const trimmed = urlOrHost.trim().toLowerCase();
+
+  try {
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      const parsed = new URL(trimmed);
+      hostname = parsed.hostname.toLowerCase();
+    } else if (!trimmed.includes("/") && !trimmed.includes(":") && !trimmed.includes("?")) {
+      hostname = trimmed;
+    } else {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
+  if (!hostname) return false;
+
+  // 1. Bloqueio estrito de alvos SSRF e endereços não roteáveis/privados
+  if (
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".internal") ||
+    hostname === "127.0.0.1" ||
+    hostname.startsWith("127.") ||
+    hostname === "0.0.0.0" ||
+    hostname === "::1" ||
+    hostname === "[::1]" ||
+    hostname === "169.254.169.254" || // AWS / GCP / Azure IMDS
+    hostname.startsWith("169.254.") || // Link-local
+    hostname.startsWith("10.") || // RFC 1918 Class A
+    hostname.startsWith("192.168.") || // RFC 1918 Class C
+    hostname === "metadata.google.internal" ||
+    hostname === "metadata.internal"
+  ) {
+    return false;
+  }
+
+  // RFC 1918 Class B: 172.16.0.0 - 172.31.255.255
+  const matchClassB = hostname.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./);
+  if (matchClassB) return false;
+
+  // RFC 6598 Carrier-Grade NAT: 100.64.0.0 - 100.127.255.255
+  const matchCgnat = hostname.match(/^100\.(6[4-9]|[7-9][0-9]|1[0-1][0-9]|12[0-7])\./);
+  if (matchCgnat) return false;
+
+  // 2. Validação contra lista explícita de padrões autorizados
+  for (const pattern of ALLOWED_IMAGE_HOST_PATTERNS) {
+    if (pattern.startsWith("*.")) {
+      const domainRoot = pattern.slice(2).toLowerCase();
+      if (hostname === domainRoot || hostname.endsWith("." + domainRoot)) {
+        return true;
+      }
+    } else {
+      if (hostname === pattern.toLowerCase()) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Valida se uma string é uma URL válida de imagem de capa HTTP/HTTPS,
  * descartando áudios/vídeos, SVGs de placeholder, pixels de rastreamento e CDNs bloqueados.
+ * Aplica também verificação de domínios autorizados para prevenção de SSRF.
  */
 export function isValidImageUrl(url?: string | null): boolean {
   if (!url || typeof url !== "string") return false;
@@ -102,6 +261,8 @@ export function isValidImageUrl(url?: string | null): boolean {
     return false;
   }
 
-  return true;
+  // Defesa em profundidade contra SSRF: validação de host autorizado
+  return isAllowedImageHost(trimmed);
 }
+
 

@@ -26,6 +26,7 @@ import { publishToSocialNetworks } from "../lib/services/social-publisher";
 import { matchOrSuggestGameHub } from "../lib/services/hub-matcher";
 import { sendDiscordNewsAlert } from "../lib/services/discord-notifier";
 import { enrichGameMetadata } from "../lib/services/game-enricher";
+import { isValidImageUrl, isAllowedImageHost } from "../lib/utils";
 
 // ============================================================================
 // CONFIGURAÇÕES & FONTES OFICIAIS
@@ -336,44 +337,6 @@ function cleanHtmlText(html: string): string {
 }
 
 /**
- * Valida se uma string é uma URL válida de imagem HTTP/HTTPS e descarta áudios/vídeos, SVGs e placeholders
- */
-function isValidImageUrl(url?: string | null): boolean {
-  if (!url || typeof url !== "string") return false;
-  const trimmed = url.trim();
-  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) return false;
-
-  // Rejeita extensões de áudio e vídeo comuns em feeds/enclosures
-  if (/\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm|mkv|avi)(\?.*)?$/i.test(trimmed)) {
-    return false;
-  }
-
-  // Rejeita SVGs (geralmente ícones, logos ou placeholders 1x1, como o placeholder.svg do PlayStation Blog)
-  if (/\.svg(\?.*)?$/i.test(trimmed)) {
-    return false;
-  }
-
-  // Rejeita termos comuns de imagens de placeholder ou rastreadores
-  const lower = trimmed.toLowerCase();
-  if (
-    lower.includes("placeholder") ||
-    lower.includes("blank.gif") ||
-    lower.includes("pixel.gif") ||
-    lower.includes("spacer.gif") ||
-    lower.includes("/1x1.")
-  ) {
-    return false;
-  }
-
-  // Rejeita CDNs que utilizam Cloudflare Bot Challenge bloqueando hotlinking (ex: Nintendo Life)
-  if (lower.includes("images.nintendolife.com")) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
  * Extrai URL de campos complexos de mídia RSS (media:content, media:thumbnail)
  */
 function extractMediaUrl(media: any): string | null {
@@ -515,8 +478,8 @@ async function scrapeArticle(item: Parser.Item, feedConfig: FeedConfig): Promise
     }
   }
 
-  // 7. Fallback final temático por plataforma/categoria com URLs verificadas
-  if (!imageUrl) {
+  // 7. Fallback final temático por plataforma/categoria com URLs verificadas e autorizadas
+  if (!imageUrl || !isAllowedImageHost(imageUrl)) {
     const categoryCovers =
       FALLBACK_COVERS_BY_CATEGORY[feedConfig.defaultCategorySlug] || FALLBACK_COVERS_BY_CATEGORY.geral;
     const hash = Math.abs(originalTitle.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0));
@@ -1150,13 +1113,21 @@ export async function runNewsSync() {
           console.warn(`     ⚠️ Erro ao processar Hub de Jogo: ${hubErr?.message || hubErr}`);
         }
 
+        // Garantia de segurança (Anti-SSRF): assegura que a imagem inserida seja de um host expressamente autorizado
+        let safeCoverImageUrl = scraped.imageUrl;
+        if (!safeCoverImageUrl || !isAllowedImageHost(safeCoverImageUrl)) {
+          const fallbackCovers =
+            FALLBACK_COVERS_BY_CATEGORY[feedConfig.defaultCategorySlug] || FALLBACK_COVERS_BY_CATEGORY.geral;
+          safeCoverImageUrl = fallbackCovers[0];
+        }
+
         const newPost = {
           title: generated.title,
           slug: finalSlug,
           tldr: generated.tldr,
           content: generated.content,
           excerpt: generated.excerpt || scraped.cleanText.slice(0, 155),
-          cover_image_url: scraped.imageUrl,
+          cover_image_url: safeCoverImageUrl,
           cover_image_alt: generated.title,
           category_id: categoryId,
           source_id: sourceId,
