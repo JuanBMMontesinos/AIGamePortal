@@ -180,7 +180,7 @@ O painel administrativo dispõe do botão **"Exportar Pitch Deck B2B"**, que abr
 
 ## 6. Segurança e Proteção de Acesso
 
-O painel em `/admin/metricas` adota autenticação dupla:
-1. **Query Parameter Secreto**: `https://aigameportal.com/admin/metricas?key=SEU_ADMIN_SECRET_KEY` permite acesso direto a executivos e diretores sem necessidade de login manual prévio.
-2. **Sessão por Cookie Seguro**: `admin_session` gerada pelo formulário de login padrão (`/app/admin/afiliados/login-form.tsx`).
+O painel em `/admin/metricas` é protegido pela arquitetura de autenticação administrativa unificada (Fase 4):
+1. **Sessão Criptografada HMAC-SHA256**: Acesso restrito via cookie HTTP-only `admin_session` assinado digitalmente, com tempo de vida de 7 dias e atributos `SameSite=Lax` e `Secure`.
+2. **Proibição de Autenticação por Query String**: O suporte anterior a `?key=...` foi descontinuado para evitar vazamento de credenciais em logs de servidor e cabeçalhos Referer. O acesso é realizado exclusivamente via formulário de login seguro.
 3. **Bypass de RLS Controlado**: A leitura agregada utiliza `createAdminClient()` no servidor, garantindo que métricas de inscritos protegidas por RLS sejam consolidadas sem expor a lista de e-mails publicamente.

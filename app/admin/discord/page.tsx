@@ -1,12 +1,13 @@
 import { Metadata } from "next";
-import { cookies } from "next/headers";
 import {
   getDiscordSettingsAdmin,
   getDiscordKPIsAdmin,
   getDiscordDealsHistoryAdmin,
+  maskDiscordWebhookUrl,
 } from "@/lib/data/discord-admin";
 import { AdminDiscordView } from "./admin-view";
 import { AdminDiscordLoginForm } from "./login-form";
+import { isServerAdminAuthenticated } from "@/lib/utils/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +19,8 @@ export const metadata: Metadata = {
   },
 };
 
-const SESSION_TOKEN = "aigameportal_admin_authenticated_v1";
-
 export default async function AdminDiscordPage() {
-  const cookieStore = await cookies();
-  const session = cookieStore.get("admin_session");
-  const isAuthenticated = session?.value === SESSION_TOKEN;
+  const isAuthenticated = await isServerAdminAuthenticated();
 
   // Se não estiver autenticado, exibe formulário de acesso
   if (!isAuthenticated) {
@@ -37,9 +34,15 @@ export default async function AdminDiscordPage() {
     getDiscordDealsHistoryAdmin({ page: 1, limit: 15 }),
   ]);
 
+  const safeSettings = {
+    ...settings,
+    deals_webhook_url: maskDiscordWebhookUrl(settings.deals_webhook_url),
+    news_webhook_url: maskDiscordWebhookUrl(settings.news_webhook_url),
+  };
+
   return (
     <AdminDiscordView
-      initialSettings={settings}
+      initialSettings={safeSettings}
       initialKpis={kpis}
       initialHistory={history}
     />

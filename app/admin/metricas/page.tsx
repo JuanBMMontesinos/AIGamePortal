@@ -1,9 +1,8 @@
 import { Metadata } from "next";
-import { cookies } from "next/headers";
 import { getB2BMetricsSummary } from "@/lib/data/metrics-summary";
 import { AdminMetricsView } from "./admin-view";
 import { AdminMetricsLoginForm } from "./login-form";
-import { safeConstantTimeCompare } from "@/lib/utils/security";
+import { isServerAdminAuthenticated } from "@/lib/utils/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -16,24 +15,8 @@ export const metadata: Metadata = {
   },
 };
 
-const SESSION_TOKEN = "aigameportal_admin_authenticated_v1";
-const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "aigameportal_admin_2026";
-
-interface AdminMetricsPageProps {
-  searchParams: Promise<{
-    key?: string;
-  }>;
-}
-
-export default async function AdminMetricsPage({ searchParams }: AdminMetricsPageProps) {
-  const params = await searchParams;
-  const cookieStore = await cookies();
-  const session = cookieStore.get("admin_session");
-
-  // Autenticação dupla: via Cookie de Sessão OU via Query Param (?key=...)
-  const isKeyValid = Boolean(params.key && safeConstantTimeCompare(params.key, ADMIN_SECRET));
-  const isSessionValid = Boolean(session?.value && safeConstantTimeCompare(session.value, SESSION_TOKEN));
-  const isAuthenticated = isKeyValid || isSessionValid;
+export default async function AdminMetricsPage() {
+  const isAuthenticated = await isServerAdminAuthenticated();
 
   if (!isAuthenticated) {
     return <AdminMetricsLoginForm />;

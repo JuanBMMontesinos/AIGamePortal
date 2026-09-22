@@ -1,11 +1,11 @@
 import { Metadata } from "next";
-import { cookies } from "next/headers";
 import {
   getAllAffiliateProductsAdmin,
   getAffiliateKPIs,
 } from "@/lib/data/affiliates";
 import { AdminAffiliatesView } from "./admin-view";
 import { AdminLoginForm } from "./login-form";
+import { isServerAdminAuthenticated } from "@/lib/utils/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +17,8 @@ export const metadata: Metadata = {
   },
 };
 
-const SESSION_TOKEN = "aigameportal_admin_authenticated_v1";
-
 export default async function AdminAffiliatesPage() {
-  const cookieStore = await cookies();
-  const session = cookieStore.get("admin_session");
-  const isAuthenticated = session?.value === SESSION_TOKEN;
+  const isAuthenticated = await isServerAdminAuthenticated();
 
   // Se não estiver autenticado, exibe tela de login
   if (!isAuthenticated) {

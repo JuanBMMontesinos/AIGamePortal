@@ -39,7 +39,22 @@ async function handleRevalidation(request: NextRequest) {
   const path = searchParams.get("path");
   const tag = searchParams.get("tag");
 
-  const expectedSecret = process.env.REVALIDATION_SECRET || "aigameportal_super_secret_token_2026";
+  const expectedSecret =
+    process.env.REVALIDATION_SECRET?.trim() ||
+    process.env.REVALIDATE_SECRET?.trim();
+
+  if (!expectedSecret) {
+    console.error(
+      "[CRITICAL SECURITY] REVALIDATION_SECRET / REVALIDATE_SECRET não está configurada no ambiente do servidor!"
+    );
+    return NextResponse.json(
+      {
+        revalidated: false,
+        message: "Erro de configuração de segurança do servidor: Chave de revalidação não configurada.",
+      },
+      { status: 500 }
+    );
+  }
 
   // 1. Validação de token de segurança
   if (!secret || !safeConstantTimeCompare(secret, expectedSecret)) {

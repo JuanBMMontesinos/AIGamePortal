@@ -60,7 +60,7 @@ export function AdminMetricsLoginForm() {
             Métricas & Patrocínio
           </h1>
           <p className="text-xs text-zinc-400">
-            Digite a chave mestra de administrador ou utilize o link comercial direto com parâmetro <code className="text-brand-cyan">?key=...</code>
+            Digite a Chave Mestra configurada no ambiente para acessar o painel de métricas e patrocínio.
           </p>
         </div>
 

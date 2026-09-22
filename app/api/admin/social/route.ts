@@ -7,28 +7,15 @@ import {
   recordSocialDispatchTelemetry,
 } from "@/lib/data/social-admin";
 import { TwitterApi } from "twitter-api-v2";
-import { safeConstantTimeCompare } from "@/lib/utils/security";
 import { rateLimit, createRateLimitResponse } from "@/lib/utils/rate-limit";
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "aigameportal_admin_2026";
-const COOKIE_NAME = "admin_session";
-const SESSION_TOKEN = "aigameportal_admin_authenticated_v1";
-
-async function isAuthorized(request: NextRequest): Promise<boolean> {
-  const headerKey = request.headers.get("x-admin-key");
-  if (headerKey && safeConstantTimeCompare(headerKey, ADMIN_SECRET)) return true;
-
-  const cookieStore = await cookies();
-  const session = cookieStore.get(COOKIE_NAME);
-  return Boolean(session?.value && safeConstantTimeCompare(session.value, SESSION_TOKEN));
-}
+import { isServerAdminAuthenticated } from "@/lib/utils/admin-auth";
 
 /**
  * GET /api/admin/social
  * Consulta configurações atuais, credenciais mascaradas e telemetria de disparos
  */
 export async function GET(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -52,7 +39,7 @@ export async function GET(request: NextRequest) {
  * Atualiza status de habilitação (is_twitter_enabled, is_telegram_enabled) e motivos de pausa
  */
 export async function PATCH(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -103,7 +90,7 @@ export async function PATCH(request: NextRequest) {
  * Disparos controlados de teste para validação de conexões e créditos
  */
 export async function POST(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 

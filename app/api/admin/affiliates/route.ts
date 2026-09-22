@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import {
   getAllAffiliateProductsAdmin,
   getAffiliateKPIs,
@@ -7,26 +6,13 @@ import {
   createAffiliateProductAdmin,
   deleteAffiliateProductAdmin,
 } from "@/lib/data/affiliates";
-import { safeConstantTimeCompare } from "@/lib/utils/security";
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "aigameportal_admin_2026";
-const COOKIE_NAME = "admin_session";
-const SESSION_TOKEN = "aigameportal_admin_authenticated_v1";
-
-async function isAuthorized(request: NextRequest): Promise<boolean> {
-  const headerKey = request.headers.get("x-admin-key");
-  if (headerKey && safeConstantTimeCompare(headerKey, ADMIN_SECRET)) return true;
-
-  const cookieStore = await cookies();
-  const session = cookieStore.get(COOKIE_NAME);
-  return Boolean(session?.value && safeConstantTimeCompare(session.value, SESSION_TOKEN));
-}
+import { isServerAdminAuthenticated } from "@/lib/utils/admin-auth";
 
 /**
  * Listagem e KPIs para o Painel Admin
  */
 export async function GET(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -49,7 +35,7 @@ export async function GET(request: NextRequest) {
  * Cadastro de Novo Produto Afiliado
  */
 export async function POST(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -95,7 +81,7 @@ export async function POST(request: NextRequest) {
  * Atualização / Toggle de Status (is_active)
  */
 export async function PATCH(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -125,7 +111,7 @@ export async function PATCH(request: NextRequest) {
  * Exclusão de Produto
  */
 export async function DELETE(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 

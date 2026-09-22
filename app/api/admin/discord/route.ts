@@ -5,6 +5,7 @@ import {
   updateDiscordSettingsAdmin,
   getDiscordKPIsAdmin,
   getDiscordDealsHistoryAdmin,
+  maskDiscordWebhookUrl,
 } from "@/lib/data/discord-admin";
 import {
   sendDiscordFreeGameAlert,
@@ -12,28 +13,15 @@ import {
   FreeGameDeal,
   DiscordNewsPayload,
 } from "@/lib/services/discord-notifier";
-import { safeConstantTimeCompare } from "@/lib/utils/security";
 import { rateLimit, createRateLimitResponse } from "@/lib/utils/rate-limit";
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "aigameportal_admin_2026";
-const COOKIE_NAME = "admin_session";
-const SESSION_TOKEN = "aigameportal_admin_authenticated_v1";
-
-async function isAuthorized(request: NextRequest): Promise<boolean> {
-  const headerKey = request.headers.get("x-admin-key");
-  if (headerKey && safeConstantTimeCompare(headerKey, ADMIN_SECRET)) return true;
-
-  const cookieStore = await cookies();
-  const session = cookieStore.get(COOKIE_NAME);
-  return Boolean(session?.value && safeConstantTimeCompare(session.value, SESSION_TOKEN));
-}
+import { isServerAdminAuthenticated } from "@/lib/utils/admin-auth";
 
 /**
  * GET /api/admin/discord
  * Consulta de configurações, KPIs e histórico de ofertas disparadas
  */
 export async function GET(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -49,7 +37,13 @@ export async function GET(request: NextRequest) {
       getDiscordDealsHistoryAdmin({ search, page, limit }),
     ]);
 
-    return NextResponse.json({ settings, kpis, history });
+    const safeSettings = {
+      ...settings,
+      deals_webhook_url: maskDiscordWebhookUrl(settings.deals_webhook_url),
+      news_webhook_url: maskDiscordWebhookUrl(settings.news_webhook_url),
+    };
+
+    return NextResponse.json({ settings: safeSettings, kpis, history });
   } catch (err: any) {
     return NextResponse.json(
       { error: "Falha ao carregar dados do Discord Admin", details: err?.message },
@@ -63,7 +57,7 @@ export async function GET(request: NextRequest) {
  * Atualiza configurações de habilitação (is_deals_enabled, is_news_enabled, motivos e webhooks)
  */
 export async function PATCH(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -96,10 +90,18 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
+    const safeSettings = result.settings
+      ? {
+          ...result.settings,
+          deals_webhook_url: maskDiscordWebhookUrl(result.settings.deals_webhook_url),
+          news_webhook_url: maskDiscordWebhookUrl(result.settings.news_webhook_url),
+        }
+      : undefined;
+
     return NextResponse.json({
       success: true,
       message: "Configurações do Discord atualizadas com sucesso.",
-      settings: result.settings,
+      settings: safeSettings,
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -114,7 +116,7 @@ export async function PATCH(request: NextRequest) {
  * Executa disparos de teste controlados diretamente para os webhooks
  */
 export async function POST(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 

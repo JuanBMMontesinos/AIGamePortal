@@ -9,26 +9,13 @@ import {
   deleteSubscriberAdmin,
 } from "@/lib/data/newsletter-admin";
 import { Resend } from "resend";
-import { safeConstantTimeCompare } from "@/lib/utils/security";
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "aigameportal_admin_2026";
-const COOKIE_NAME = "admin_session";
-const SESSION_TOKEN = "aigameportal_admin_authenticated_v1";
-
-async function isAuthorized(request: NextRequest): Promise<boolean> {
-  const headerKey = request.headers.get("x-admin-key");
-  if (headerKey && safeConstantTimeCompare(headerKey, ADMIN_SECRET)) return true;
-
-  const cookieStore = await cookies();
-  const session = cookieStore.get(COOKIE_NAME);
-  return Boolean(session?.value && safeConstantTimeCompare(session.value, SESSION_TOKEN));
-}
+import { isServerAdminAuthenticated } from "@/lib/utils/admin-auth";
 
 /**
  * Consulta de Dados e KPIs da Newsletter para o Painel Admin
  */
 export async function GET(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -56,7 +43,7 @@ export async function GET(request: NextRequest) {
  * Atualizações de Configurações ou Status de Assinante
  */
 export async function PATCH(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -116,7 +103,7 @@ export async function PATCH(request: NextRequest) {
  * Disparo de Teste / Simulação Manual a partir do Painel
  */
 export async function POST(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
@@ -188,7 +175,7 @@ export async function POST(request: NextRequest) {
  * Exclusão de Assinante
  */
 export async function DELETE(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isServerAdminAuthenticated(request))) {
     return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
   }
 
