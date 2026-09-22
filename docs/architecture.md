@@ -30,13 +30,22 @@ flowchart TD
         DB_INS -->|Publicação Concluída| SOC[Social Publisher Multi-Canal]
         SOC -->|Bot API: sendPhoto / sendMessage| TEL[Canal/Grupo Telegram]
         SOC -->|twitter-api-v2: OAuth 1.0a <= 280c| TW[X / Twitter Oficial]
+        SOC -->|Discord Webhook| DISC[Canal Alertas Discord]
+    end
+
+    subgraph Observabilidade_IA ["Observabilidade, Telemetria & Auditoria (Fase 1 a 6)"]
+        SCRIPT -.->|Telemetria / Erros| LOGGER["Logger Resiliente (lib/services/logger.ts)"]
+        SOC -.->|Status de Disparo / Falha| LOGGER
+        LOGGER -->|Sanitização CWE-117/532 + De-duplicação| LOG_DB[(Supabase: ai_system_logs)]
+        ADMIN_USER([Administrador]) -->|Sessão HMAC / Cookie| LOG_UI["/admin/logs (Dashboard Forense)"]
+        LOG_UI -->|Consultas Paginadas & KPIs| LOG_DB
+        LOG_UI -.->|RPC purge_old_system_logs| LOG_DB
     end
 
     subgraph Modulo_Afiliados ["Módulo de Afiliados Inteligentes & Automação 100%"]
         SCRIPT -.->|Auto-Cadastro de Jogo por IA| AFF_DB[(Supabase: affiliate_products)]
         AFF_DB -->|Cache ISR / SSR| MATCHER["Affiliate Matcher (lib/services/affiliate-matcher.ts)"]
-        MATCHER -->|rel='sponsored nofollow'| MD_RENDER["Renderizador Markdown / Post Detail"]
-        MD_RENDER -->|Card de Oferta / Fallback| DEAL_CARD["AffiliateDealCard.tsx"]
+        MD_RENDER["Renderizador Markdown / Post Detail"] -->|rel='sponsored nofollow'| DEAL_CARD["AffiliateDealCard.tsx"]
         USER -->|Clique em Link / Card| OUT_ROUTE["/api/out/[id] ou /api/out/search"]
         OUT_ROUTE -.->|Gravação Assíncrona| CLICK_DB[(Supabase: affiliate_clicks)]
         OUT_ROUTE -->|HTTP 307 Redirect| PARTNER_STORE["Amazon Brasil (aigameportal-20)"]
@@ -432,6 +441,67 @@ flowchart LR
 - Após a estruturação inicial pelo Gemini, o sistema consulta APIs públicas de metadados de videogames (RAWG Video Games Database e OpenCritic).
 - **Dados complementados sem alterar schemas**: Estúdio desenvolvedor, publicadora, data exata de lançamento e notas consolidadas do Metacritic/OpenCritic.
 - **Tolerância a Falhas (Graceful Degradation)**: Se a API externa estiver sem chave configurada, demorar mais de 3 segundos ou atingir limite de cota, os dados originais são preservados integralmente sem bloquear a publicação.
+
+---
+
+## 12. Observabilidade, Telemetria & Resiliência de Agentes de IA
+
+Para assegurar estabilidade contínua em uma arquitetura orientada a agentes de inteligência artificial, o sistema adota um subsistema centralizado de observabilidade e resiliência ([lib/services/logger.ts](file:///d:/IAProjects/AIGamePortal/lib/services/logger.ts) e [app/admin/logs](file:///d:/IAProjects/AIGamePortal/app/admin/logs)):
+
+```mermaid
+flowchart TD
+    subgraph Execucao_Agentes ["Execução de Agentes & Automações"]
+        WRITER["ai_writer (Gemini 1.5 Flash)"]
+        EMBED["ai_embedding (text-embedding-004)"]
+        HUB["ai_hub (Hub Matcher / Auto-create)"]
+        SOCIAL["social_* (X, Telegram, Discord, Instagram)"]
+    end
+
+    subgraph Camada_Resiliencia ["Camada de Resiliência & Tratamento"]
+        TRY{Tentativa de Execução}
+        RETRY{Erro Transitório?}
+        FALLBACK["Fallback de Modelo / Modelo Secundário"]
+        FAIL["Falha Permanente / task_completed = false"]
+        OK["Sucesso / task_completed = true"]
+    end
+
+    subgraph Subsistema_Logging ["Subsistema de Logging & Telemetria"]
+        SANIT["Sanitizador Criptográfico (CWE-117 / CWE-532)"]
+        DEDUP{Erro Idêntico no Mesmo Minuto?}
+        INC_CNT["Incrementa repeat_count (+1)"]
+        INSERT_DB["INSERT em public.ai_system_logs"]
+    end
+
+    WRITER --> TRY
+    EMBED --> TRY
+    HUB --> TRY
+    SOCIAL --> TRY
+
+    TRY -->|Erro| RETRY
+    RETRY -->|Sim| FALLBACK
+    FALLBACK --> TRY
+    RETRY -->|Exaurido / Bloqueio| FAIL
+    TRY -->|Sucesso| OK
+
+    FAIL --> SANIT
+    OK --> SANIT
+
+    SANIT --> DEDUP
+    DEDUP -->|Sim| INC_CNT
+    DEDUP -->|Não| INSERT_DB
+```
+
+### 12.1 Princípios de Resiliência Implementados
+1. **Falhas Não-Bloqueantes (Non-Blocking Failures)**:
+   - Uma falha em rede social (ex: `TWITTER_CREDITS_DEPLETED`) ou erro ao gerar imagem de enriquecimento nunca interrompe o ciclo principal nem aborta a gravação da notícia no portal.
+   - O pipeline registra a falha com `task_completed = false`, marca a ocorrência para posterior auditoria humana e prossegue com a entrega da notícia no site.
+2. **De-duplicação Consecutiva em Memória**:
+   - Falhas repetidas dentro da mesma janela de 60 segundos são agregadas no mesmo registro (`repeat_count`), prevenindo estouro de conexões e inchaço do banco.
+3. **Isolamento de Segurança e Zero Permissões Públicas**:
+   - Toda a telemetria é selada sob Row Level Security restrita à `service_role`. Visitantes comuns e usuários autenticados comuns não possuem visibilidade nem acesso aos logs do sistema.
+4. **Governança Operacional via Painel Administrativo**:
+   - O painel `/admin/logs` permite filtrar tarefas incompletas, auditar a causa-raiz com stack traces já higienizados e marcar o incidente como resolvido (`resolved_by`).
+
 
 
 

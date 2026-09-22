@@ -127,6 +127,24 @@ erDiagram
         timestamptz created_at
         timestamptz updated_at
     }
+
+    AI_SYSTEM_LOGS {
+        uuid id PK
+        timestamptz created_at
+        text service
+        text action
+        text level
+        text status
+        boolean task_completed
+        text failure_reason_code
+        text message
+        text error_details
+        jsonb metadata
+        boolean is_retryable
+        integer repeat_count
+        timestamptz resolved_at
+        text resolved_by
+    }
 ```
 
 ---
@@ -310,6 +328,30 @@ Parâmetros globais de controle, chaves mestras e telemetria dos envios automati
 
 ---
 
+### 2.9 Tabela `public.ai_system_logs` (Fase 1 - Sistema Centralizado de Logs & Auditoria IA)
+
+Tabela centralizada de telemetria, erros e auditoria dos motores de inteligência artificial, raspadores RSS e robôs de redes sociais.
+
+| Coluna | Tipo | Modificadores | Descrição |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Identificador universal único do log |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Carimbo de data/hora do evento |
+| `service` | `TEXT` | `NOT NULL` | Serviço/agente emissor (`ai_writer`, `ai_embedding`, `social_x`, etc.) |
+| `action` | `TEXT` | `NOT NULL` | Ação executada (`article_rewrite`, `publish_post`, `vector_search`) |
+| `level` | `TEXT` | `NOT NULL CHECK (level IN ('info', 'warn', 'error', 'critical'))` | Severidade do registro |
+| `status` | `TEXT` | `NOT NULL CHECK (status IN ('success', 'failed', 'skipped', 'aborted', 'retry_exhausted'))` | Status de conclusão |
+| `task_completed` | `BOOLEAN` | `NOT NULL DEFAULT false` | Flag essencial para rastrear se a tarefa esperada foi ou não concluída pela IA |
+| `failure_reason_code` | `TEXT` | `NULL` | Código padronizado da causa-raiz (ex: `GEMINI_QUOTA_EXCEEDED`, `TWITTER_CREDITS_DEPLETED`) |
+| `message` | `TEXT` | `NOT NULL` | Mensagem descritiva higienizada contra Log Injection (CWE-117) |
+| `error_details` | `TEXT` | `NULL CHECK (char_length(error_details) <= 4000)` | Stack trace ou detalhes técnicos truncados e sem segredos (CWE-532) |
+| `metadata` | `JSONB` | `NOT NULL DEFAULT '{}'::jsonb` | Metadados estruturados (URLs, tempos de resposta, parâmetros de modelo) |
+| `is_retryable` | `BOOLEAN` | `NOT NULL DEFAULT false` | Indica se o erro é transitório e apto a repetição |
+| `repeat_count` | `INTEGER` | `NOT NULL DEFAULT 1` | Contador para de-duplicação de erros repetidos no mesmo minuto |
+| `resolved_at` | `TIMESTAMPTZ` | `NULL` | Data/hora em que um operador técnico marcou o incidente como solucionado |
+| `resolved_by` | `TEXT` | `NULL` | Identificador do usuário/operador que solucionou a ocorrência |
+
+---
+
 ## 3. Estratégia de Indexação e Performance
 
 | Nome do Índice | Tipo | Tabela / Colunas | Justificativa |
@@ -334,6 +376,10 @@ Parâmetros globais de controle, chaves mestras e telemetria dos envios automati
 | `idx_game_hubs_aliases` | GIN | `game_hubs(aliases)` | Matching ultrarrápido por array de termos |
 | `idx_free_games_history_deal_id` | B-Tree Único | `free_games_history(deal_id)` | Checagem de duplicação de ofertas em tempo constante $O(1)$ |
 | `idx_free_games_history_posted_at` | B-Tree | `free_games_history(posted_at DESC)` | Ordenação e relatórios temporais de ofertas |
+| `idx_ai_logs_created_at` | B-Tree | `ai_system_logs(created_at DESC)` | Ordenação cronológica para o dashboard e consultas de auditoria |
+| `idx_ai_logs_service_status` | B-Tree Composto | `ai_system_logs(service, level, status)` | Filtro rápido por módulo emissor, severidade e status |
+| `idx_ai_logs_incomplete_tasks` | B-Tree Parcial | `ai_system_logs(created_at DESC) WHERE task_completed = false` | Índice crucial para localização instantânea de tarefas pendentes |
+| `idx_ai_logs_failure_reason` | B-Tree Parcial | `ai_system_logs(failure_reason_code) WHERE failure_reason_code IS NOT NULL` | Agrupamento analítico e computação dos Top Erros nos KPIs |
 
 ### Por que HNSW em vez de IVFFlat?
 1. **Sem necessidade de retreino:** O IVFFlat necessita que a tabela já contenha centenas de registros para construir listas de Voronoi eficazes e perde precisão conforme novos dados entram sem `REINDEX`.
@@ -398,6 +444,46 @@ if (matches && matches.length > 0) {
 
 ---
 
+### 4.2 Função RPC de Faxina / Retenção de Logs (`purge_old_system_logs`)
+
+Para prevenir inchaço de tabela (*bloat*) e controlar custos de armazenamento, a função RPC `public.purge_old_system_logs` remove de forma segura registros de telemetria mais antigos que a janela estipulada (padrão 30 dias):
+
+```sql
+CREATE OR REPLACE FUNCTION public.purge_old_system_logs(days_to_keep INT DEFAULT 30)
+RETURNS INT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    deleted_count INT;
+BEGIN
+    IF days_to_keep < 1 THEN
+        RAISE EXCEPTION 'days_to_keep deve ser maior ou igual a 1';
+    END IF;
+
+    DELETE FROM public.ai_system_logs
+    WHERE created_at < (now() - (days_to_keep || ' days')::INTERVAL);
+
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
+END;
+$$;
+```
+
+#### Como chamar via Supabase Client (TypeScript)
+```typescript
+const { data: deletedCount, error } = await supabase.rpc('purge_old_system_logs', {
+  days_to_keep: 30
+});
+
+if (!error) {
+  console.log(`Logs antigos expurgados com sucesso. Linhas deletadas: ${deletedCount}`);
+}
+```
+
+---
+
 ## 5. Políticas de Segurança (Row Level Security - RLS)
 
 Todas as tabelas possuem `ENABLE ROW LEVEL SECURITY`.
@@ -423,6 +509,10 @@ Todas as tabelas possuem `ENABLE ROW LEVEL SECURITY`.
 7. **`public.discord_settings`** (Fase 4):
    - `SELECT`: Liberado para `anon`, `authenticated` e `service_role` (para leitura de status pelos clientes).
    - `ALL`: Restrito exclusivamente a `service_role` (protege alteração de chaves mestras e webhooks contra edições não autorizadas).
+8. **`public.ai_system_logs`** (Fase 1 - Sistema Centralizado de Logs & Auditoria IA):
+   - `REVOKE ALL`: Permissões públicas (`anon`) e de usuários logados (`authenticated`) são expressamente revogadas para evitar vazamento de telemetria de produção (CWE-284).
+   - `ALL`: Restrito com política RLS exclusiva para `service_role`.
+   - RPC `purge_old_system_logs`: Execução restrita a `service_role` com `SECURITY DEFINER`.
 
 ---
 
@@ -441,3 +531,4 @@ Todas as tabelas possuem `ENABLE ROW LEVEL SECURITY`.
 | `20260916000005_discord_settings.sql` | Configurações do bot de Discord para breaking news e alertas de jogos grátis. |
 | `20260920000001_social_settings.sql` | Chaves e credenciais para distribuição social automatizada. |
 | `20260920000002_multi_tier_sources.sql` | Inserção e atualização idempotente (`UPSERT`) das 15 fontes homologadas Multi-Tier e categorias padrão. |
+| `20260923000001_ai_system_logs.sql` | Tabela centralizada `ai_system_logs`, índices parciais para tarefas incompletas, RLS restrito a `service_role` e RPC `purge_old_system_logs`. |

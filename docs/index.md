@@ -21,9 +21,10 @@ Esta documentação foi estruturada para servir tanto a engenheiros humanos de s
 | **[ai-context.md](file:///d:/IAProjects/AIGamePortal/docs/ai-context.md)** | Guia canônico para agentes de IA: regras de negócio, pipeline n8n + Gemini, diretrizes E-E-A-T e política anti-alucinação. | Agentes de IA & Engenheiros |
 | **[gemini-redator-prompt.md](file:///d:/IAProjects/AIGamePortal/docs/gemini-redator-prompt.md)** | Especificação do Agente Redator & Otimizador SEO: System Prompt definitivo, Few-Shot, JSON Schema e parâmetros Gemini 1.5. | Engenheiros de IA & Redação |
 | **[social-automation.md](file:///d:/IAProjects/AIGamePortal/docs/social-automation.md)** | Módulo de Distribuição Multi-canal: Telegram Bot API, X/Twitter API v2, copywriter gamer e resiliência non-blocking. | Social Media & Engenheiros |
-| **[affiliate-system.md](file:///d:/IAProjects/AIGamePortal/docs/affiliate-system.md)** | Módulo de Afiliados Inteligentes (Fase 3): Modelagem, conformidade E-E-A-T (rel="sponsored nofollow"), tracking /api/out/[id] e AffiliateDealCard. | Monetização, Engenheiros & E-commerce |
 | **[discord-bot.md](file:///d:/IAProjects/AIGamePortal/docs/discord-bot.md)** | Bot de Alertas de Jogos Grátis & Breaking News no Discord (Fase 4): Webhook serverless, GamerPower API, Rich Embeds e cron. | Comunidade, DevOps & IA |
 | **[admin-discord.md](file:///d:/IAProjects/AIGamePortal/docs/admin-discord.md)** | Guia operacional do Painel Administrativo do Discord (/admin/discord): Chaves mestras de envio, testes e histórico. | Administradores, DevOps & IA |
+| **[admin-logs.md](file:///d:/IAProjects/AIGamePortal/docs/admin-logs.md)** | Manual operacional da Central de Logs & Auditoria de IA (/admin/logs): Guia de interface, triagem de tarefas não concluídas e dicionário de 28 erros. | Administradores, Suporte & IA |
+| **[security/hardening-phase8-logging.md](file:///d:/IAProjects/AIGamePortal/docs/security/hardening-phase8-logging.md)** | Hardening de Segurança (Fase 8): Mitigação de Log Injection (CWE-117), sanitização universal de credenciais (CWE-532), RLS estrito e defesas anti-DoS. | Segurança, DevSecOps & Backend |
 
 ---
 
@@ -52,6 +53,10 @@ O **AIGamePortal** resolve o gargalo de tempo na produção de notícias sobre j
     - **Compartilhamento Direto nas Miniaturas (Thumbs)**: Botão flutuante em overlay sobre as imagens do `NewsCard` e `HeroFeatured` com menu popover vidro fosco (`backdrop-blur-xl`) e isolamento rigoroso de eventos de clique (`stopPropagation` e `preventDefault`), permitindo compartilhar direto dos feeds sem navegar indesejadamente para a matéria.
     - **Compartilhamento na Leitura**: Barra compacta no cabeçalho editorial e bloco de alto destaque no rodapé pós-leitura com chamada de engajamento comunitário.
     - **Conteúdo Enriquecido por Plataforma**: Montagem dinâmica de mensagens personalizadas com emojis temáticos, título em destaque, resumo/gancho editorial (`excerpt` ou `tldr`), hashtags da categoria e URL canônica para **WhatsApp**, **X (Twitter)**, **Telegram**, **Facebook** e **Reddit**, além de botão de cópia com feedback instantâneo e suporte nativo à **Web Share API** no mobile.
+12. **Observabilidade Centralizada & Auditoria de IA (`/admin/logs`)**:
+    - **Monitoramento em Tempo Real**: Telemetria unificada de agentes (`ai_writer`, `ai_embedding`, `ai_hub`), scrapers de feeds e publicadores de redes sociais com RLS estrito.
+    - **Rastreamento de Tarefas Não Concluídas**: Identificação instantânea e triagem operacional de matérias não publicadas (`task_completed = false`).
+    - **Governança e Retenção**: Expurgo controlado com RPC `purge_old_system_logs`, de-duplicação de erros no mesmo minuto e conformidade com CWE-117 e CWE-532.
 
 ---
 
@@ -93,10 +98,14 @@ d:/IAProjects/AIGamePortal/
 │   │   └── revalidate/
 │   │       └── route.ts                # Endpoint ISR sob demanda (GET/POST)
 │   ├── admin/
-│   │   └── afiliados/                  # Painel de controle restrito de afiliados
-│   │       ├── admin-view.tsx          # Dashboard interativo com métricas e toggles
-│   │       ├── login-form.tsx          # Formulário de login com chave mestra
-│   │       └── page.tsx                # Server Component protegido contra crawlers
+│   │   ├── afiliados/                  # Painel de controle restrito de afiliados
+│   │   │   ├── admin-view.tsx          # Dashboard interativo com métricas e toggles
+│   │   │   ├── login-form.tsx          # Formulário de login com chave mestra
+│   │   │   └── page.tsx                # Server Component protegido contra crawlers
+│   │   └── logs/                       # Central de Logs & Auditoria de IA
+│   │       ├── admin-view.tsx          # Dashboard forense com KPIs, filtros e modais
+│   │       ├── login-form.tsx          # Autenticação segura por cookie/chave
+│   │       └── page.tsx                # Rota administrativa protegida com noindex
 │   ├── categoria/
 │   │   └── [slug]/
 │   │       └── page.tsx                # Feed dinâmico por categoria/plataforma
@@ -130,6 +139,10 @@ d:/IAProjects/AIGamePortal/
 │   ├── theme-toggle.tsx                # Botão alternador Claro/Escuro
 │   └── tldr-box.tsx                    # Resumo em 30 segundos (3-4 bullets)
 ├── docs/                               # Suíte de Documentação Técnica
+│   ├── admin-discord.md                # Guia operacional do Painel do Discord (/admin/discord)
+│   ├── admin-logs.md                   # Manual operacional da Central de Logs (/admin/logs)
+│   ├── admin-newsletter.md             # Guia operacional do Painel da Newsletter
+│   ├── admin-redes.md                  # Guia operacional do Painel de Redes Sociais (/admin/redes)
 │   ├── affiliate-system.md             # Módulo de Afiliados, automações 100% e /admin/afiliados
 │   ├── ai-context.md                   # Diretrizes canônicas para agentes de IA
 │   ├── api-reference.md                # Referência de funções e utilitários
@@ -140,6 +153,8 @@ d:/IAProjects/AIGamePortal/
 │   ├── gemini-redator-prompt.md        # Especificação do Agente Redator & Otimizador SEO
 │   ├── index.md                        # Este documento
 │   ├── routes-and-isr.md               # Rotas, SSG e webhook de revalidação
+│   ├── security/                       # Suíte de Hardening e Auditorias de Segurança
+│   │   └── hardening-phase8-logging.md # Hardening da telemetria, mitigação CWE-117/532 e RLS
 │   ├── seo-and-indexing.md             # SEO Técnico, Schema.org e Google News/Discover
 │   └── social-automation.md            # Módulo de Distribuição Multi-canal
 ├── public/                             # Ativos estáticos públicos
