@@ -61,6 +61,11 @@ export function AdminMetricsView({ initialSummary }: AdminMetricsViewProps) {
           setSummary(json.data);
           notify("Métricas e telemetria atualizadas com sucesso!");
         }
+      } else if (res.status === 429) {
+        const json = await res.json().catch(() => ({}));
+        notify(json.error || "Muitas atualizações em pouco tempo (máx 3/min). Aguarde 1 minuto.");
+      } else if (res.status === 401) {
+        notify("Sessão administrativa expirada. Recarregue a página para autenticar.");
       } else {
         notify("Falha ao atualizar dados de telemetria.");
       }

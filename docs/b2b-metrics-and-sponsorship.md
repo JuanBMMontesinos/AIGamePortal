@@ -113,74 +113,118 @@ O painel administrativo dispõe do botão **"Exportar Pitch Deck B2B"**, que abr
 
 ---
 
-## 5. Rota de Telemetria Interna (`/api/metrics/summary`)
+## 5. Rotas de Telemetria e Métricas
 
-### 5.1 Especificação Técnica
+### 5.1 Rota de Telemetria Administrativa Interna (`/api/metrics/summary`)
 - **Método**: `GET`
-- **Autenticação**: Pública com cache ou administrativa via query parameter `?refresh=true` para forçar expurgo de cache em memória.
-- **Cabeçalhos de Cache no Edge**:
+- **Autenticação**: **Obrigatória** (Fase 7). Requer cookie HTTP-only assinado `admin_session` ou cabeçalho `x-admin-key`.
+- **Status Não-Autenticado**: `HTTP 401 Unauthorized` (`{ "success": false, "error": "Acesso não autorizado às métricas internas." }`).
+- **Cabeçalhos de Segurança HTTP**:
   ```http
-  Cache-Control: public, s-maxage=300, stale-while-revalidate=600
-  CDN-Cache-Control: public, s-maxage=300, stale-while-revalidate=600
-  Cloudflare-CDN-Cache-Control: public, s-maxage=300, stale-while-revalidate=600
+  Cache-Control: private, no-cache, no-store, must-revalidate
+  Pragma: no-cache
   ```
-- **Camada de Cache em Memória**: TTL de 5 minutos (300 segundos) para mitigar sobrecarga de leitura no banco de dados Supabase em períodos de pico.
+  *(Armazenamento em proxies intermediários e CDNs públicas é terminantemente proibido)*.
+- **Proteção contra DoS e Cache-Buster**:
+  - Limite geral: Máximo de **10 requisições por minuto** por IP (`prefix: "metrics_summary_endpoint"`).
+  - Limite do parâmetro `?refresh=true`: Máximo de **3 requisições por minuto** por IP (`prefix: "metrics_summary_refresh"`).
+  - Retorno em caso de excesso: `HTTP 429 Too Many Requests` com cabeçalhos RFC 6585 (`Retry-After`, `X-RateLimit-*`).
+- **Camada de Cache em Memória**: TTL de 5 minutos (300 segundos) para mitigar sobrecarga de leitura no banco de dados Supabase.
 
-### 5.2 Exemplo de Resposta JSON
+### 5.2 Exemplo de Resposta JSON (Privada / Completa)
 ```json
 {
   "success": true,
   "data": {
-    "generatedAt": "2026-09-16T23:26:03.858Z",
-    "cachedUntil": "2026-09-16T23:31:03.858Z",
+    "generatedAt": "2026-09-22T15:30:00.000Z",
+    "cachedUntil": "2026-09-22T15:35:00.000Z",
     "posts": {
-      "totalPublished": 81,
-      "last24h": 12,
-      "last7d": 81,
-      "totalViews": 23085,
+      "totalPublished": 150,
+      "last24h": 14,
+      "last7d": 68,
+      "totalViews": 42750,
       "avgViewsPerPost": 285,
       "platformDistribution": [
-        { "platform": "PlayStation", "count": 13, "percentage": 16 },
-        { "platform": "Xbox", "count": 7, "percentage": 8.6 },
-        { "platform": "PC Gaming", "count": 19, "percentage": 23.5 },
-        { "platform": "Nintendo", "count": 17, "percentage": 21 },
-        { "platform": "Hardware & Geral", "count": 25, "percentage": 30.9 }
+        { "platform": "PlayStation", "count": 52, "percentage": 23.3 },
+        { "platform": "Xbox", "count": 44, "percentage": 19.7 },
+        { "platform": "PC Gaming", "count": 46, "percentage": 20.6 },
+        { "platform": "Nintendo", "count": 35, "percentage": 15.7 },
+        { "platform": "Hardware & Geral", "count": 45, "percentage": 20.2 }
       ]
     },
     "affiliates": {
-      "totalClicks": 15,
-      "clicksLast24h": 1,
-      "clicksLast7d": 6,
+      "totalClicks": 384,
+      "clicksLast24h": 24,
+      "clicksLast7d": 162,
       "estimatedConversionRate": 3.2,
-      "estimatedConversions": 1,
+      "estimatedConversions": 12,
       "avgTicketBrl": 380,
-      "estimatedGmvBrl": 380,
-      "estimatedCommissionBrl": 28
+      "estimatedGmvBrl": 4560,
+      "estimatedCommissionBrl": 342
     },
     "cac": {
       "costPerArticleUsd": 0.00028,
       "costPerArticleBrl": 0.0015,
       "traditionalCostBrl": 45,
       "savingsPerArticleBrl": 44.9985,
-      "totalSavingsBrl": 3645,
-      "hoursSavedTotal": 122,
+      "totalSavingsBrl": 6749,
+      "hoursSavedTotal": 225,
       "operationalMarginPercent": 99.9
     },
     "audience": {
       "newsletterSubscribersActive": 348,
       "newsletterOpenRatePercent": 46.8,
       "discordMembers": 1250,
-      "monthlyProjectedPageviews": 120000
-    }
+      "monthlyProjectedPageviews": 128250
+    },
+    "sponsorshipPackages": [
+      {
+        "id": "slot-peripherals-hero",
+        "title": "Hero Takeover & Injeção de Periféricos",
+        "recommendedMonthlyBrl": "R$ 3.500 / mês"
+      }
+    ]
   }
 }
 ```
+
+### 5.3 Rota de Métricas Públicas Sanitizadas (`/api/metrics/public`)
+- **Método**: `GET`
+- **Autenticação**: Nenhuma (Acesso Público).
+- **Rate Limit**: Máximo de 60 requisições por minuto por IP.
+- **Cabeçalhos de Cache CDN**:
+  ```http
+  Cache-Control: public, s-maxage=300, stale-while-revalidate=600
+  CDN-Cache-Control: public, s-maxage=300, stale-while-revalidate=600
+  Cloudflare-CDN-Cache-Control: public, s-maxage=300, stale-while-revalidate=600
+  ```
+- **Payload Sanitizado**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "postsCount": 150,
+      "platforms": [
+        { "platform": "PlayStation", "count": 52, "percentage": 23.3 },
+        { "platform": "Xbox", "count": 44, "percentage": 19.7 },
+        { "platform": "PC Gaming", "count": 46, "percentage": 20.6 },
+        { "platform": "Nintendo", "count": 35, "percentage": 15.7 },
+        { "platform": "Hardware & Geral", "count": 45, "percentage": 20.2 }
+      ]
+    }
+  }
+  ```
+- **Garantia de Isolamento**: O endpoint público nunca aceita `?refresh=true` e omite rigorosamente qualquer menção a afiliados, conversões, GMV, comissões, custos de API, dados de assinantes da newsletter ou precificação de patrocínio.
 
 ---
 
 ## 6. Segurança e Proteção de Acesso
 
-O painel em `/admin/metricas` é protegido pela arquitetura de autenticação administrativa unificada (Fase 4):
+O ecossistema de métricas é blindado por múltiplas camadas de defesa em profundidade:
 1. **Sessão Criptografada HMAC-SHA256**: Acesso restrito via cookie HTTP-only `admin_session` assinado digitalmente, com tempo de vida de 7 dias e atributos `SameSite=Lax` e `Secure`.
 2. **Proibição de Autenticação por Query String**: O suporte anterior a `?key=...` foi descontinuado para evitar vazamento de credenciais em logs de servidor e cabeçalhos Referer. O acesso é realizado exclusivamente via formulário de login seguro.
 3. **Bypass de RLS Controlado**: A leitura agregada utiliza `createAdminClient()` no servidor, garantindo que métricas de inscritos protegidas por RLS sejam consolidadas sem expor a lista de e-mails publicamente.
+4. **Hardening de Telemetria e Mitigação de DoS (Fase 7)**:
+   - Bloqueio imediato (HTTP 401) para acessos anônimos em `/api/metrics/summary`.
+   - Rate limiting duplo (10 req/min na rota e 3 req/min com `?refresh=true`) para impedir exaustão do pool de conexões do Supabase.
+   - Segregação de responsabilidade entre telemetria administrativa interna e contadores públicos via `/api/metrics/public`.

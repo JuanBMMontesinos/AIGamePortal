@@ -150,7 +150,7 @@ export function verifyAdminSessionToken(token: unknown): boolean {
  * @returns Promessa com true se autenticado; false se não autenticado.
  */
 export async function isServerAdminAuthenticated(request?: NextRequest): Promise<boolean> {
-  // 1. Verificação de cabeçalho 'x-admin-key' para integrações e scripts
+  // 1. Verificação em Route Handlers (onde request está disponível)
   if (request) {
     const headerKey = request.headers.get("x-admin-key");
     const secret = getAdminSecret();
@@ -163,9 +163,11 @@ export async function isServerAdminAuthenticated(request?: NextRequest): Promise
     if (requestCookie && verifyAdminSessionToken(requestCookie)) {
       return true;
     }
+
+    return false;
   }
 
-  // 2. Verificação de cookie via next/headers (Server Components ou Route Handlers)
+  // 2. Verificação de cookie via next/headers em Server Components
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get(ADMIN_COOKIE_NAME)?.value;

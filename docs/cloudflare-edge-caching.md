@@ -76,17 +76,18 @@ Acesse `Caching -> Cache Rules` no Cloudflare Dashboard e crie as regras na segu
 
 ---
 
-### Regra 3: Cache para Telemetria B2B Interna
-* **Nome da Regra**: `AIGamePortal - Telemetry Cache 300s`
+### Regra 3: Cache para Métricas Públicas Sanitizadas
+* **Nome da Regra**: `AIGamePortal - Public Metrics Cache 300s`
 * **Expressão (Expression Builder)**:
   ```text
-  (http.request.uri.path eq "/api/metrics/summary")
+  (http.request.uri.path eq "/api/metrics/public")
   ```
 * **Configurações de Cache**:
   * **Eligible for cache**: `Eligible for cache`
   * **Edge TTL**: `Override origin` -> `5 minutes` (300 segundos).
   * **Browser TTL**: `Respect origin`
-* **Finalidade**: Evita que requisições repetidas ao endpoint de telemetria sobrecarreguem o PostgreSQL do Supabase.
+* **Finalidade**: Absorve requisições a contadores públicos e protege o banco contra leituras desnecessárias.
+* **Nota Crítica de Segurança (Fase 7)**: A rota interna `/api/metrics/summary` é estritamente administrativa (`Cache-Control: private, no-cache, no-store`) e **NUNCA** deve ser incluída em regras de cache na Cloudflare para não vazar dados financeiros e comerciais sigilosos.
 
 ---
 

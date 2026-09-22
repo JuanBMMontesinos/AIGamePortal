@@ -408,3 +408,32 @@ export async function getB2BMetricsSummary(forceRefresh = false): Promise<B2BMet
 
   return summary;
 }
+
+/**
+ * Interface sanitizada para exibição em componentes públicos (ex: footer, home).
+ * Omitindo estritamente quaisquer dados financeiros, comerciais, CAC ou audiência privada.
+ */
+export interface PublicMetricsSummary {
+  postsCount: number;
+  platforms: {
+    platform: string;
+    count: number;
+    percentage: number;
+  }[];
+}
+
+/**
+ * Retorna exclusivamente métricas sanitizadas e inofensivas para consumo público.
+ * Reutiliza o cache em memória consolidado sem permitir bypass de cache forçado.
+ */
+export async function getPublicMetricsSummary(): Promise<PublicMetricsSummary> {
+  const summary = await getB2BMetricsSummary(false);
+  return {
+    postsCount: summary.posts.totalPublished,
+    platforms: summary.posts.platformDistribution.map((p) => ({
+      platform: p.platform,
+      count: p.count,
+      percentage: p.percentage,
+    })),
+  };
+}

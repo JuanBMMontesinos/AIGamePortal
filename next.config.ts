@@ -154,9 +154,9 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Telemetria Interna com Cache de 5 minutos (evita sobrecarga no banco)
+      // Métricas Públicas Sanitizadas com Cache de 5 minutos (CDN e Browser)
       {
-        source: "/api/metrics/summary",
+        source: "/api/metrics/public",
         headers: [
           {
             key: "Cache-Control",

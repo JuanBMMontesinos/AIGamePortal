@@ -84,8 +84,8 @@ npm run start
 - `/admin/afiliados` (`app/admin/afiliados/page.tsx`): **Painel de Afiliados**, gestão de produtos parceiros e métricas de cliques.
 - `/admin/newsletter` (`app/admin/newsletter/page.tsx`): **Painel da Newsletter**, controle de ativação/pausa de envios, diagnóstico Resend e gestão de inscritos.
 - `/admin/discord` (`app/admin/discord/page.tsx`): **Painel do Discord**, controle de ativação/pausa de envios (jogos grátis e breaking news), diagnóstico de webhooks e histórico de alertas.
-- `/admin/redes` (`app/admin/redes/page.tsx`): **Painel de Redes Sociais**, controle de ativação/pausa de envios para o X (Twitter) e Telegram com padrão desabilitado de segurança e testes imediatos.
-- `/api/metrics/summary` (`app/api/metrics/summary/route.ts`): **Rota de Telemetria Interna**, agregação de dados do Supabase com cache no Edge/Memória.
+- `/api/metrics/summary` (`app/api/metrics/summary/route.ts`): **Rota de Telemetria Interna Protegida** (Fase 7), acesso restrito a administradores (HMAC/Cookie/x-admin-key), rate limiting contra DoS e dados confidenciais consolidados.
+- `/api/metrics/public` (`app/api/metrics/public/route.ts`): **Endpoint de Métricas Públicas Sanitizadas** (Fase 7), com cache no Edge/CDN para contadores gerais (posts e plataformas).
 - `/api/revalidate` (`app/api/revalidate/route.ts`): **Endpoint de Revalidação Incremental sob Demanda (ISR)** acionado pelo pipeline autônomo para atualizar o cache instantaneamente após a gravação no Supabase.
 
 ---
@@ -205,12 +205,13 @@ Para transformar o portal em uma **MediaTech atrativa para marcas e patrocinador
   - **KPIs Comerciais**: Volume de notícias (24h e 7d), distribuição por plataforma (PlayStation, Xbox, PC Gaming, Nintendo), cliques de afiliados e GMV estimado.
   - **CAC de Conteúdo**: Prova de margem operacional de 99.9% (IA Gemini Flash a R$ 0,0015/artigo vs R$ 45,00 de redator freelancer).
   - **Gerador de Pitch Deck de Mídia**: Modal executivo com resumo comercial pronto para envio a marcas, cópia em Markdown, download JSON e impressão A4/PDF.
-- **Rota de Telemetria Interna (`/api/metrics/summary`)**: Consolidação leve com cache em memória (5 min) e cabeçalhos de CDN para não onerar o Supabase.
+- **Rota de Telemetria Interna (`/api/metrics/summary`)**: Acesso estritamente restrito a administradores (cookie assinado HMAC / `x-admin-key`), proteção com rate limiting duplo contra DoS de cache-buster e endpoint público sanitizado (`/api/metrics/public`).
 
 ---
 
 ## 📚 Documentação Técnica Completa
 Consulte a pasta [docs/](file:///d:/IAProjects/AIGamePortal/docs):
+- [docs/security/hardening-phase7.md](file:///d:/IAProjects/AIGamePortal/docs/security/hardening-phase7.md): Hardening Final da Telemetria B2B, Autenticação de Métricas e Mitigação de DoS.
 - [docs/index.md](file:///d:/IAProjects/AIGamePortal/docs/index.md): Sumário executivo e guia geral do projeto.
 - [docs/b2b-metrics-and-sponsorship.md](file:///d:/IAProjects/AIGamePortal/docs/b2b-metrics-and-sponsorship.md): Guia de Métricas B2B, Metodologia de CAC e Pacotes de Patrocínio.
 - [docs/cloudflare-edge-caching.md](file:///d:/IAProjects/AIGamePortal/docs/cloudflare-edge-caching.md): Guia passo a passo de Edge Caching na Cloudflare (Cache Rules, Tiered Cache e Zero Trust).
