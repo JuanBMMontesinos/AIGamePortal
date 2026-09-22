@@ -22,6 +22,7 @@ import {
   Twitter,
   Info,
   Zap,
+  Terminal,
 } from "lucide-react";
 import { SocialSettings } from "@/types/database";
 import { SocialAdminKPIs } from "@/lib/data/social-admin";
@@ -270,6 +271,14 @@ export function AdminSocialView({ initialSettings, initialKpis }: AdminSocialVie
           >
             <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
             <span>Discord</span>
+          </a>
+
+          <a
+            href="/admin/logs"
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors flex items-center gap-1.5"
+          >
+            <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Logs & IA</span>
           </a>
 
           <button

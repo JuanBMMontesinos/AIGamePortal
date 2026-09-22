@@ -31,6 +31,7 @@ import {
   Share2,
   CheckCircle2,
   X,
+  Terminal,
 } from "lucide-react";
 import { B2BMetricsSummary } from "@/lib/data/metrics-summary";
 
@@ -198,6 +199,14 @@ Painel de Telemetria: https://aigameportal.com/admin/metricas
             >
               <Share2 className="w-4 h-4 text-sky-400" />
               Redes Sociais
+            </Link>
+
+            <Link
+              href="/admin/logs"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            >
+              <Terminal className="w-4 h-4 text-cyan-400" />
+              Logs & IA
             </Link>
           </div>
 

@@ -29,6 +29,7 @@ import {
   DollarSign,
   MessageSquare,
   Share2,
+  Terminal,
 } from "lucide-react";
 import { NewsletterSettings, NewsletterSubscriber } from "@/types/database";
 import { NewsletterAdminKPIs } from "@/lib/data/newsletter-admin";
@@ -275,6 +276,14 @@ export function AdminNewsletterView({
             >
               <Share2 className="w-4 h-4 text-sky-400" />
               Redes Sociais
+            </Link>
+
+            <Link
+              href="/admin/logs"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            >
+              <Terminal className="w-4 h-4 text-cyan-400" />
+              Logs & IA
             </Link>
           </div>
 
