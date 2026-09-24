@@ -3,7 +3,8 @@ name: Ingestão de Notícias Gamer (Cron)
 on:
   schedule:
     # Executa a cada 15 minutos (00, 15, 30, 45 de cada hora)
-    - cron: '*/15 * * * *'
+    # - cron: '*/15 * * * *'
+    - cron: '0 9,21 * * *'
   workflow_dispatch: # Permite disparo manual pelo painel do GitHub Actions
   push:
     branches:
