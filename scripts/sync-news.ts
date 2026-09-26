@@ -20,6 +20,7 @@ import Parser from "rss-parser";
 import { extract } from "@extractus/article-extractor";
 import * as cheerio from "cheerio";
 import { GoogleGenAI, Type } from "@google/genai";
+import { GeminiPool } from "../lib/services/gemini-pool";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Category, FailureReasonCode, GameMetadata, Post, Source } from "../types/database";
 import { publishToSocialNetworks } from "../lib/services/social-publisher";
@@ -507,7 +508,7 @@ const GENERATION_MODELS = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-1.
  * Gera vetor denso de 768 dimensões com suporte resiliente a múltiplos modelos
  */
 async function generateEmbedding(
-  ai: GoogleGenAI,
+  ai: GoogleGenAI | GeminiPool,
   text: string,
   context?: { title?: string; url?: string }
 ): Promise<number[] | null> {
@@ -516,11 +517,18 @@ async function generateEmbedding(
 
   for (const model of EMBEDDING_MODELS) {
     try {
-      const response = await ai.models.embedContent({
-        model,
-        contents: cleanSnippet,
-        config: { outputDimensionality: 768 },
-      });
+      const runner = async (client: GoogleGenAI) => {
+        return await client.models.embedContent({
+          model,
+          contents: cleanSnippet,
+          config: { outputDimensionality: 768 },
+        });
+      };
+
+      const response =
+        ai instanceof GeminiPool
+          ? await ai.execute(runner, { contextName: `Embedding:${model}` })
+          : await runner(ai);
 
       const values = response.embeddings?.[0]?.values || (response as any).embedding?.values;
       if (Array.isArray(values) && values.length === 768) {
@@ -558,7 +566,7 @@ async function generateEmbedding(
  * Reescreve a matéria com voz gamer, SEO e estrutura JSON pelo Gemini Flash
  */
 async function rewriteArticleWithGemini(
-  ai: GoogleGenAI,
+  ai: GoogleGenAI | GeminiPool,
   scraped: ScrapedContent,
   sourceName: string
 ): Promise<AIArticleOutput | null> {
@@ -573,82 +581,89 @@ ${scraped.cleanText}`;
 
   for (const model of GENERATION_MODELS) {
     try {
-      const response = await ai.models.generateContent({
-        model,
-        config: {
-          temperature: 0.2,
-          topP: 0.85,
-          topK: 40,
-          maxOutputTokens: 4096,
-          responseMimeType: "application/json",
-          systemInstruction: SYSTEM_INSTRUCTION,
-          responseSchema: {
-            type: Type.OBJECT,
-            required: [
-              "title",
-              "slug",
-              "tldr",
-              "excerpt",
-              "content",
-              "community_sentiment",
-              "game_metadata",
-              "suggested_category",
-              "keywords",
-              "is_rumor",
-              "reliability_score",
-              "rumor_warning",
-            ],
-            properties: {
-              title: { type: Type.STRING },
-              slug: { type: Type.STRING },
-              tldr: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-              },
-              excerpt: { type: Type.STRING },
-              content: { type: Type.STRING },
-              community_sentiment: { type: Type.STRING },
-              game_metadata: {
-                type: Type.OBJECT,
-                required: ["game_name", "platforms", "release_date", "developer", "publisher"],
-                properties: {
-                  game_name: { type: Type.STRING },
-                  platforms: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  release_date: { type: Type.STRING },
-                  developer: { type: Type.STRING },
-                  publisher: { type: Type.STRING },
+      const runner = async (client: GoogleGenAI) => {
+        return await client.models.generateContent({
+          model,
+          config: {
+            temperature: 0.2,
+            topP: 0.85,
+            topK: 40,
+            maxOutputTokens: 4096,
+            responseMimeType: "application/json",
+            systemInstruction: SYSTEM_INSTRUCTION,
+            responseSchema: {
+              type: Type.OBJECT,
+              required: [
+                "title",
+                "slug",
+                "tldr",
+                "excerpt",
+                "content",
+                "community_sentiment",
+                "game_metadata",
+                "suggested_category",
+                "keywords",
+                "is_rumor",
+                "reliability_score",
+                "rumor_warning",
+              ],
+              properties: {
+                title: { type: Type.STRING },
+                slug: { type: Type.STRING },
+                tldr: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
                 },
-              },
-              suggested_category: {
-                type: Type.STRING,
-                enum: ["PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Indústria", "Geral"],
-              },
-              keywords: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-              },
-              is_rumor: {
-                type: Type.BOOLEAN,
-                description: "Verdadeiro se for baseado em vazamento, datamine, boato ou patente não confirmada.",
-              },
-              reliability_score: {
-                type: Type.INTEGER,
-                description: "Nota de confiabilidade de 1 a 5 da fonte.",
-              },
-              rumor_warning: {
-                type: Type.STRING,
-                description: "Mensagem contextual de aviso para o leitor se for rumor, ou vazio se oficial.",
+                excerpt: { type: Type.STRING },
+                content: { type: Type.STRING },
+                community_sentiment: { type: Type.STRING },
+                game_metadata: {
+                  type: Type.OBJECT,
+                  required: ["game_name", "platforms", "release_date", "developer", "publisher"],
+                  properties: {
+                    game_name: { type: Type.STRING },
+                    platforms: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    release_date: { type: Type.STRING },
+                    developer: { type: Type.STRING },
+                    publisher: { type: Type.STRING },
+                  },
+                },
+                suggested_category: {
+                  type: Type.STRING,
+                  enum: ["PlayStation", "Xbox", "Nintendo", "PC Gaming", "Hardware", "Indústria", "Geral"],
+                },
+                keywords: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+                is_rumor: {
+                  type: Type.BOOLEAN,
+                  description: "Verdadeiro se for baseado em vazamento, datamine, boato ou patente não confirmada.",
+                },
+                reliability_score: {
+                  type: Type.INTEGER,
+                  description: "Nota de confiabilidade de 1 a 5 da fonte.",
+                },
+                rumor_warning: {
+                  type: Type.STRING,
+                  description: "Mensagem contextual de aviso para o leitor se for rumor, ou vazio se oficial.",
+                },
               },
             },
           },
-        },
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: userPrompt }],
-          },
-        ],
-      });
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: userPrompt }],
+            },
+          ],
+        });
+      };
+
+      const response =
+        ai instanceof GeminiPool
+          ? await ai.execute(runner, { contextName: `Rewrite:${model}`, waitIfShortCooldown: true })
+          : await runner(ai);
 
       // 1. Verificação de Safety Filter em candidate
       const candidate = response.candidates?.[0];
@@ -1000,7 +1015,6 @@ export async function runNewsSync() {
   console.log("====================================================================");
 
   // 1. Validação de credenciais de ambiente
-  const geminiApiKey = process.env.GEMINI_API_KEY;
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -1017,16 +1031,24 @@ export async function runNewsSync() {
     process.exit(1);
   }
 
-  if (!geminiApiKey) {
-    console.error("❌ ERRO CRÍTICO: GEMINI_API_KEY ausente. Configure a chave para embeddings e geração.");
+  // 2. Inicialização do Pool de IA Gemini com suporte a múltiplas chaves e failover 429
+  let ai: GeminiPool;
+  try {
+    ai = GeminiPool.fromEnv({ waitIfShortCooldown: true });
+    const poolStatus = ai.getStatus();
+    console.log(`\n🤖 [GeminiPool] Inicializado com sucesso (${poolStatus.totalKeys} chave(s) de API ativa(s)):`);
+    for (const key of poolStatus.keys) {
+      console.log(`   - ${key.label} [Status: ${key.status}]`);
+    }
+  } catch (poolErr: any) {
+    console.error(`❌ ERRO CRÍTICO NO POOL GEMINI: ${poolErr?.message || poolErr}`);
     process.exit(1);
   }
 
-  // 2. Inicialização dos Clientes
+  // 3. Inicialização dos Clientes de Banco e RSS
   const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false },
   });
-  const ai = new GoogleGenAI({ apiKey: geminiApiKey });
   const parser = new Parser({
     headers: {
       "User-Agent":
@@ -1531,6 +1553,14 @@ export async function runNewsSync() {
   console.log(`🛑 Duplicatas semânticas (pgvector >= 82%): ${totalSemanticDuplicates}`);
   console.log(`🎉 Artigos inéditos publicados: ${totalPublished}`);
   console.log(`⚠️ Falhas ou erros pontuais: ${totalErrors}`);
+
+  const poolTelemetry = ai.getStatus();
+  console.log("\n🤖 Telemetria do Pool de Chaves Gemini:");
+  console.log(`   Total de chaves: ${poolTelemetry.totalKeys} | Saudáveis: ${poolTelemetry.healthyKeys} | Em Cooldown: ${poolTelemetry.coolingDownKeys} | Esgotadas Diárias: ${poolTelemetry.exhaustedDailyKeys}`);
+  for (const k of poolTelemetry.keys) {
+    const cdInfo = k.cooldownRemainingSeconds ? ` (Cooldown: ${k.cooldownRemainingSeconds}s)` : "";
+    console.log(`   - ${k.label}: ${k.totalSuccesses} sucesso(s), ${k.totalErrors} erro(s) [${k.status}]${cdInfo}`);
+  }
   console.log("====================================================================\n");
 }
 

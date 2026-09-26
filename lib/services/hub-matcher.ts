@@ -2,6 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { GameHub } from "@/types/database";
 import { logAITask, logAISuccess } from "./logger";
+import { GeminiPool } from "./gemini-pool";
 
 export interface HubMatchResult {
   matched: boolean;
@@ -161,7 +162,7 @@ export function matchGameHub(
  * que ainda não possui Hub permanente e sugerir sua ficha técnica completa.
  */
 export async function suggestGameHubWithGemini(
-  ai: GoogleGenAI,
+  ai: GoogleGenAI | GeminiPool,
   title: string,
   content: string,
   gameMetadata?: Record<string, any>
@@ -198,44 +199,51 @@ ${content.slice(0, 2000)}
 
   for (const model of models) {
     try {
-      const response = await ai.models.generateContent({
-        model,
-        config: {
-          temperature: 0.1,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              shouldCreateHub: {
-                type: Type.BOOLEAN,
-                description: "Verdadeiro se for um jogo de relevância que justifica a criação de uma central permanente.",
+      const runner = async (client: GoogleGenAI) => {
+        return await client.models.generateContent({
+          model,
+          config: {
+            temperature: 0.1,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                shouldCreateHub: {
+                  type: Type.BOOLEAN,
+                  description: "Verdadeiro se for um jogo de relevância que justifica a criação de uma central permanente.",
+                },
+                name: { type: Type.STRING },
+                slug: { type: Type.STRING },
+                aliases: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+                developer: { type: Type.STRING },
+                publisher: { type: Type.STRING },
+                release_date: { type: Type.STRING },
+                platforms: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+                metacritic_score: {
+                  type: Type.INTEGER,
+                  description: "Nota numérica de 0 a 100 ou null",
+                },
+                synopsis: { type: Type.STRING },
+                cover_image_url: { type: Type.STRING },
+                banner_image_url: { type: Type.STRING },
               },
-              name: { type: Type.STRING },
-              slug: { type: Type.STRING },
-              aliases: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-              },
-              developer: { type: Type.STRING },
-              publisher: { type: Type.STRING },
-              release_date: { type: Type.STRING },
-              platforms: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-              },
-              metacritic_score: {
-                type: Type.INTEGER,
-                description: "Nota numérica de 0 a 100 ou null",
-              },
-              synopsis: { type: Type.STRING },
-              cover_image_url: { type: Type.STRING },
-              banner_image_url: { type: Type.STRING },
+              required: ["shouldCreateHub"],
             },
-            required: ["shouldCreateHub"],
           },
-        },
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-      });
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        });
+      };
+
+      const response =
+        ai instanceof GeminiPool
+          ? await ai.execute(runner, { contextName: `HubMatcher:${model}` })
+          : await runner(ai);
 
       const text = response.text;
       if (!text) continue;
@@ -282,7 +290,7 @@ export async function matchOrSuggestGameHub(params: {
   title: string;
   content: string;
   gameMetadata?: Record<string, any>;
-  aiClient?: GoogleGenAI | null;
+  aiClient?: GoogleGenAI | GeminiPool | null;
   autoCreate?: boolean;
   defaultCoverUrl?: string | null;
 }): Promise<HubMatchResult> {

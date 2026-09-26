@@ -12,7 +12,8 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`| Público (Browser & Server) | Sim | Chave de API pública com permissões restritas controladas por Row Level Security (RLS). | `eyJhbGciOiJIUzI1NiIsIn...` |
 | `SUPABASE_URL` | Privado (GitHub Actions / Script) | Sim | URL do Supabase para execução do script `sync:news`. | `https://sfqleufmlacmuilanpni.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Privado** (GitHub Actions / Script) | Sim | Chave de serviço com permissão administrativa para inserção de posts e fontes (ignora RLS). | `eyJhbGciOiJIUzI1NiIsIn...` |
-| `GEMINI_API_KEY` | **Privado** (GitHub Actions / Script) | Sim | Chave de API do Google AI Studio para geração de embeddings (`text-embedding-004`) e redação (`gemini-1.5-flash`). | `AIzaSyD...` |
+| `GEMINI_API_KEYS` | **Privado** (GitHub Actions / Vercel / Script) | Sim (Recomendado) | Lista de chaves de API do Google AI Studio separadas por vírgula para balanceamento Round-Robin e failover automático de cota (HTTP 429). | `AIzaSyA...,AIzaSyB...,AIzaSyC...` |
+| `GEMINI_API_KEY` | **Privado** (GitHub Actions / Script) | Sim (Fallback) | Chave de API única legada do Google AI Studio para geração de embeddings e redação. | `AIzaSyD...` |
 | `REVALIDATE_SECRET` | **Privado** (Servidor & GitHub Actions) | Sim | Token secreto utilizado pelo pipeline para autenticar requisições de revalidação instantânea ao `/api/revalidate`. | `aigameportal_super_secret_token_2026` |
 | `NEXT_PUBLIC_SITE_URL` | Público (Browser & Server) | Sim | Domínio canônico do site, utilizado para resolução de metatags OpenGraph, Twitter Cards e chamadas de revalidação ISR. | `http://localhost:3000` ou `https://aigameportal.com` |
 | `TELEGRAM_BOT_TOKEN` | **Privado** (Pipeline / Script) | Opcional (Fase 2) | Token de autenticação HTTP da Telegram Bot API gerado pelo @BotFather. | `123456789:ABCdefGhIJKlm...` |
@@ -51,12 +52,19 @@ Este documento detalha todas as variáveis de ambiente necessárias para o funci
 
 ---
 
-### 2.3 `GEMINI_API_KEY`
-- **Utilizada em**: [scripts/sync-news.ts](file:///d:/IAProjects/AIGamePortal/scripts/sync-news.ts).
+### 2.3 `GEMINI_API_KEYS` & `GEMINI_API_KEY` (Gemini Key Pool)
+- **Utilizadas em**: [lib/services/gemini-pool.ts](file:///d:/IAProjects/AIGamePortal/lib/services/gemini-pool.ts), [scripts/sync-news.ts](file:///d:/IAProjects/AIGamePortal/scripts/sync-news.ts) e [lib/services/hub-matcher.ts](file:///d:/IAProjects/AIGamePortal/lib/services/hub-matcher.ts).
 - **Provedor**: Google AI Studio / Gemini API.
+- **Funcionamento do Pool**:
+  - `GEMINI_API_KEYS`: Permite informar múltiplas chaves de contas do Google diferentes delimitadas por vírgula (`key1,key2,key3`).
+  - `GEMINI_API_KEY`: Mantido para retrocompatibilidade como fallback caso apenas uma chave esteja definida.
+  - **Distribuição Round-Robin**: Alterna uniformemente as chamadas entre as chaves saudáveis do pool, minimizando o risco de estourar o limite de 15 RPM.
+  - **Failover Instantâneo em 429**: Caso uma chave retorne erro de cota (`GEMINI_QUOTA_EXCEEDED` / `RESOURCE_EXHAUSTED`), o pool isola a chave em cooldown (65 segundos para picos de RPM ou até 00:00 UTC para cota diária RPD) e repete a chamada automaticamente na próxima chave sadia disponível sem descartar o artigo.
+  - **Segurança de Mascaramento**: Todas as chaves são mascaradas (ex: `AIzaSyDa...7x9k`) antes de serem exibidas no terminal ou nos logs de auditoria.
 - **Funções**:
-  - Deduplicação Semântica: Geração de vetores de 768 dimensões com o modelo `text-embedding-004`.
-  - Redação e SEO: Inferência com `gemini-1.5-flash` sob temperatura 0.2 e retorno JSON estruturado.
+  - Deduplicação Semântica: Geração de vetores de 768 dimensões com o modelo `gemini-embedding-001` / `text-embedding-004`.
+  - Redação e SEO: Inferência com `gemini-3.6-flash`, `gemini-flash-latest` e `gemini-1.5-flash` sob temperatura 0.2 e retorno JSON estruturado.
+  - Game Hubs: Classificação e sugestão de centrais temáticas permanentes de jogos.
 
 ---
 
